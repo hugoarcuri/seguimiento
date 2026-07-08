@@ -1,13 +1,26 @@
-import { createClient } from "@/lib/supabase/server";
+"use client";
+
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { CalendarioClient } from "./calendario-client";
 
-export default async function CalendarioPage() {
-  const supabase = await createClient();
+export default function CalendarioPage() {
+  const [encuentros, setEncuentros] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const { data: encuentros } = await supabase
-    .from("encuentros")
-    .select("*, discipulos:discipulo_id(nombre, apellido)")
-    .order("fecha", { ascending: true });
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from("encuentros")
+      .select("*, discipulos:discipulo_id(nombre, apellido)")
+      .order("fecha", { ascending: true })
+      .then((res) => {
+        setEncuentros(res.data || []);
+        setLoading(false);
+      });
+  }, []);
 
-  return <CalendarioClient encuentros={encuentros || []} />;
+  if (loading) return <div className="flex items-center justify-center min-h-[50vh]"><p className="text-muted-foreground">Cargando...</p></div>;
+
+  return <CalendarioClient encuentros={encuentros} />;
 }
