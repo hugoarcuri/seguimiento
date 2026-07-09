@@ -42,7 +42,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Loader2, Pencil, Trash2, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
+import { Plus, Loader2, Pencil, Trash2, CheckCircle2, RotateCcw, Clock, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -147,10 +147,14 @@ export default function TareasPage() {
     fetchData();
   };
 
-  const markCompleted = async (id: string) => {
-    const { error } = await supabase.from("tareas").update({ estado: "completada", completed_at: new Date().toISOString() }).eq("id", id);
-    if (error) { toast.error("Error al completar tarea"); return }
-    toast.success("Tarea marcada como completada");
+  const toggleEstado = async (id: string, estadoActual: string) => {
+    const nuevoEstado = estadoActual === "completada" ? "pendiente" : "completada";
+    const payload = nuevoEstado === "completada"
+      ? { estado: nuevoEstado, completed_at: new Date().toISOString() }
+      : { estado: nuevoEstado, completed_at: null };
+    const { error } = await supabase.from("tareas").update(payload).eq("id", id);
+    if (error) { toast.error("Error al actualizar tarea"); return }
+    toast.success(nuevoEstado === "completada" ? "Tarea marcada como completada" : "Tarea revertida a pendiente");
     fetchData();
   };
 
@@ -226,11 +230,12 @@ export default function TareasPage() {
                       <TableCell>{tarea.completed_at ? format(new Date(tarea.completed_at), "dd/MM/yyyy HH:mm", { locale: es }) : "—"}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
-                          {tarea.estado === "pendiente" && (
-                            <Button variant="ghost" size="icon" onClick={() => markCompleted(tarea.id)} title="Marcar completada">
-                              <CheckCircle2 className="h-4 w-4 text-green-600" />
-                            </Button>
-                          )}
+                          <Button variant="ghost" size="icon" onClick={() => toggleEstado(tarea.id, tarea.estado)} title={tarea.estado === "completada" ? "Revertir a pendiente" : "Marcar completada"}>
+                            {tarea.estado === "completada"
+                              ? <RotateCcw className="h-4 w-4 text-amber-600" />
+                              : <CheckCircle2 className="h-4 w-4 text-green-600" />
+                            }
+                          </Button>
                           {isAdmin && (
                             <>
                               <Button variant="ghost" size="icon" onClick={() => openEdit(tarea)} title="Editar">
@@ -261,7 +266,7 @@ export default function TareasPage() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label>Discípulo</Label>
-              <Select onValueChange={(v: any) => form.setValue("discipulo_id", v ?? "")}>
+              <Select value={form.watch("discipulo_id") || undefined} onValueChange={(v: any) => form.setValue("discipulo_id", v ?? "")}>
                 <SelectTrigger><SelectValue placeholder="Seleccionar discípulo" /></SelectTrigger>
                 <SelectContent>
                   {discipulos.map((d) => (
