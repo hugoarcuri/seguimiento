@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -51,7 +52,7 @@ export function Sidebar() {
     <aside className="hidden lg:flex flex-col w-64 border-r bg-card">
       <div className="p-6 border-b">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <Church className="h-6 w-6 text-primary" />
+          <Image src="/seguimiento/logo.png" alt="Logo" width={32} height={32} className="rounded" />
           <span className="font-semibold text-lg">Discipulado</span>
         </Link>
       </div>
