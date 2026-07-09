@@ -69,6 +69,15 @@ export function DiscipuloForm({
     const payload = {
       ...data,
       lider_id: user.id,
+      email: data.email || null,
+      telefono: data.telefono || null,
+      direccion: data.direccion || null,
+      fecha_nacimiento: data.fecha_nacimiento || null,
+      fecha_conversion: data.fecha_conversion || null,
+      fecha_bautismo: data.fecha_bautismo || null,
+      ministerio: data.ministerio || null,
+      dones: data.dones || null,
+      observaciones: data.observaciones || null,
     };
 
     if (isEditing && initialData?.id) {
@@ -167,7 +176,7 @@ export function DiscipuloForm({
             <Input id="fecha_bautismo" type="date" {...register("fecha_bautismo")} />
           </div>
           <div className="space-y-2">
-            <Label>Etapa *</Label>
+            <Label>Etapa</Label>
             <Select
               onValueChange={(value: any) => setValue("etapa_id", parseInt(value ?? "1"))}
               defaultValue={String(initialData?.etapa_id || 1)}
