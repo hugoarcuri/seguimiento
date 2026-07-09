@@ -3,7 +3,6 @@ import { z } from "zod";
 export const discipuloSchema = z.object({
   apellido: z.string().min(1, "El apellido es requerido"),
   nombre: z.string().min(1, "El nombre es requerido"),
-  dni: z.string().optional().nullable(),
   fecha_nacimiento: z.string().optional().nullable(),
   sexo: z.enum(["M", "F"]).optional().nullable(),
   telefono: z.string().optional().nullable(),

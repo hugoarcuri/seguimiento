@@ -82,12 +82,15 @@ export default function TareasPage() {
     const { data: { user: authUser } } = await supabase.auth.getUser();
     if (!authUser) return;
 
+    const { data: profile } = await supabase.from("profiles").select("rol").eq("id", authUser.id).single();
+    const isAdminUser = profile?.rol === "admin";
+
     let tareasQuery = supabase.from("tareas").select("*, discipulo:discipulos(*)").order("created_at", { ascending: false });
-    if (!isAdmin) tareasQuery = tareasQuery.eq("discipulo_id", authUser.id);
+    if (!isAdminUser) tareasQuery = tareasQuery.eq("discipulo_id", authUser.id);
 
     const [tareasRes, discipulosRes] = await Promise.all([
       tareasQuery,
-      isAdmin ? supabase.from("discipulos").select("*").order("apellido", { ascending: true }) : Promise.resolve({ data: [] }),
+      isAdminUser ? supabase.from("discipulos").select("*").order("apellido", { ascending: true }) : Promise.resolve({ data: [] }),
     ]);
     setTareas((tareasRes.data as any) || []);
     setDiscipulos(discipulosRes.data || []);
@@ -258,7 +261,7 @@ export default function TareasPage() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label>Discípulo</Label>
-              <Select onValueChange={(v) => form.setValue("discipulo_id", v || "")} value={form.watch("discipulo_id") || ""}>
+              <Select onValueChange={(v: any) => form.setValue("discipulo_id", v ?? "")}>
                 <SelectTrigger><SelectValue placeholder="Seleccionar discípulo" /></SelectTrigger>
                 <SelectContent>
                   {discipulos.map((d) => (
@@ -280,7 +283,7 @@ export default function TareasPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Tipo</Label>
-                <Select onValueChange={(v) => form.setValue("tipo", v as any)} value={form.watch("tipo")}>
+                <Select onValueChange={(v: any) => form.setValue("tipo", v)} value={form.watch("tipo")}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {Object.entries(tipoLabels).map(([k, v]) => (

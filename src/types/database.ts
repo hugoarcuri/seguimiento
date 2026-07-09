@@ -17,7 +17,6 @@ export interface Discipulo {
   lider_id: string;
   apellido: string;
   nombre: string;
-  dni?: string;
   fecha_nacimiento?: string;
   sexo?: "M" | "F";
   telefono?: string;

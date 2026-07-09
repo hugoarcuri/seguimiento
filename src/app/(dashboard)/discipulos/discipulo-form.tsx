@@ -118,10 +118,7 @@ export function DiscipuloForm({
               <p className="text-sm text-destructive">{errors.nombre.message}</p>
             )}
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="dni">DNI</Label>
-            <Input id="dni" {...register("dni")} />
-          </div>
+
           <div className="space-y-2">
             <Label htmlFor="fecha_nacimiento">Fecha de Nacimiento</Label>
             <Input id="fecha_nacimiento" type="date" {...register("fecha_nacimiento")} />
