@@ -83,6 +83,7 @@ export interface Tarea {
   tipo: "lectura" | "memorizacion" | "preguntas" | "practica";
   estado: "pendiente" | "completada" | "vencida";
   fecha_limite?: string;
+  completed_at?: string;
   created_at: string;
   updated_at: string;
 }

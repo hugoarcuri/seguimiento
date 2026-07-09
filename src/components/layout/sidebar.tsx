@@ -14,12 +14,14 @@ import {
   BarChart3,
   Settings,
   User,
+  ClipboardCheck,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const adminMenuItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/discipulos", label: "Discípulos", icon: Users },
+  { href: "/tareas", label: "Tareas", icon: ClipboardCheck },
   { href: "/encuentros", label: "Encuentros", icon: CalendarCheck },
   { href: "/materiales", label: "Materiales", icon: BookOpen },
   { href: "/oracion", label: "Oración", icon: Church },
@@ -30,6 +32,7 @@ const adminMenuItems = [
 
 const discipuloMenuItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/tareas", label: "Tareas", icon: ClipboardCheck },
   { href: "/materiales", label: "Materiales", icon: BookOpen },
   { href: "/oracion", label: "Oración", icon: Church },
   { href: "/perfil", label: "Mi Perfil", icon: User },
