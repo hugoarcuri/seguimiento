@@ -3,7 +3,7 @@
 import { useUser } from "@/hooks/useUser";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { UserCog, Shield, Mail, Calendar } from "lucide-react";
+import { UserCog, Shield, Crown, Mail, Calendar } from "lucide-react";
 import { format } from "date-fns";
 
 export default function ConfiguracionPage() {
@@ -40,8 +40,8 @@ export default function ConfiguracionPage() {
               </span>
               <span className="text-muted-foreground">Rol</span>
               <span>
-                <Badge variant="secondary" className="capitalize">
-                  <Shield className="mr-1 h-3 w-3" />
+                <Badge variant={user?.rol === "admin" ? "default" : "secondary"} className="capitalize">
+                  {user?.rol === "admin" ? <Crown className="mr-1 h-3 w-3" /> : <Shield className="mr-1 h-3 w-3" />}
                   {user?.rol === "admin" ? "Administrador" : "Discípulo"}
                 </Badge>
               </span>

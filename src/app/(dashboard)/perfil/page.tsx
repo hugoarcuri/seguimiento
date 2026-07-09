@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Shield, Mail, Calendar, Save, Loader2 } from "lucide-react";
+import { Shield, Crown, Mail, Calendar, Save, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -68,8 +68,8 @@ export default function PerfilPage() {
               <p className="text-xl font-semibold">
                 {user?.nombre} {user?.apellido}
               </p>
-              <Badge variant="secondary" className="mt-1 capitalize">
-                <Shield className="mr-1 h-3 w-3" />
+              <Badge variant={user?.rol === "admin" ? "default" : "secondary"} className="mt-1 capitalize">
+                {user?.rol === "admin" ? <Crown className="mr-1 h-3 w-3" /> : <Shield className="mr-1 h-3 w-3" />}
                 {user?.rol === "admin" ? "Administrador" : "Discípulo"}
               </Badge>
             </div>
@@ -149,7 +149,7 @@ export default function PerfilPage() {
                 </div>
                 <div>
                   <span className="text-muted-foreground">Rol</span>
-                  <p className="font-medium capitalize">{user?.rol}</p>
+                  <p className={"font-medium capitalize " + (user?.rol === "admin" ? "text-primary" : "")}>{user?.rol === "admin" ? "Administrador" : "Discípulo"}</p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Miembro desde</span>
