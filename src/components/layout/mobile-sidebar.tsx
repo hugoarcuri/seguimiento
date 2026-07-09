@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useUser } from "@/hooks/useUser";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -15,10 +16,11 @@ import {
   Calendar,
   BarChart3,
   Settings,
+  User,
   Menu,
 } from "lucide-react";
 
-const menuItems = [
+const adminMenuItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/discipulos", label: "Discípulos", icon: Users },
   { href: "/encuentros", label: "Encuentros", icon: CalendarCheck },
@@ -29,9 +31,22 @@ const menuItems = [
   { href: "/configuracion", label: "Configuración", icon: Settings },
 ];
 
+const discipuloMenuItems = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/materiales", label: "Materiales", icon: BookOpen },
+  { href: "/oracion", label: "Oración", icon: Church },
+  { href: "/perfil", label: "Mi Perfil", icon: User },
+  { href: "/configuracion", label: "Configuración", icon: Settings },
+];
+
 export function MobileSidebar() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const { user, loading } = useUser();
+
+  const menuItems = user?.rol === "admin" ? adminMenuItems : discipuloMenuItems;
+
+  if (loading) return null;
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>

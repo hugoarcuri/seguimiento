@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useUser } from "@/hooks/useUser";
 import {
   LayoutDashboard,
   Users,
@@ -12,10 +13,11 @@ import {
   Calendar,
   BarChart3,
   Settings,
+  User,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-const menuItems = [
+const adminMenuItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/discipulos", label: "Discípulos", icon: Users },
   { href: "/encuentros", label: "Encuentros", icon: CalendarCheck },
@@ -26,8 +28,21 @@ const menuItems = [
   { href: "/configuracion", label: "Configuración", icon: Settings },
 ];
 
+const discipuloMenuItems = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/materiales", label: "Materiales", icon: BookOpen },
+  { href: "/oracion", label: "Oración", icon: Church },
+  { href: "/perfil", label: "Mi Perfil", icon: User },
+  { href: "/configuracion", label: "Configuración", icon: Settings },
+];
+
 export function Sidebar() {
   const pathname = usePathname();
+  const { user, loading } = useUser();
+
+  const menuItems = user?.rol === "admin" ? adminMenuItems : discipuloMenuItems;
+
+  if (loading) return null;
 
   return (
     <aside className="hidden lg:flex flex-col w-64 border-r bg-card">
