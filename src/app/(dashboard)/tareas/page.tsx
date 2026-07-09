@@ -42,7 +42,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Loader2, Pencil, Trash2, CheckCircle2, RotateCcw, Clock, AlertTriangle } from "lucide-react";
+import { Plus, Loader2, Pencil, Trash2, CheckCircle2, RotateCcw, Clock, AlertTriangle, CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -53,6 +53,18 @@ const tipoLabels: Record<string, string> = {
   memorizacion: "Memorización",
   preguntas: "Preguntas",
   practica: "Práctica",
+};
+
+const parseDate = (s: string) => {
+  const [d, m, y] = s.split("/");
+  if (!d || !m || !y) return null;
+  return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+};
+
+const formatDate = (iso: string | null | undefined) => {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("T")[0].split("-");
+  return `${d}/${m}/${y}`;
 };
 
 const estadoConfig: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; label: string; icon: any }> = {
@@ -112,7 +124,7 @@ export default function TareasPage() {
       titulo: tarea.titulo,
       descripcion: tarea.descripcion || "",
       tipo: tarea.tipo,
-      fecha_limite: tarea.fecha_limite || "",
+      fecha_limite: formatDate(tarea.fecha_limite),
     });
     setDialogOpen(true);
   };
@@ -122,7 +134,8 @@ export default function TareasPage() {
     const { data: { user: authUser } } = await supabase.auth.getUser();
     if (!authUser) { toast.error("Debés iniciar sesión"); setSubmitting(false); return }
 
-    const payload = { ...data, lider_id: authUser.id, descripcion: data.descripcion || null, fecha_limite: data.fecha_limite || null };
+    const fechaLimite = data.fecha_limite ? parseDate(data.fecha_limite) : null;
+    const payload = { ...data, lider_id: authUser.id, descripcion: data.descripcion || null, fecha_limite: fechaLimite };
 
     if (editingId) {
       const { error } = await supabase.from("tareas").update(payload).eq("id", editingId);
@@ -299,7 +312,10 @@ export default function TareasPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="fecha_limite">Fecha Límite</Label>
-                <Input id="fecha_limite" type="date" {...form.register("fecha_limite")} />
+                <div className="relative">
+                  <Input id="fecha_limite" placeholder="DD/MM/AAAA" className="pl-8" {...form.register("fecha_limite")} />
+                  <CalendarIcon className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                </div>
               </div>
             </div>
             <DialogFooter>
