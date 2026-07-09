@@ -187,13 +187,13 @@ export function DiscipulosClient({ discipulos, etapas }: DiscipulosClientProps) 
                         />
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem
-                            render={<Link href={`/discipulos/${discipulo.id}`} />}
+                            onClick={() => router.push(`/discipulos/${discipulo.id}`)}
                           >
                             <Eye className="mr-2 h-4 w-4" />
                             Ver
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            render={<Link href={`/discipulos/${discipulo.id}/editar`} />}
+                            onClick={() => router.push(`/discipulos/${discipulo.id}/editar`)}
                           >
                             <Edit className="mr-2 h-4 w-4" />
                             Editar
