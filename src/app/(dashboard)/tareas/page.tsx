@@ -258,7 +258,7 @@ export default function TareasPage() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label>Discípulo</Label>
-              <Select onValueChange={(v) => form.setValue("discipulo_id", v)} value={form.watch("discipulo_id")}>
+              <Select onValueChange={(v) => form.setValue("discipulo_id", v || "")} value={form.watch("discipulo_id") || ""}>
                 <SelectTrigger><SelectValue placeholder="Seleccionar discípulo" /></SelectTrigger>
                 <SelectContent>
                   {discipulos.map((d) => (
