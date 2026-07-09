@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { DiscipuloForm } from "../../discipulo-form";
+import { DiscipuloForm } from "../discipulo-form";
 import type { Etapa, Profile, Discipulo } from "@/types/database";
 
-export function EditarDiscipuloWrapper() {
-  const { id } = useParams<{ id: string }>();
+function EditarDiscipuloContent() {
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id");
   const router = useRouter();
   const [etapas, setEtapas] = useState<Etapa[]>([]);
   const [lideres, setLideres] = useState<Pick<Profile, "id" | "nombre" | "apellido">[]>([]);
@@ -15,7 +16,10 @@ export function EditarDiscipuloWrapper() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id) {
+      router.push("/discipulos");
+      return;
+    }
     const supabase = createClient();
 
     Promise.all([
@@ -57,5 +61,13 @@ export function EditarDiscipuloWrapper() {
         isEditing
       />
     </div>
+  );
+}
+
+export default function EditarDiscipuloPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-[50vh]"><p className="text-muted-foreground">Cargando...</p></div>}>
+      <EditarDiscipuloContent />
+    </Suspense>
   );
 }

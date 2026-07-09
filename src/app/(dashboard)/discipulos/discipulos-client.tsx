@@ -193,7 +193,7 @@ export function DiscipulosClient({ discipulos, etapas }: DiscipulosClientProps) 
                             Ver
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => router.push(`/discipulos/${discipulo.id}/editar`)}
+                            onClick={() => router.push(`/discipulos/editar?id=${discipulo.id}`)}
                           >
                             <Edit className="mr-2 h-4 w-4" />
                             Editar
