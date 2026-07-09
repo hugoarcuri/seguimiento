@@ -101,6 +101,19 @@ export function DiscipuloDetailClient({
                       ? format(new Date(discipulo.fecha_nacimiento), "dd/MM/yyyy")
                       : "—"}
                   </span>
+                  <span className="text-muted-foreground">Edad</span>
+                  <span>
+                    {discipulo.fecha_nacimiento
+                      ? (() => {
+                          const hoy = new Date();
+                          const nac = new Date(discipulo.fecha_nacimiento);
+                          let edad = hoy.getFullYear() - nac.getFullYear();
+                          const m = hoy.getMonth() - nac.getMonth();
+                          if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) edad--;
+                          return `${edad} años`;
+                        })()
+                      : "—"}
+                  </span>
                   <span className="text-muted-foreground">Sexo</span>
                   <span>{discipulo.sexo === "M" ? "Masculino" : discipulo.sexo === "F" ? "Femenino" : "—"}</span>
                   <span className="text-muted-foreground">Teléfono</span>

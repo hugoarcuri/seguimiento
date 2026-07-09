@@ -11,7 +11,7 @@ export default function DashboardPage() {
     const supabase = createClient();
 
     Promise.all([
-      supabase.from("discipulos").select("id, etapa_id, estado, lider_id, created_at"),
+      supabase.from("discipulos").select("id, nombre, apellido, fecha_nacimiento, etapa_id, estado, lider_id, created_at"),
       supabase
         .from("encuentros")
         .select("id, fecha, discipulo_id, lider_id, tema_tratado")
@@ -26,6 +26,14 @@ export default function DashboardPage() {
         .limit(5),
     ]).then(([discipulosRes, encuentrosRes, oracionesRes]) => {
       const discipulos = discipulosRes.data || [];
+      const hoy = new Date();
+      const proximosCumples = discipulos.filter((d: any) => {
+        if (!d.fecha_nacimiento) return false;
+        const nac = new Date(d.fecha_nacimiento);
+        const cumple = new Date(hoy.getFullYear(), nac.getMonth(), nac.getDate());
+        const diff = Math.ceil((cumple.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
+        return diff >= 0 && diff <= 7;
+      });
       setData({
         totalDiscipulos: discipulos.length,
         nuevos: discipulos.filter((d: any) => d.etapa_id === 1).length,
@@ -36,6 +44,7 @@ export default function DashboardPage() {
         oracionesPendientes: (oracionesRes.data || []).length,
         proximosEncuentros: encuentrosRes.data || [],
         oracionesPendientesList: oracionesRes.data || [],
+        proximosCumples,
       });
     });
   }, []);

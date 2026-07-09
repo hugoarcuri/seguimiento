@@ -2,10 +2,19 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, UserPlus, TrendingUp, CalendarCheck, Church, AlertCircle } from "lucide-react";
+import { Users, UserPlus, TrendingUp, CalendarCheck, Church, AlertCircle, Cake } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { format } from "date-fns";
+import { format, isToday } from "date-fns";
 import Link from "next/link";
+import { es } from "date-fns/locale";
+
+interface DiscipuloBasico {
+  id: string;
+  nombre: string;
+  apellido: string;
+  fecha_nacimiento: string;
+  etapa_id: number;
+}
 
 interface DashboardClientProps {
   totalDiscipulos: number;
@@ -29,6 +38,7 @@ interface DashboardClientProps {
     estado: string;
     fecha: string;
   }>;
+  proximosCumples: DiscipuloBasico[];
 }
 
 export function DashboardClient({
@@ -41,6 +51,7 @@ export function DashboardClient({
   oracionesPendientes,
   proximosEncuentros,
   oracionesPendientesList,
+  proximosCumples,
 }: DashboardClientProps) {
   const chartData = [
     { name: "Nueva Vida", value: nuevos, fill: "hsl(var(--chart-1))" },
@@ -173,6 +184,39 @@ export function DashboardClient({
             </CardContent>
           </Card>
 
+          {proximosCumples.length > 0 && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">Cumpleaños Próximos</CardTitle>
+                  <Cake className="h-4 w-4 text-pink-500" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {proximosCumples.map((d: any) => {
+                    const nac = new Date(d.fecha_nacimiento);
+                    const cumple = new Date(new Date().getFullYear(), nac.getMonth(), nac.getDate());
+                    return (
+                      <div key={d.id} className="flex items-center justify-between border-b pb-2 last:border-0">
+                        <div>
+                          <Link href={`/discipulos/${d.id}`} className="text-sm font-medium hover:underline">
+                            {d.apellido}, {d.nombre}
+                          </Link>
+                          <p className="text-xs text-muted-foreground">
+                            {format(cumple, "dd/MM", { locale: es })}
+                          </p>
+                        </div>
+                        <Badge variant={isToday(cumple) ? "default" : "secondary"}>
+                          {isToday(cumple) ? "Hoy" : format(cumple, "EEEE", { locale: es })}
+                        </Badge>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">

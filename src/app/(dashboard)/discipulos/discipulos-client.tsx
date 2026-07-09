@@ -123,14 +123,15 @@ export function DiscipulosClient({ discipulos, etapas }: DiscipulosClientProps) 
                 <TableHead>Nombre</TableHead>
                 <TableHead>Etapa</TableHead>
                 <TableHead>Estado</TableHead>
+                <TableHead>Edad</TableHead>
                 <TableHead>Teléfono</TableHead>
                 <TableHead className="w-[100px]">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  <TableRow>
+                   <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                     No se encontraron discípulos
                   </TableCell>
                 </TableRow>
@@ -156,13 +157,25 @@ export function DiscipulosClient({ discipulos, etapas }: DiscipulosClientProps) 
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <div
-                          className={`h-2 w-2 rounded-full ${estadoColors[discipulo.estado]}`}
-                        />
-                        <span className="capitalize">{discipulo.estado}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{discipulo.telefono || "—"}</TableCell>
+                         <div
+                           className={`h-2 w-2 rounded-full ${estadoColors[discipulo.estado]}`}
+                         />
+                         <span className="capitalize">{discipulo.estado}</span>
+                       </div>
+                     </TableCell>
+                     <TableCell>
+                       {discipulo.fecha_nacimiento
+                         ? (() => {
+                             const hoy = new Date();
+                             const nac = new Date(discipulo.fecha_nacimiento);
+                             let edad = hoy.getFullYear() - nac.getFullYear();
+                             const m = hoy.getMonth() - nac.getMonth();
+                             if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) edad--;
+                             return edad;
+                           })()
+                         : "—"}
+                     </TableCell>
+                     <TableCell>{discipulo.telefono || "—"}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger
