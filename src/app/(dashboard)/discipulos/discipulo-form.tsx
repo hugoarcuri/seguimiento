@@ -15,14 +15,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Loader2, User, Calendar, Phone, Mail, MapPin, Church, Target, Activity, FileText } from "lucide-react";
 import { toast } from "sonner";
 import type { Etapa, Profile } from "@/types/database";
 
@@ -32,6 +29,8 @@ interface DiscipuloFormProps {
   initialData?: DiscipuloInput & { id?: string };
   isEditing?: boolean;
 }
+
+const inputClass = "h-9";
 
 export function DiscipuloForm({
   etapas,
@@ -107,137 +106,113 @@ export function DiscipuloForm({
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Información Personal</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="apellido">Apellido *</Label>
-            <Input id="apellido" {...register("apellido")} />
-            {errors.apellido && (
-              <p className="text-sm text-destructive">{errors.apellido.message}</p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="nombre">Nombre *</Label>
-            <Input id="nombre" {...register("nombre")} />
-            {errors.nombre && (
-              <p className="text-sm text-destructive">{errors.nombre.message}</p>
-            )}
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <Card className="overflow-hidden">
+        <CardContent className="p-6">
+          <div className="grid gap-5 md:grid-cols-3">
+            <div className="space-y-1.5 md:col-span-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground border-b pb-1.5 mb-3">
+                <User className="h-4 w-4" /> Datos personales
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="apellido" className="text-xs">Apellido *</Label>
+              <Input id="apellido" className={inputClass} {...register("apellido")} />
+              {errors.apellido && <p className="text-xs text-destructive">{errors.apellido.message}</p>}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="nombre" className="text-xs">Nombre *</Label>
+              <Input id="nombre" className={inputClass} {...register("nombre")} />
+              {errors.nombre && <p className="text-xs text-destructive">{errors.nombre.message}</p>}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="sexo" className="text-xs">Sexo</Label>
+              <Select onValueChange={(v: any) => setValue("sexo", v)} defaultValue={initialData?.sexo || undefined}>
+                <SelectTrigger className={inputClass}><SelectValue placeholder="—" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="M">Masculino</SelectItem>
+                  <SelectItem value="F">Femenino</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="fecha_nacimiento" className="text-xs flex items-center gap-1"><Calendar className="h-3 w-3" /> Nacimiento</Label>
+              <Input id="fecha_nacimiento" type="date" className={inputClass} {...register("fecha_nacimiento")} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="telefono" className="text-xs flex items-center gap-1"><Phone className="h-3 w-3" /> Teléfono</Label>
+              <Input id="telefono" className={inputClass} {...register("telefono")} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-xs flex items-center gap-1"><Mail className="h-3 w-3" /> Email</Label>
+              <Input id="email" type="email" className={inputClass} {...register("email")} />
+            </div>
+            <div className="space-y-1.5 md:col-span-3">
+              <Label htmlFor="direccion" className="text-xs flex items-center gap-1"><MapPin className="h-3 w-3" /> Dirección</Label>
+              <Input id="direccion" className={inputClass} {...register("direccion")} />
+            </div>
+
+            <div className="space-y-1.5 md:col-span-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground border-b pb-1.5 mb-3 mt-1">
+                <Church className="h-4 w-4" /> Vida espiritual
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="fecha_conversion" className="text-xs flex items-center gap-1"><Calendar className="h-3 w-3" /> Conversión</Label>
+              <Input id="fecha_conversion" type="date" className={inputClass} {...register("fecha_conversion")} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="fecha_bautismo" className="text-xs flex items-center gap-1"><Calendar className="h-3 w-3" /> Bautismo</Label>
+              <Input id="fecha_bautismo" type="date" className={inputClass} {...register("fecha_bautismo")} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs flex items-center gap-1"><Target className="h-3 w-3" /> Etapa</Label>
+              <Select onValueChange={(v: any) => setValue("etapa_id", parseInt(v ?? "1"))} defaultValue={String(initialData?.etapa_id || 1)}>
+                <SelectTrigger className={inputClass}><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {etapas.map((etapa) => (
+                    <SelectItem key={etapa.id} value={String(etapa.id)}>{etapa.nombre}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs flex items-center gap-1"><Activity className="h-3 w-3" /> Estado</Label>
+              <Select onValueChange={(v: any) => setValue("estado", v)} defaultValue={initialData?.estado || "activo"}>
+                <SelectTrigger className={inputClass}><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="activo">Activo</SelectItem>
+                  <SelectItem value="pausado">Pausado</SelectItem>
+                  <SelectItem value="completado">Completado</SelectItem>
+                  <SelectItem value="retirado">Retirado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="ministerio" className="text-xs">Ministerio</Label>
+              <Input id="ministerio" className={inputClass} {...register("ministerio")} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="dones" className="text-xs">Dones</Label>
+              <Input id="dones" className={inputClass} {...register("dones")} />
+            </div>
+            <div className="space-y-1.5 md:col-span-3">
+              <Label htmlFor="observaciones" className="text-xs flex items-center gap-1"><FileText className="h-3 w-3" /> Observaciones</Label>
+              <Input id="observaciones" className={inputClass} {...register("observaciones")} />
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="fecha_nacimiento">Fecha de Nacimiento</Label>
-            <Input id="fecha_nacimiento" type="date" {...register("fecha_nacimiento")} />
-          </div>
-          <div className="space-y-2">
-            <Label>Sexo</Label>
-            <Select
-              onValueChange={(value: any) => setValue("sexo", value as "M" | "F")}
-              defaultValue={initialData?.sexo || undefined}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="M">Masculino</SelectItem>
-                <SelectItem value="F">Femenino</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="telefono">Teléfono</Label>
-            <Input id="telefono" {...register("telefono")} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" {...register("email")} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="direccion">Dirección</Label>
-            <Input id="direccion" {...register("direccion")} />
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+            <Button type="button" variant="outline" size="sm" onClick={() => router.push("/discipulos")}>
+              Cancelar
+            </Button>
+            <Button type="submit" size="sm" disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isEditing ? "Guardar Cambios" : "Crear Discípulo"}
+            </Button>
           </div>
         </CardContent>
       </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Información Espiritual</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="fecha_conversion">Fecha de Conversión</Label>
-            <Input id="fecha_conversion" type="date" {...register("fecha_conversion")} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="fecha_bautismo">Fecha de Bautismo</Label>
-            <Input id="fecha_bautismo" type="date" {...register("fecha_bautismo")} />
-          </div>
-          <div className="space-y-2">
-            <Label>Etapa</Label>
-            <Select
-              onValueChange={(value: any) => setValue("etapa_id", parseInt(value ?? "1"))}
-              defaultValue={String(initialData?.etapa_id || 1)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar etapa" />
-              </SelectTrigger>
-              <SelectContent>
-                {etapas.map((etapa) => (
-                  <SelectItem key={etapa.id} value={String(etapa.id)}>
-                    {etapa.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Estado</Label>
-            <Select
-              onValueChange={(value: any) => setValue("estado", value as DiscipuloInput["estado"])}
-              defaultValue={initialData?.estado || "activo"}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar estado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="activo">Activo</SelectItem>
-                <SelectItem value="pausado">Pausado</SelectItem>
-                <SelectItem value="completado">Completado</SelectItem>
-                <SelectItem value="retirado">Retirado</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="ministerio">Ministerio</Label>
-            <Input id="ministerio" {...register("ministerio")} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="dones">Dones</Label>
-            <Input id="dones" {...register("dones")} />
-          </div>
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="observaciones">Observaciones</Label>
-            <Textarea id="observaciones" {...register("observaciones")} />
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="flex justify-end gap-4">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => router.push("/discipulos")}
-        >
-          Cancelar
-        </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {isEditing ? "Actualizar Discípulo" : "Crear Discípulo"}
-        </Button>
-      </div>
     </form>
   );
 }
