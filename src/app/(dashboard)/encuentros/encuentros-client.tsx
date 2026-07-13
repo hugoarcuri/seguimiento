@@ -40,7 +40,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -55,38 +55,61 @@ export function EncuentrosClient({
 }: EncuentrosClientProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<any>(null);
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    reset,
-    formState: { errors, isSubmitting },
-  } = useForm<EncuentroInput>({
+  const form = useForm<EncuentroInput>({
     resolver: zodResolver(encuentroSchema),
   });
 
+  const openCreate = () => {
+    setEditing(null);
+    form.reset({ discipulo_id: "", fecha: "", hora: "", lugar: "", tema_tratado: "", material_utilizado: "", compromisos: "", notas: "", proximo_encuentro: "" });
+    setOpen(true);
+  };
+
+  const openEdit = (encuentro: any) => {
+    setEditing(encuentro);
+    form.reset({
+      discipulo_id: encuentro.discipulo_id,
+      fecha: encuentro.fecha?.split("T")[0] || "",
+      hora: encuentro.hora || "",
+      lugar: encuentro.lugar || "",
+      tema_tratado: encuentro.tema_tratado,
+      material_utilizado: encuentro.material_utilizado || "",
+      compromisos: encuentro.compromisos || "",
+      notas: encuentro.notas || "",
+      proximo_encuentro: encuentro.proximo_encuentro?.slice(0, 16) || "",
+    });
+    setOpen(true);
+  };
+
   const onSubmit = async (data: EncuentroInput) => {
     const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { error } = await supabase.from("encuentros").insert({
-      ...data,
-      lider_id: user.id,
-    });
+    const payload = { ...data, lider_id: user.id };
+    const { error } = editing
+      ? await supabase.from("encuentros").update(payload).eq("id", editing.id)
+      : await supabase.from("encuentros").insert(payload);
 
     if (error) {
-      toast.error("Error al registrar encuentro");
+      toast.error(editing ? "Error al actualizar encuentro" : "Error al registrar encuentro");
     } else {
-      toast.success("Encuentro registrado");
+      toast.success(editing ? "Encuentro actualizado" : "Encuentro registrado");
       setOpen(false);
-      reset();
+      setEditing(null);
+      form.reset();
       router.refresh();
     }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("¿Eliminar este encuentro?")) return;
+    const { error } = await createClient().from("encuentros").delete().eq("id", id);
+    if (error) { toast.error("Error al eliminar encuentro"); return }
+    toast.success("Encuentro eliminado");
+    router.refresh();
   };
 
   return (
@@ -98,95 +121,87 @@ export function EncuentrosClient({
             Registra y gestiona los encuentros de discipulado
           </p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger
-            render={
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Nuevo Encuentro
-              </Button>
-            }
-          />
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditing(null); }}>
+          <DialogTrigger render={<Button onClick={openCreate}><Plus className="mr-2 h-4 w-4" />Nuevo Encuentro</Button>} />
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Registrar Encuentro</DialogTitle>
+              <DialogTitle>{editing ? "Editar Encuentro" : "Registrar Encuentro"}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
                 <Label>Discípulo *</Label>
-                <Select
-                  onValueChange={(value: any) => setValue("discipulo_id", value ?? "")}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar discípulo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {discipulos.map((d) => (
-                      <SelectItem key={d.id} value={d.id}>
-                        {d.apellido}, {d.nombre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.discipulo_id && (
-                  <p className="text-sm text-destructive">
-                    {errors.discipulo_id.message}
-                  </p>
-                )}
+                  <Select
+                    value={form.watch("discipulo_id") || undefined}
+                    onValueChange={(value: any) => form.setValue("discipulo_id", value ?? "")}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar discípulo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {discipulos.map((d) => (
+                        <SelectItem key={d.id} value={d.id}>
+                          {d.apellido}, {d.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {form.formState.errors.discipulo_id && (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.discipulo_id.message}
+                    </p>
+                  )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="fecha">Fecha *</Label>
-                  <Input id="fecha" type="date" {...register("fecha")} />
-                  {errors.fecha && (
+                  <Input id="fecha" type="date" {...form.register("fecha")} />
+                  {form.formState.errors.fecha && (
                     <p className="text-sm text-destructive">
-                      {errors.fecha.message}
+                      {form.formState.errors.fecha.message}
                     </p>
                   )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="hora">Hora</Label>
-                  <Input id="hora" type="time" {...register("hora")} />
+                  <Input id="hora" type="time" {...form.register("hora")} />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lugar">Lugar</Label>
-                <Input id="lugar" {...register("lugar")} />
+                <Input id="lugar" {...form.register("lugar")} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="tema_tratado">Tema Tratado *</Label>
-                <Input id="tema_tratado" {...register("tema_tratado")} />
-                {errors.tema_tratado && (
+                <Input id="tema_tratado" {...form.register("tema_tratado")} />
+                {form.formState.errors.tema_tratado && (
                   <p className="text-sm text-destructive">
-                    {errors.tema_tratado.message}
+                    {form.formState.errors.tema_tratado.message}
                   </p>
                 )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="material_utilizado">Material Utilizado</Label>
-                <Textarea id="material_utilizado" {...register("material_utilizado")} />
+                <Textarea id="material_utilizado" {...form.register("material_utilizado")} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="compromisos">Compromisos</Label>
-                <Textarea id="compromisos" {...register("compromisos")} />
+                <Textarea id="compromisos" {...form.register("compromisos")} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="notas">Notas</Label>
-                <Textarea id="notas" {...register("notas")} />
+                <Textarea id="notas" {...form.register("notas")} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="proximo_encuentro">Próximo Encuentro</Label>
                 <Input
                   id="proximo_encuentro"
                   type="datetime-local"
-                  {...register("proximo_encuentro")}
+                  {...form.register("proximo_encuentro")}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                Registrar Encuentro
+              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {editing ? "Guardar Cambios" : "Registrar Encuentro"}
               </Button>
             </form>
           </DialogContent>
@@ -207,12 +222,13 @@ export function EncuentrosClient({
                 <TableHead>Tema</TableHead>
                 <TableHead>Lugar</TableHead>
                 <TableHead>Compromisos</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {encuentros.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                     No hay encuentros registrados
                   </TableCell>
                 </TableRow>
@@ -233,6 +249,16 @@ export function EncuentrosClient({
                     <TableCell>{encuentro.lugar || "—"}</TableCell>
                     <TableCell className="max-w-[200px] truncate">
                       {encuentro.compromisos || "—"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => openEdit(encuentro)} title="Editar">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(encuentro.id)} title="Eliminar">
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
