@@ -1,9 +1,7 @@
 const SCOPES = "https://www.googleapis.com/auth/calendar.events";
 const CALENDAR_ID = "primary";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let tokenClient: any = null;
-let gisLoaded = false;
+const STORAGE_KEY = "google_calendar_token";
+const EXPIRY_KEY = "google_calendar_expires_at";
 
 export type GoogleEvent = {
   id: string;
@@ -13,45 +11,56 @@ export type GoogleEvent = {
   end: { dateTime: string };
 };
 
-function loadGis(): Promise<void> {
-  if (gisLoaded) return Promise.resolve();
-  return new Promise((resolve) => {
-    const script = document.createElement("script");
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.onload = () => {
-      gisLoaded = true;
-      resolve();
-    };
-    document.head.appendChild(script);
-  });
+function getRedirectUri(): string {
+  return window.location.origin + window.location.pathname;
 }
 
-export async function initGoogleCalendar(clientId: string) {
-  await loadGis();
-  tokenClient = google.accounts.oauth2.initTokenClient({
+export function redirectToGoogleAuth(clientId: string): void {
+  const redirectUri = getRedirectUri();
+  const params = new URLSearchParams({
     client_id: clientId,
+    redirect_uri: redirectUri,
+    response_type: "token",
     scope: SCOPES,
-    callback: () => {},
+    include_granted_scopes: "true",
+    state: "calendar",
   });
+  window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
+}
+
+export function handleRedirectCallback(): boolean {
+  if (typeof window === "undefined") return false;
+  const hash = window.location.hash;
+  if (!hash || !hash.includes("access_token")) return false;
+
+  const params = new URLSearchParams(hash.substring(1));
+  const token = params.get("access_token");
+  const expiresIn = parseInt(params.get("expires_in") || "3600");
+
+  window.history.replaceState(null, "", window.location.pathname + window.location.search);
+
+  if (token) {
+    sessionStorage.setItem(STORAGE_KEY, token);
+    sessionStorage.setItem(EXPIRY_KEY, String(Date.now() + expiresIn * 1000));
+    return true;
+  }
+  return false;
 }
 
 export function getToken(): Promise<string> {
-  return new Promise((resolve, reject) => {
-    if (!tokenClient) {
-      reject(new Error("Google Calendar no inicializado"));
-      return;
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    tokenClient.callback = (resp: any) => {
-      if (resp.error) {
-        reject(resp);
-        return;
-      }
-      resolve(resp.access_token);
-    };
-    tokenClient.requestAccessToken({ prompt: "" });
-  });
+  const token = sessionStorage.getItem(STORAGE_KEY);
+  const expiresAt = sessionStorage.getItem(EXPIRY_KEY);
+  if (token && expiresAt && Date.now() < parseInt(expiresAt)) {
+    return Promise.resolve(token);
+  }
+  sessionStorage.removeItem(STORAGE_KEY);
+  sessionStorage.removeItem(EXPIRY_KEY);
+  return Promise.reject(new Error("Token expirado. Conectá Google Calendar de nuevo."));
+}
+
+export function disconnectGoogleCalendar(): void {
+  sessionStorage.removeItem(STORAGE_KEY);
+  sessionStorage.removeItem(EXPIRY_KEY);
 }
 
 export async function listEvents(token: string, timeMin: string, timeMax: string): Promise<GoogleEvent[]> {

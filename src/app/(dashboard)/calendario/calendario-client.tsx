@@ -8,7 +8,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { CalendarPlus, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { initGoogleCalendar, getToken, listEvents, createEvent, type GoogleEvent } from "@/lib/google-calendar";
+import { redirectToGoogleAuth, handleRedirectCallback, getToken, listEvents, createEvent, type GoogleEvent } from "@/lib/google-calendar";
 import { toast } from "sonner";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -24,22 +24,21 @@ export function CalendarioClient({ encuentros, clientId }: CalendarioClientProps
   const [connected, setConnected] = useState(false);
   const [googleEvents, setGoogleEvents] = useState<GoogleEvent[]>([]);
   const [syncing, setSyncing] = useState(false);
-  const [initializing, setInitializing] = useState(false);
 
   useEffect(() => {
     if (!clientId) return;
-    initGoogleCalendar(clientId).then(() => setInitializing(true));
-  }, [clientId]);
-
-  const handleConnect = useCallback(async () => {
-    try {
-      await getToken();
+    const gotToken = handleRedirectCallback();
+    if (gotToken) {
       setConnected(true);
       toast.success("Google Calendar conectado");
-    } catch {
-      toast.error("Error al conectar Google Calendar");
+    } else {
+      getToken().then(() => setConnected(true)).catch(() => {});
     }
-  }, []);
+  }, [clientId]);
+
+  const handleConnect = useCallback(() => {
+    redirectToGoogleAuth(clientId);
+  }, [clientId]);
 
   const handleSync = useCallback(async () => {
     if (!date) return;
@@ -113,7 +112,7 @@ export function CalendarioClient({ encuentros, clientId }: CalendarioClientProps
         {clientId && (
           <div className="flex items-center gap-2">
             {!connected ? (
-              <Button onClick={handleConnect} variant="outline" disabled={!initializing}>
+              <Button onClick={handleConnect} variant="outline">
                 <CalendarPlus className="mr-2 h-4 w-4" />
                 Conectar Google Calendar
               </Button>
