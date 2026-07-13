@@ -22,5 +22,5 @@ export default function CalendarioPage() {
 
   if (loading) return <div className="flex items-center justify-center min-h-[50vh]"><p className="text-muted-foreground">Cargando...</p></div>;
 
-  return <CalendarioClient encuentros={encuentros} />;
+  return <CalendarioClient encuentros={encuentros} clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""} />;
 }
