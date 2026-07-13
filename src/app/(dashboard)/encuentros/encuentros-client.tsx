@@ -251,12 +251,12 @@ export function EncuentrosClient({
                       {encuentro.compromisos || "—"}
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(encuentro)} title="Editar">
-                          <Pencil className="h-4 w-4" />
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" size="sm" onClick={() => openEdit(encuentro)}>
+                          <Pencil className="mr-1 h-3.5 w-3.5" /> Editar
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(encuentro.id)} title="Eliminar">
-                          <Trash2 className="h-4 w-4 text-destructive" />
+                        <Button variant="destructive" size="sm" onClick={() => handleDelete(encuentro.id)}>
+                          <Trash2 className="mr-1 h-3.5 w-3.5" /> Eliminar
                         </Button>
                       </div>
                     </TableCell>
