@@ -37,7 +37,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Search, MoreHorizontal, Edit, Trash2, Eye, UserPlus } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Edit, Trash2, Eye, UserPlus, Filter } from "lucide-react";
 import { toast } from "sonner";
 import type { Discipulo, Etapa } from "@/types/database";
 
@@ -56,14 +56,17 @@ interface DiscipulosClientProps {
 export function DiscipulosClient({ discipulos, etapas }: DiscipulosClientProps) {
   const router = useRouter();
   const [search, setSearch] = useState("");
+  const [etapaFilter, setEtapaFilter] = useState<number | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<string | null>(null);
 
-  const filtered = discipulos.filter(
-    (d) =>
+  const filtered = discipulos.filter((d) => {
+    if (etapaFilter !== null && d.etapa_id !== etapaFilter) return false;
+    return (
       d.nombre.toLowerCase().includes(search.toLowerCase()) ||
       d.apellido.toLowerCase().includes(search.toLowerCase()) ||
       d.email?.toLowerCase().includes(search.toLowerCase())
-  );
+    );
+  });
 
   const getEtapaNombre = (etapaId: number) => {
     return etapas.find((e) => e.id === etapaId)?.nombre || "Sin etapa";
@@ -114,6 +117,25 @@ export function DiscipulosClient({ discipulos, etapas }: DiscipulosClientProps) 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
+          </div>
+          <div className="flex flex-wrap gap-2 mt-4">
+            <Button
+              variant={etapaFilter === null ? "default" : "outline"}
+              size="sm"
+              onClick={() => setEtapaFilter(null)}
+            >
+              Todas
+            </Button>
+            {etapas.map((etapa) => (
+              <Button
+                key={etapa.id}
+                variant={etapaFilter === etapa.id ? "default" : "outline"}
+                size="sm"
+                onClick={() => setEtapaFilter(etapa.id)}
+              >
+                {etapa.nombre}
+              </Button>
+            ))}
           </div>
         </CardHeader>
         <CardContent>
