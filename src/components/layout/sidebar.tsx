@@ -9,10 +9,7 @@ import {
   LayoutDashboard,
   Users,
   CalendarCheck,
-  BookOpen,
   Church,
-  Calendar,
-  BarChart3,
   Settings,
   User,
   ClipboardCheck,
@@ -24,17 +21,13 @@ const adminMenuItems = [
   { href: "/discipulos", label: "Discípulos", icon: Users },
   { href: "/tareas", label: "Tareas", icon: ClipboardCheck },
   { href: "/encuentros", label: "Encuentros", icon: CalendarCheck },
-  { href: "/materiales", label: "Materiales", icon: BookOpen },
   { href: "/oracion", label: "Oración", icon: Church },
-  { href: "/calendario", label: "Calendario", icon: Calendar },
-  { href: "/reportes", label: "Reportes", icon: BarChart3 },
   { href: "/configuracion", label: "Configuración", icon: Settings },
 ];
 
 const discipuloMenuItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/tareas", label: "Tareas", icon: ClipboardCheck },
-  { href: "/materiales", label: "Materiales", icon: BookOpen },
   { href: "/oracion", label: "Oración", icon: Church },
   { href: "/perfil", label: "Mi Perfil", icon: User },
   { href: "/configuracion", label: "Configuración", icon: Settings },

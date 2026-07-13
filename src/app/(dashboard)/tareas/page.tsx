@@ -42,11 +42,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Loader2, Pencil, Trash2, CheckCircle2, RotateCcw, Clock, AlertTriangle, CalendarIcon } from "lucide-react";
+import { Plus, Loader2, Pencil, Trash2, CheckCircle2, RotateCcw, Clock, AlertTriangle, CalendarIcon, BookOpen, FileText, Film, Headphones, Link2, StickyNote } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import type { Discipulo, Tarea } from "@/types/database";
+import type { Discipulo, Tarea, Material, Etapa } from "@/types/database";
 
 const tipoLabels: Record<string, string> = {
   lectura: "Lectura",
@@ -73,6 +73,14 @@ const estadoConfig: Record<string, { variant: "default" | "secondary" | "destruc
   vencida: { variant: "destructive", label: "Vencida", icon: AlertTriangle },
 };
 
+const materialTipoIcon: Record<string, any> = {
+  libro: BookOpen, pdf: FileText, video: Film, audio: Headphones, link: Link2, nota: StickyNote,
+};
+
+const materialTipoLabel: Record<string, string> = {
+  libro: "Libro", pdf: "PDF", video: "Video", audio: "Audio", link: "Link", nota: "Nota",
+};
+
 export default function TareasPage() {
   const { user } = useUser();
   const supabase = createClient();
@@ -82,6 +90,11 @@ export default function TareasPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [materiales, setMateriales] = useState<(Material & { etapas?: { nombre: string } })[]>([]);
+  const [etapas, setEtapas] = useState<Etapa[]>([]);
+  const [matDialogOpen, setMatDialogOpen] = useState(false);
+  const [matForm, setMatForm] = useState({ titulo: "", tipo: "libro", etapa_id: "", url: "", descripcion: "" });
+  const [matSubmitting, setMatSubmitting] = useState(false);
 
   const form = useForm<TareaInput>({
     resolver: zodResolver(tareaSchema),
@@ -100,12 +113,16 @@ export default function TareasPage() {
     let tareasQuery = supabase.from("tareas").select("*, discipulo:discipulos(*)").order("created_at", { ascending: false });
     if (!isAdminUser) tareasQuery = tareasQuery.eq("discipulo_id", authUser.id);
 
-    const [tareasRes, discipulosRes] = await Promise.all([
+    const [tareasRes, discipulosRes, matRes, etapasRes] = await Promise.all([
       tareasQuery,
       isAdminUser ? supabase.from("discipulos").select("*").order("apellido", { ascending: true }) : Promise.resolve({ data: [] }),
+      supabase.from("materiales").select("*, etapas:etapa_id(nombre)").order("created_at", { ascending: false }),
+      supabase.from("etapas").select("*").order("orden", { ascending: true }),
     ]);
     setTareas((tareasRes.data as any) || []);
     setDiscipulos(discipulosRes.data || []);
+    setMateriales((matRes.data as any) || []);
+    setEtapas(etapasRes.data || []);
     setLoading(false);
   };
 
@@ -168,6 +185,24 @@ export default function TareasPage() {
     const { error } = await supabase.from("tareas").update(payload).eq("id", id);
     if (error) { toast.error("Error al actualizar tarea"); return }
     toast.success(nuevoEstado === "completada" ? "Tarea marcada como completada" : "Tarea revertida a pendiente");
+    fetchData();
+  };
+
+  const createMaterial = async () => {
+    if (!matForm.titulo) { toast.error("El título es requerido"); return }
+    setMatSubmitting(true);
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) { toast.error("Debés iniciar sesión"); setMatSubmitting(false); return }
+    const payload: any = { titulo: matForm.titulo, tipo: matForm.tipo, creado_por: authUser.id };
+    if (matForm.descripcion) payload.descripcion = matForm.descripcion;
+    if (matForm.url) payload.url = matForm.url;
+    if (matForm.etapa_id) payload.etapa_id = parseInt(matForm.etapa_id);
+    const { error } = await supabase.from("materiales").insert(payload);
+    if (error) { toast.error("Error al crear material"); setMatSubmitting(false); return }
+    toast.success("Material creado");
+    setMatDialogOpen(false);
+    setMatForm({ titulo: "", tipo: "libro", etapa_id: "", url: "", descripcion: "" });
+    setMatSubmitting(false);
     fetchData();
   };
 
@@ -269,6 +304,105 @@ export default function TareasPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-semibold">Materiales</h2>
+            <p className="text-sm text-muted-foreground">Recursos para el discipulado</p>
+          </div>
+          {isAdmin && (
+            <Button onClick={() => setMatDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> Nuevo Material
+            </Button>
+          )}
+        </div>
+        {materiales.length === 0 ? (
+          <Card><CardContent className="py-8 text-center text-muted-foreground">No hay materiales registrados</CardContent></Card>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {materiales.map((mat) => {
+              const MatIcon = materialTipoIcon[mat.tipo] || BookOpen;
+              return (
+                <Card key={mat.id}>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center gap-2">
+                      <MatIcon className="h-4 w-4 text-muted-foreground" />
+                      <Badge variant="outline">{materialTipoLabel[mat.tipo]}</Badge>
+                    </div>
+                    <CardTitle className="text-base mt-2">{mat.titulo}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {mat.descripcion && <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{mat.descripcion}</p>}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {mat.etapas?.nombre && <Badge variant="secondary">{mat.etapas.nombre}</Badge>}
+                      {mat.url && (
+                        <a href={mat.url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline ml-auto">
+                          <Link2 className="h-3 w-3 inline mr-1" />Abrir
+                        </a>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <Dialog open={matDialogOpen} onOpenChange={setMatDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nuevo Material</DialogTitle>
+            <DialogDescription>Agregá un recurso para el discipulado</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="mat-titulo">Título</Label>
+              <Input id="mat-titulo" value={matForm.titulo} onChange={(e) => setMatForm({ ...matForm, titulo: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Tipo</Label>
+                <Select onValueChange={(v: any) => setMatForm({ ...matForm, tipo: v })} value={matForm.tipo}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(materialTipoLabel).map(([k, v]) => (
+                      <SelectItem key={k} value={k}>{v}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Etapa</Label>
+                <Select onValueChange={(v: any) => setMatForm({ ...matForm, etapa_id: v ?? "" })} value={matForm.etapa_id || undefined}>
+                  <SelectTrigger><SelectValue placeholder="Sin etapa" /></SelectTrigger>
+                  <SelectContent>
+                    {etapas.map((etapa) => (
+                      <SelectItem key={etapa.id} value={String(etapa.id)}>{etapa.nombre}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="mat-url">URL</Label>
+              <Input id="mat-url" value={matForm.url} onChange={(e) => setMatForm({ ...matForm, url: e.target.value })} placeholder="https://..." />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="mat-desc">Descripción</Label>
+              <Textarea id="mat-desc" value={matForm.descripcion} onChange={(e) => setMatForm({ ...matForm, descripcion: e.target.value })} />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setMatDialogOpen(false)}>Cancelar</Button>
+              <Button onClick={createMaterial} disabled={matSubmitting}>
+                {matSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Crear Material
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-lg">

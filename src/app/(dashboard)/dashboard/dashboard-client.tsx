@@ -2,8 +2,10 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, UserPlus, TrendingUp, CalendarCheck, Church, AlertCircle, Cake } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { Users, UserPlus, TrendingUp, CalendarCheck, Church, AlertCircle, Cake, BookOpen, CheckCircle2 } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
+
+const COLORS = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
 import { format, isToday } from "date-fns";
 import Link from "next/link";
 import { es } from "date-fns/locale";
@@ -23,7 +25,15 @@ interface DashboardClientProps {
   caracter: number;
   servicio: number;
   activos: number;
+  completados: number;
+  pausados: number;
+  retirados: number;
   oracionesPendientes: number;
+  totalEncuentros: number;
+  totalOraciones: number;
+  oracionesRespondidas: number;
+  discipulosPorEtapa: Array<{ nombre: string; cantidad: number }>;
+  encuentrosPorMes: Array<{ mes: string; cantidad: number }>;
   proximosEncuentros: Array<{
     id: string;
     fecha: string;
@@ -48,7 +58,15 @@ export function DashboardClient({
   caracter,
   servicio,
   activos,
+  completados,
+  pausados,
+  retirados,
   oracionesPendientes,
+  totalEncuentros,
+  totalOraciones,
+  oracionesRespondidas,
+  discipulosPorEtapa,
+  encuentrosPorMes,
   proximosEncuentros,
   oracionesPendientesList,
   proximosCumples,
@@ -246,6 +264,50 @@ export function DashboardClient({
                   ))}
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-xl font-semibold mb-4">Analíticas</h2>
+        <div className="grid gap-4 md:grid-cols-4 mb-4">
+          <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Total Encuentros</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">{totalEncuentros}</p></CardContent></Card>
+          <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Total Oraciones</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">{totalOraciones}</p></CardContent></Card>
+          <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Oraciones Respondidas</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">{oracionesRespondidas}</p></CardContent></Card>
+          <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Discípulos Completados</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold text-green-600">{completados}</p></CardContent></Card>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card>
+            <CardHeader><CardTitle>Encuentros por Mes</CardTitle><CardDescription>Actividad de encuentros en el tiempo</CardDescription></CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={encuentrosPorMes}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="mes" className="text-xs" />
+                    <YAxis className="text-xs" />
+                    <Tooltip />
+                    <Bar dataKey="cantidad" radius={[4, 4, 0, 0]} fill="hsl(var(--chart-1))" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader><CardTitle>Estado de Discípulos</CardTitle><CardDescription>Distribución por estado</CardDescription></CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={[{ name: "Activos", value: activos }, { name: "Completados", value: completados }, { name: "Pausados", value: pausados }, { name: "Retirados", value: retirados }]} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
+                      {[{ name: "Activos", value: activos }, { name: "Completados", value: completados }, { name: "Pausados", value: pausados }, { name: "Retirados", value: retirados }].map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
             </CardContent>
           </Card>
         </div>
