@@ -165,6 +165,13 @@ export default function SeguimientoPage() {
       setReuniones(rRes.data || []);
       setDesafios(dRes.data || []);
       setAlertas(aRes.data || []);
+      const ultima = rRes.data?.[0];
+      if (ultima?.observaciones_generales) {
+        const m = ultima.observaciones_generales.match(/__PERSONAS_JSON__:(.+)/);
+        if (m) {
+          try { setPersonasOracion(JSON.parse(m[1])); } catch {}
+        }
+      }
     });
   }, [selectedId]);
 
@@ -188,10 +195,10 @@ export default function SeguimientoPage() {
     if (actoServicio !== undefined) extras.push(`Acto de servicio: ${actoServicio === 1 ? `Sí — ${actoServicioDesc || "(no especificó)"}` : "No"}`);
     if (ministerioSeleccionado) extras.push(`Ministerio: ${ministerioSeleccionado}${ministerioCustom ? ` (${ministerioCustom})` : ""}`);
     if (personasOracion.length > 0) {
-      const personasStr = personasOracion.map((p) => `${p.nombre} ${p.apellido} (${p.estado})`).join(", ");
-      extras.push(`Personas por las que ora: ${personasStr}`);
+      extras.push(`Personas por las que ora: ${personasOracion.map((p) => `${p.nombre} ${p.apellido} (${p.estado})`).join(", ")}`);
     }
-    const obsFinal = [obsGenerales, ...extras].filter(Boolean).join("\n\n");
+    const personasMarker = personasOracion.length > 0 ? `\n__PERSONAS_JSON__:${JSON.stringify(personasOracion)}` : "";
+    const obsFinal = [obsGenerales, ...extras].filter(Boolean).join("\n\n") + personasMarker;
 
     const { data: reunion } = await supabase.from("reuniones").insert({
       discipulo_id: selectedId, lider_id: user.id, fecha: today,
