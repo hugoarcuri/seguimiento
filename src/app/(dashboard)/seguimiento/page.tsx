@@ -343,22 +343,35 @@ export default function SeguimientoPage() {
 
                   {/* Extra fields for Step 5: Evangelismo */}
                   {step === 5 && (
-                    <Card>
-                      <CardHeader className="p-3 pb-0">
-                        <CardTitle className="text-sm">Personas por las que ora</CardTitle>
-                        <CardDescription className="text-xs">Registrá las personas por las que el discípulo está orando</CardDescription>
-                      </CardHeader>
-                      <CardContent className="p-3 space-y-3">
-                        {personasOracion.map((p, i) => (
-                          <div key={i} className="flex items-center gap-2 text-sm bg-muted/30 rounded-lg p-2">
-                            <span className="flex-1">{p.nombre} {p.apellido}</span>
-                            <span className="text-xs text-muted-foreground px-2 py-0.5 rounded-full bg-muted">{p.estado}</span>
-                            <button type="button" onClick={() => setPersonasOracion((prev) => prev.filter((_, j) => j !== i))} className="text-red-400 hover:text-red-600 text-xs font-medium">Quitar</button>
-                          </div>
-                        ))}
-                        <PersonaOracionForm onAgregar={(p) => setPersonasOracion((prev) => [...prev, p])} />
-                      </CardContent>
-                    </Card>
+                    <>
+                      <Card>
+                        <CardHeader className="p-3 pb-0">
+                          <CardTitle className="text-sm">Acompañamiento evangelístico</CardTitle>
+                          <CardDescription className="text-xs">Gestioná el proceso completo de evangelismo (oración → servicio → evangelismo)</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-3">
+                          <a href="/evangelismo" className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
+                            <Heart className="h-4 w-4" /> Ir a Acompañamiento Evangelístico →
+                          </a>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader className="p-3 pb-0">
+                          <CardTitle className="text-sm">Personas por las que ora</CardTitle>
+                          <CardDescription className="text-xs">Registrá las personas por las que el discípulo está orando</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-3 space-y-3">
+                          {personasOracion.map((p, i) => (
+                            <div key={i} className="flex items-center gap-2 text-sm bg-muted/30 rounded-lg p-2">
+                              <span className="flex-1">{p.nombre} {p.apellido}</span>
+                              <span className="text-xs text-muted-foreground px-2 py-0.5 rounded-full bg-muted">{p.estado}</span>
+                              <button type="button" onClick={() => setPersonasOracion((prev) => prev.filter((_, j) => j !== i))} className="text-red-400 hover:text-red-600 text-xs font-medium">Quitar</button>
+                            </div>
+                          ))}
+                          <PersonaOracionForm onAgregar={(p) => setPersonasOracion((prev) => [...prev, p])} />
+                        </CardContent>
+                      </Card>
+                    </>
                   )}
 
                   {/* Extra fields for Step 2: Comunión */}
