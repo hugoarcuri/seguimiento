@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, CheckCircle2, Book, Heart, Users, Target, Sparkles, Hand, GraduationCap, Crown, User as UserIcon, AlertTriangle, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, ClipboardCheck } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
@@ -75,7 +76,7 @@ const desafiosPredefinidos = [
   "Memorizar Efesios 2:8-9",
 ];
 
-const lugaresServicio = ["Sonido", "Música", "Evangelismo", "Limpieza", "Niños", "Recepción", "Otro"];
+const ministerios = ["Club Bíblico", "Escuela Dominical", "JH", "Enfoque", "Alabanza"];
 
 export default function SeguimientoPage() {
   const supabase = createClient();
@@ -96,7 +97,8 @@ export default function SeguimientoPage() {
   const [step, setStep] = useState(1);
   const [valores, setValores] = useState<Record<number, number>>({});
   const [evalObs, setEvalObs] = useState<Record<number, string>>({});
-  const [dondeSirvio, setDondeSirvio] = useState<string[]>([]);
+  const [ministerioSeleccionado, setMinisterioSeleccionado] = useState("");
+  const [ministerioCustom, setMinisterioCustom] = useState("");
   const [pasajeLeido, setPasajeLeido] = useState("");
   const [materialLeido, setMaterialLeido] = useState("");
   const [motivosOracion, setMotivosOracion] = useState("");
@@ -135,7 +137,8 @@ export default function SeguimientoPage() {
     setStep(1);
     setValores({});
     setEvalObs({});
-    setDondeSirvio([]);
+    setMinisterioSeleccionado("");
+    setMinisterioCustom("");
     setPasajeLeido("");
     setMaterialLeido("");
     setMotivosOracion("");
@@ -176,6 +179,7 @@ export default function SeguimientoPage() {
     if (mensajeoAlguien !== undefined) extras.push(`Contactó a alguien: ${mensajeoAlguien === 1 ? "Sí" : "No"}`);
     if (visitoAlguien !== undefined) extras.push(`Visitó a alguien: ${visitoAlguien === 1 ? "Sí" : "No"}`);
     if (actoServicio !== undefined) extras.push(`Acto de servicio: ${actoServicio === 1 ? `Sí — ${actoServicioDesc || "(no especificó)"}` : "No"}`);
+    if (ministerioSeleccionado) extras.push(`Ministerio: ${ministerioSeleccionado}${ministerioCustom ? ` (${ministerioCustom})` : ""}`);
     const obsFinal = [obsGenerales, ...extras].filter(Boolean).join("\n\n");
 
     const { data: reunion } = await supabase.from("reuniones").insert({
@@ -414,13 +418,17 @@ export default function SeguimientoPage() {
                                       ))}
                                     </div>
                                     {(valores[ind.id] ?? -1) === 1 && (
-                                      <div className="flex flex-wrap gap-1.5">
-                                        {lugaresServicio.map((l) => (
-                                          <label key={l} className="flex items-center gap-1 text-xs cursor-pointer">
-                                            <input type="checkbox" checked={dondeSirvio.includes(l)} onChange={(e) => setDondeSirvio(e.target.checked ? [...dondeSirvio, l] : dondeSirvio.filter((x) => x !== l))} className="h-3 w-3" />
-                                            {l}
-                                          </label>
-                                        ))}
+                                      <div className="space-y-2">
+                                        <Select value={ministerioSeleccionado} onValueChange={(v) => setMinisterioSeleccionado(v ?? "")}>
+                                          <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccionar ministerio" /></SelectTrigger>
+                                          <SelectContent>
+                                            {ministerios.map((m) => <SelectItem key={m} value={m} className="text-xs">{m}</SelectItem>)}
+                                            <SelectItem value="Otro" className="text-xs">Otro</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                        {ministerioSeleccionado === "Otro" && (
+                                          <Input placeholder="¿Cuál?" className="h-8 text-xs" value={ministerioCustom} onChange={(e) => setMinisterioCustom(e.target.value)} />
+                                        )}
                                       </div>
                                     )}
                                   </div>
