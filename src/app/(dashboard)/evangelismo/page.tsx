@@ -269,23 +269,27 @@ export default function EvangelismoPage() {
       {/* PERSONAS POR LAS QUE ORA */}
       {personasOracion.length > 0 && (
         <Card className="border-blue-200 dark:border-blue-800">
-          <CardContent className="p-3 space-y-2">
+          <CardContent className="p-3 space-y-3">
             <p className="text-xs font-semibold flex items-center gap-1 text-blue-600"><Heart className="h-3 w-3" /> Personas por las que ora ({personasOracion.length})</p>
-            <div className="space-y-1.5">
-              {personasOracion.map((p) => {
-                const disc = discipulos.find((d) => d.id === p.discipulo_id);
-                return (
-                  <div key={p.id} className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/40 rounded-lg px-3 py-2 text-xs"
-                    draggable onDragStart={() => handleDragStart({ ...p, es_oracion: true })}
-                  >
-                    <span className="font-medium min-w-[120px]">{p.nombre} {p.apellido}</span>
-                    <span className="text-muted-foreground">{p.estado}</span>
-                    <span className="text-[10px] text-muted-foreground bg-blue-100 dark:bg-blue-900/50 px-1.5 py-0.5 rounded-full ml-auto">contacto de {disc?.nombre || "—"}</span>
-                    <button type="button" onClick={() => handleMoverAOracion(p)} className="text-emerald-600 hover:text-emerald-700 font-medium shrink-0">→ Acompañar</button>
+            {discipulos.filter((d) => personasOracion.some((p) => p.discipulo_id === d.id)).map((disc) => {
+              const items = personasOracion.filter((p) => p.discipulo_id === disc.id);
+              return (
+                <div key={disc.id}>
+                  <p className="text-[11px] font-medium text-blue-700 dark:text-blue-300 mb-1">{disc.nombre} {disc.apellido}</p>
+                  <div className="space-y-1">
+                    {items.map((p) => (
+                      <div key={p.id} className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/40 rounded-lg px-3 py-2 text-xs"
+                        draggable onDragStart={() => handleDragStart({ ...p, es_oracion: true })}
+                      >
+                        <span className="font-medium min-w-[120px]">{p.nombre} {p.apellido}</span>
+                        <span className="text-muted-foreground">{p.estado}</span>
+                        <button type="button" onClick={() => handleMoverAOracion(p)} className="text-emerald-600 hover:text-emerald-700 font-medium shrink-0 ml-auto">→ Acompañar</button>
+                      </div>
+                    ))}
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
           </CardContent>
         </Card>
       )}
