@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, CheckCircle2, Book, Heart, Users, Target, Sparkles, Hand, GraduationCap, Crown, User as UserIcon, AlertTriangle, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, ClipboardCheck } from "lucide-react";
 import { format, parseISO } from "date-fns";
+import Link from "next/link";
 import { toast } from "sonner";
 import { ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 
@@ -350,9 +351,9 @@ export default function SeguimientoPage() {
                           <CardDescription className="text-xs">Gestioná el proceso completo de evangelismo (oración → servicio → evangelismo)</CardDescription>
                         </CardHeader>
                         <CardContent className="p-3">
-                          <a href="/evangelismo" className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
+                          <Link href="/evangelismo" className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
                             <Heart className="h-4 w-4" /> Ir a Acompañamiento Evangelístico →
-                          </a>
+                          </Link>
                         </CardContent>
                       </Card>
                       <Card>
