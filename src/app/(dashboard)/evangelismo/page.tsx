@@ -271,17 +271,17 @@ export default function EvangelismoPage() {
         <Card className="border-blue-200 dark:border-blue-800">
           <CardContent className="p-3 space-y-2">
             <p className="text-xs font-semibold flex items-center gap-1 text-blue-600"><Heart className="h-3 w-3" /> Personas por las que ora ({personasOracion.length})</p>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="space-y-1.5">
               {personasOracion.map((p) => {
                 const disc = discipulos.find((d) => d.id === p.discipulo_id);
                 return (
-                  <div key={p.id} className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/40 rounded-lg px-2.5 py-1.5 text-xs"
+                  <div key={p.id} className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/40 rounded-lg px-3 py-2 text-xs"
                     draggable onDragStart={() => handleDragStart({ ...p, es_oracion: true })}
                   >
-                    <span className="font-medium">{p.nombre} {p.apellido}</span>
-                    <span className="text-muted-foreground">· {p.estado}</span>
-                    <span className="text-[10px] text-muted-foreground bg-blue-100 dark:bg-blue-900/50 px-1.5 py-0.5 rounded-full">contacto de {disc?.nombre || "—"}</span>
-                    <button type="button" onClick={() => handleMoverAOracion(p)} className="text-emerald-600 hover:text-emerald-700 ml-1 font-medium">→ Acompañar</button>
+                    <span className="font-medium min-w-[120px]">{p.nombre} {p.apellido}</span>
+                    <span className="text-muted-foreground">{p.estado}</span>
+                    <span className="text-[10px] text-muted-foreground bg-blue-100 dark:bg-blue-900/50 px-1.5 py-0.5 rounded-full ml-auto">contacto de {disc?.nombre || "—"}</span>
+                    <button type="button" onClick={() => handleMoverAOracion(p)} className="text-emerald-600 hover:text-emerald-700 font-medium shrink-0">→ Acompañar</button>
                   </div>
                 );
               })}
@@ -308,9 +308,7 @@ export default function EvangelismoPage() {
       {/* LISTA VIEW */}
       {viewMode === "lista" && (
         <div className="space-y-2">
-          {filteredPersonas.length === 0 ? (
-            <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">No hay personas registradas</CardContent></Card>
-          ) : filteredPersonas.map((p) => {
+          {filteredPersonas.length === 0 ? null : filteredPersonas.map((p) => {
             const meta = estadosMeta[p.estado];
             const Icon = meta?.icon || Users;
             const dias = diasEnEstado(p);
