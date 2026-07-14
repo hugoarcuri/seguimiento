@@ -102,8 +102,11 @@ export default function SeguimientoPage() {
   const [pasajeLeido, setPasajeLeido] = useState("");
   const [materialLeido, setMaterialLeido] = useState("");
   const [motivosOracion, setMotivosOracion] = useState("");
+  const [personasOracion, setPersonasOracion] = useState<{ nombre: string; apellido: string; estado: string }[]>([]);
   const [mensajeoAlguien, setMensajeoAlguien] = useState<number | undefined>(undefined);
+  const [mensajeoQuien, setMensajeoQuien] = useState("");
   const [visitoAlguien, setVisitoAlguien] = useState<number | undefined>(undefined);
+  const [visitoQuien, setVisitoQuien] = useState("");
   const [actoServicio, setActoServicio] = useState<number | undefined>(undefined);
   const [actoServicioDesc, setActoServicioDesc] = useState("");
   const [obsGenerales, setObsGenerales] = useState("");
@@ -142,8 +145,11 @@ export default function SeguimientoPage() {
     setPasajeLeido("");
     setMaterialLeido("");
     setMotivosOracion("");
+    setPersonasOracion([]);
     setMensajeoAlguien(undefined);
+    setMensajeoQuien("");
     setVisitoAlguien(undefined);
+    setVisitoQuien("");
     setActoServicio(undefined);
     setActoServicioDesc("");
     setObsGenerales("");
@@ -176,10 +182,14 @@ export default function SeguimientoPage() {
     if (pasajeLeido) extras.push(`Pasaje leído: ${pasajeLeido}`);
     if (materialLeido) extras.push(`Material leído: ${materialLeido}`);
     if (motivosOracion) extras.push(`Motivos de oración: ${motivosOracion}`);
-    if (mensajeoAlguien !== undefined) extras.push(`Contactó a alguien: ${mensajeoAlguien === 1 ? "Sí" : "No"}`);
-    if (visitoAlguien !== undefined) extras.push(`Visitó a alguien: ${visitoAlguien === 1 ? "Sí" : "No"}`);
+    if (mensajeoAlguien !== undefined) extras.push(`Contactó a alguien: ${mensajeoAlguien === 1 ? `Sí — ${mensajeoQuien || "(no especificó)"}` : "No"}`);
+    if (visitoAlguien !== undefined) extras.push(`Visitó a alguien: ${visitoAlguien === 1 ? `Sí — ${visitoQuien || "(no especificó)"}` : "No"}`);
     if (actoServicio !== undefined) extras.push(`Acto de servicio: ${actoServicio === 1 ? `Sí — ${actoServicioDesc || "(no especificó)"}` : "No"}`);
     if (ministerioSeleccionado) extras.push(`Ministerio: ${ministerioSeleccionado}${ministerioCustom ? ` (${ministerioCustom})` : ""}`);
+    if (personasOracion.length > 0) {
+      const personasStr = personasOracion.map((p) => `${p.nombre} ${p.apellido} (${p.estado})`).join(", ");
+      extras.push(`Personas por las que ora: ${personasStr}`);
+    }
     const obsFinal = [obsGenerales, ...extras].filter(Boolean).join("\n\n");
 
     const { data: reunion } = await supabase.from("reuniones").insert({
@@ -331,6 +341,26 @@ export default function SeguimientoPage() {
                     </Card>
                   )}
 
+                  {/* Extra fields for Step 5: Evangelismo */}
+                  {step === 5 && (
+                    <Card>
+                      <CardHeader className="p-3 pb-0">
+                        <CardTitle className="text-sm">Personas por las que ora</CardTitle>
+                        <CardDescription className="text-xs">Registrá las personas por las que el discípulo está orando</CardDescription>
+                      </CardHeader>
+                      <CardContent className="p-3 space-y-3">
+                        {personasOracion.map((p, i) => (
+                          <div key={i} className="flex items-center gap-2 text-sm bg-muted/30 rounded-lg p-2">
+                            <span className="flex-1">{p.nombre} {p.apellido}</span>
+                            <span className="text-xs text-muted-foreground px-2 py-0.5 rounded-full bg-muted">{p.estado}</span>
+                            <button type="button" onClick={() => setPersonasOracion((prev) => prev.filter((_, j) => j !== i))} className="text-red-400 hover:text-red-600 text-xs font-medium">Quitar</button>
+                          </div>
+                        ))}
+                        <PersonaOracionForm onAgregar={(p) => setPersonasOracion((prev) => [...prev, p])} />
+                      </CardContent>
+                    </Card>
+                  )}
+
                   {/* Extra fields for Step 2: Comunión */}
                   {step === 2 && (
                     <Card>
@@ -342,25 +372,31 @@ export default function SeguimientoPage() {
                           <Label className="text-xs">¿Envió mensaje o llamó a alguien esta semana?</Label>
                           <div className="flex gap-2 mt-1">
                             {["No", "Sí"].map((label, v) => (
-                              <button key={v} type="button" onClick={() => setMensajeoAlguien(v)}
+                              <button key={v} type="button" onClick={() => { setMensajeoAlguien(v); if (v === 0) setMensajeoQuien(""); }}
                                 className={`flex-1 h-9 rounded-lg text-sm font-medium transition-all ${
                                   (mensajeoAlguien ?? -1) === v ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
                                 }`}
                               >{label}</button>
                             ))}
                           </div>
+                          {mensajeoAlguien === 1 && (
+                            <Input placeholder="¿A quién?" className="h-9 text-sm mt-1" value={mensajeoQuien} onChange={(e) => setMensajeoQuien(e.target.value)} />
+                          )}
                         </div>
                         <div className="space-y-1">
                           <Label className="text-xs">¿Visitó a alguien en la semana?</Label>
                           <div className="flex gap-2 mt-1">
                             {["No", "Sí"].map((label, v) => (
-                              <button key={v} type="button" onClick={() => setVisitoAlguien(v)}
+                              <button key={v} type="button" onClick={() => { setVisitoAlguien(v); if (v === 0) setVisitoQuien(""); }}
                                 className={`flex-1 h-9 rounded-lg text-sm font-medium transition-all ${
                                   (visitoAlguien ?? -1) === v ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
                                 }`}
                               >{label}</button>
                             ))}
                           </div>
+                          {visitoAlguien === 1 && (
+                            <Input placeholder="¿A quién visitó?" className="h-9 text-sm mt-1" value={visitoQuien} onChange={(e) => setVisitoQuien(e.target.value)} />
+                          )}
                         </div>
                         <div className="space-y-1">
                           <Label className="text-xs">¿Realizó algún acto de servicio?</Label>
@@ -612,6 +648,45 @@ export default function SeguimientoPage() {
           )}
         </>
       ) : null}
+    </div>
+  );
+}
+
+function PersonaOracionForm({ onAgregar }: { onAgregar: (p: { nombre: string; apellido: string; estado: string }) => void }) {
+  const [nombre, setNombre] = useState("");
+  const [apellido, setApellido] = useState("");
+  const [estado, setEstado] = useState("Oración");
+
+  const handleAgregar = () => {
+    if (!nombre.trim() || !apellido.trim()) return;
+    onAgregar({ nombre: nombre.trim(), apellido: apellido.trim(), estado });
+    setNombre("");
+    setApellido("");
+    setEstado("Oración");
+  };
+
+  return (
+    <div className="flex items-end gap-2">
+      <div className="flex-1 space-y-1">
+        <Label className="text-xs">Nombre</Label>
+        <Input className="h-8 text-xs" placeholder="Nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} />
+      </div>
+      <div className="flex-1 space-y-1">
+        <Label className="text-xs">Apellido</Label>
+        <Input className="h-8 text-xs" placeholder="Apellido" value={apellido} onChange={(e) => setApellido(e.target.value)} />
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">Estado</Label>
+        <Select value={estado} onValueChange={(v) => setEstado(v ?? "Oración")}>
+          <SelectTrigger className="h-8 text-xs w-[150px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Oración" className="text-xs">Oración</SelectItem>
+            <SelectItem value="Oración y servicio" className="text-xs">Oración y servicio</SelectItem>
+            <SelectItem value="Oración y predicación" className="text-xs">Oración y predicación</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <Button size="sm" className="h-8" onClick={handleAgregar} disabled={!nombre.trim() || !apellido.trim()}>Agregar</Button>
     </div>
   );
 }
