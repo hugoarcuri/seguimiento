@@ -207,7 +207,7 @@ export default function EvangelismoPage() {
 
   const handleMoverAOracion = async (p: any, nuevoEstado?: string) => {
     const { data } = await supabase.from("acompanamiento_evangelistico").insert({
-      nombre: p.nombre, apellido: p.apellido, creado_por: user?.id, estado: nuevoEstado || "oracion",
+      nombre: p.nombre, apellido: p.apellido, discipulo_id: p.discipulo_id || null, creado_por: user?.id, estado: nuevoEstado || "oracion",
     }).select().single();
     if (data) {
       setPersonas((prev) => [...prev, data]);
