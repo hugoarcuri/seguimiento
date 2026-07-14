@@ -272,15 +272,19 @@ export default function EvangelismoPage() {
           <CardContent className="p-3 space-y-2">
             <p className="text-xs font-semibold flex items-center gap-1 text-blue-600"><Heart className="h-3 w-3" /> Personas por las que ora ({personasOracion.length})</p>
             <div className="flex flex-wrap gap-1.5">
-              {personasOracion.map((p) => (
-                <div key={p.id} className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/40 rounded-lg px-2.5 py-1.5 text-xs"
-                  draggable onDragStart={() => handleDragStart({ ...p, es_oracion: true })}
-                >
-                  <span className="font-medium">{p.nombre} {p.apellido}</span>
-                  <span className="text-muted-foreground">· {p.estado}</span>
-                  <button type="button" onClick={() => handleMoverAOracion(p)} className="text-emerald-600 hover:text-emerald-700 ml-1 font-medium">→ Acompañar</button>
-                </div>
-              ))}
+              {personasOracion.map((p) => {
+                const disc = discipulos.find((d) => d.id === p.discipulo_id);
+                return (
+                  <div key={p.id} className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/40 rounded-lg px-2.5 py-1.5 text-xs"
+                    draggable onDragStart={() => handleDragStart({ ...p, es_oracion: true })}
+                  >
+                    <span className="font-medium">{p.nombre} {p.apellido}</span>
+                    <span className="text-muted-foreground">· {p.estado}</span>
+                    <span className="text-[10px] text-muted-foreground bg-blue-100 dark:bg-blue-900/50 px-1.5 py-0.5 rounded-full">contacto de {disc?.nombre || "—"}</span>
+                    <button type="button" onClick={() => handleMoverAOracion(p)} className="text-emerald-600 hover:text-emerald-700 ml-1 font-medium">→ Acompañar</button>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
