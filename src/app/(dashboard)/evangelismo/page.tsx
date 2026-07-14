@@ -342,6 +342,7 @@ export default function EvangelismoPage() {
                       <p className="text-sm font-medium truncate">{p.nombre} {p.apellido}</p>
                       {recienAgregadoId === p.id && <Badge className="text-[10px] px-1.5 bg-emerald-500 text-white border-0 animate-pulse">✓ Guardado</Badge>}
                       <Badge variant="outline" className="text-[10px] px-1.5">{meta?.label || p.estado}</Badge>
+                      {(() => { const d = discipulos.find((x) => x.id === p.discipulo_id); return d ? <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">contacto de {d.nombre}</span> : null; })()}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
                       <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden max-w-[200px]">
@@ -394,6 +395,7 @@ export default function EvangelismoPage() {
                         <div className="flex items-center gap-1">
                           <GripVertical className="h-3 w-3 text-muted-foreground shrink-0" />
                           <p className="text-xs font-medium truncate flex-1">{p.nombre} {p.apellido}</p>
+                          {(() => { const d = discipulos.find((x) => x.id === p.discipulo_id); return d ? <span className="text-[9px] text-muted-foreground bg-muted px-1 py-0.5 rounded-full hidden sm:inline">{d.nombre}</span> : null; })()}
                           <Badge variant="outline" className="text-[10px] px-1">{dias}/30d</Badge>
                           <button type="button" onClick={(e) => { e.stopPropagation(); setEditPersonaForm({ nombre: p.nombre, apellido: p.apellido, telefono: p.telefono || "", edad: p.edad?.toString() || "", observaciones: p.observaciones || "" }); setShowEditDialog(p); }} className="text-blue-400 hover:text-blue-600 text-[10px] p-0.5">✏️</button>
                           <button type="button" onClick={(e) => { e.stopPropagation(); handleEliminarPersona(p.id); }} className="text-red-400 hover:text-red-600 text-[10px] p-0.5">🗑</button>
@@ -488,6 +490,7 @@ export default function EvangelismoPage() {
                     {p.edad && <div><span className="text-xs text-muted-foreground">Edad:</span> <p>{p.edad} años</p></div>}
                     <div><span className="text-xs text-muted-foreground">Estado:</span> <Badge variant="outline">{meta?.label}</Badge></div>
                     <div><span className="text-xs text-muted-foreground">Agregado:</span> <p>{format(new Date(p.fecha_creacion), "dd/MM/yyyy")}</p></div>
+                    {(() => { const d = discipulos.find((x) => x.id === p.discipulo_id); return d ? <div className="col-span-2"><span className="text-xs text-muted-foreground">Contacto de:</span> <p className="font-medium">{d.nombre} {d.apellido}</p></div> : null; })()}
                   </div>
 
                   {/* PROGRESS BAR */}
