@@ -59,6 +59,7 @@ export default function EvangelismoPage() {
   const [selectedPersona, setSelectedPersona] = useState<any>(null);
 
   const [dragItem, setDragItem] = useState<any>(null);
+  const [recienAgregadoId, setRecienAgregadoId] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user));
@@ -120,6 +121,8 @@ export default function EvangelismoPage() {
     setPersonas((prev) => [data, ...prev]);
     setShowAddDialog(false);
     setNuevaPersona({ discipulo_id: "", nombre: "", apellido: "", telefono: "", edad: "", observaciones: "" });
+    setRecienAgregadoId(data.id);
+    setTimeout(() => setRecienAgregadoId(null), 3000);
     toast.success("Persona agregada");
   };
 
@@ -255,6 +258,7 @@ export default function EvangelismoPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium truncate">{p.nombre} {p.apellido}</p>
+                      {recienAgregadoId === p.id && <Badge className="text-[10px] px-1.5 bg-emerald-500 text-white border-0 animate-pulse">✓ Guardado</Badge>}
                       <Badge variant="outline" className="text-[10px] px-1.5">{meta?.label || p.estado}</Badge>
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
