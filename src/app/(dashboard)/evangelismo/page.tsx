@@ -61,8 +61,9 @@ export default function EvangelismoPage() {
   const [dragItem, setDragItem] = useState<any>(null);
   const [recienAgregadoId, setRecienAgregadoId] = useState<string | null>(null);
   const [showConfirmAvanzar, setShowConfirmAvanzar] = useState<{ persona: any; nuevoEstado: string } | null>(null);
+  const [estadoDropdownOpen, setEstadoDropdownOpen] = useState<string | null>(null);
   const [showEditDialog, setShowEditDialog] = useState<any>(null);
-  const [editPersonaForm, setEditPersonaForm] = useState<any>({ nombre: "", apellido: "", telefono: "", edad: "", observaciones: "" });
+  const [editPersonaForm, setEditPersonaForm] = useState<any>({ nombre: "", apellido: "", telefono: "", edad: "", observaciones: "", estado: "oracion_salvacion" });
   const [personasOracion, setPersonasOracion] = useState<any[]>([]);
 
   useEffect(() => {
@@ -185,7 +186,7 @@ export default function EvangelismoPage() {
     await supabase.from("acompanamiento_evangelistico").update({
       nombre: editPersonaForm.nombre.trim(), apellido: editPersonaForm.apellido.trim(),
       telefono: editPersonaForm.telefono || null, edad: editPersonaForm.edad ? parseInt(editPersonaForm.edad) : null,
-      observaciones: editPersonaForm.observaciones || null,
+      observaciones: editPersonaForm.observaciones || null, estado: editPersonaForm.estado,
     }).eq("id", showEditDialog.id);
     setPersonas((prev) => prev.map((x) => x.id === showEditDialog.id ? { ...x, ...editPersonaForm } : x));
     setShowEditDialog(null);
@@ -326,10 +327,9 @@ export default function EvangelismoPage() {
                     <Icon className={cn("h-4 w-4", meta?.color)} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-medium truncate">{p.nombre} {p.apellido}</p>
                       {recienAgregadoId === p.id && <Badge className="text-[10px] px-1.5 bg-emerald-500 text-white border-0 animate-pulse">✓ Guardado</Badge>}
-                      <Badge variant="outline" className="text-[10px] px-1.5">{meta?.label || p.estado}</Badge>
                       {(() => { const d = discipulos.find((x) => x.id === p.discipulo_id); if (!d) return null; const c = getDiscipuloColor(d.id); return <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ color: c.fg, backgroundColor: c.bg }}>contacto de {d.nombre}</span>; })()}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
@@ -338,17 +338,35 @@ export default function EvangelismoPage() {
                       </div>
                       <span className="text-[11px] text-muted-foreground whitespace-nowrap">{dias}/30 días</span>
                     </div>
+                    {p.observaciones && <p className="text-[11px] text-muted-foreground truncate mt-0.5">{p.observaciones}</p>}
                   </div>
-                  <div className="flex gap-1 shrink-0">
-                    <span className="flex items-center gap-0.5">
-                      {["actos_servicio", "predicacion_evangelio"].includes(p.estado) && (
-                        <button type="button" onClick={(e) => { e.stopPropagation(); handleCambiarEstado(p.id, p.estado === "actos_servicio" ? "oracion_salvacion" : "actos_servicio"); }} className="text-muted-foreground hover:text-foreground text-xs p-1" title="Regresar">←</button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <div className="relative">
+                      <button type="button" onClick={(e) => { e.stopPropagation(); setEstadoDropdownOpen(estadoDropdownOpen === p.id ? null : p.id); }}
+                        className={cn("flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium border transition-colors", meta?.bgColor, meta?.color)}
+                      >
+                        <Icon className="h-3.5 w-3.5" />
+                        {meta?.label}
+                      </button>
+                      {estadoDropdownOpen === p.id && (
+                        <div className="absolute right-0 top-full mt-1 z-50 bg-popover border rounded-lg shadow-lg p-1 min-w-[180px]" onClick={(e) => e.stopPropagation()}>
+                          {Object.entries(estadosMeta).map(([key, m]) => {
+                            const ItemIcon = m.icon;
+                            return (
+                              <button key={key} type="button" onClick={() => { setEstadoDropdownOpen(null); if (key !== p.estado) handleCambiarEstado(p.id, key); }}
+                                className={cn("flex w-full items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors", key === p.estado ? "bg-muted font-semibold" : "hover:bg-muted/50")}
+                              >
+                                <ItemIcon className="h-3.5 w-3.5" />
+                                {m.label}
+                                {key === p.estado && <CheckCircle2 className="h-3 w-3 ml-auto text-emerald-500" />}
+                              </button>
+                            );
+                          })}
+                        </div>
                       )}
-                    </span>
-                    {p.estado === "oracion_salvacion" && <Button size="sm" variant="outline" className="h-7 text-xs" onClick={(e) => { e.stopPropagation(); handleCambiarEstado(p.id, "actos_servicio"); }}>Actos de servicio <ArrowRight className="h-3 w-3 ml-1" /></Button>}
-                    {p.estado === "actos_servicio" && <Button size="sm" variant="outline" className="h-7 text-xs" onClick={(e) => { e.stopPropagation(); handleCambiarEstado(p.id, "predicacion_evangelio"); }}>Predicar Evangelio <ArrowRight className="h-3 w-3 ml-1" /></Button>}
-                    <span className="flex items-center gap-0.5 border-l border-muted pl-2 ml-1">
-                      <button type="button" onClick={(e) => { e.stopPropagation(); setEditPersonaForm({ nombre: p.nombre, apellido: p.apellido, telefono: p.telefono || "", edad: p.edad?.toString() || "", observaciones: p.observaciones || "" }); setShowEditDialog(p); }} className="text-blue-400 hover:text-blue-600 text-xs p-1">✏️</button>
+                    </div>
+                    <span className="flex items-center gap-0.5 border-l border-muted pl-1.5 ml-0.5">
+                      <button type="button" onClick={(e) => { e.stopPropagation(); setEditPersonaForm({ nombre: p.nombre, apellido: p.apellido, telefono: p.telefono || "", edad: p.edad?.toString() || "", observaciones: p.observaciones || "", estado: p.estado }); setShowEditDialog(p); }} className="text-blue-400 hover:text-blue-600 text-xs p-1">✏️</button>
                       <button type="button" onClick={(e) => { e.stopPropagation(); handleEliminarPersona(p.id); }} className="text-red-400 hover:text-red-600 text-xs p-1">🗑</button>
                     </span>
                   </div>
@@ -389,13 +407,14 @@ export default function EvangelismoPage() {
                           <p className="text-xs font-medium truncate flex-1">{p.nombre} {p.apellido}</p>
                           {(() => { const d = discipulos.find((x) => x.id === p.discipulo_id); if (!d) return null; const c = getDiscipuloColor(d.id); return <span className="text-[9px] px-1 py-0.5 rounded-full hidden sm:inline font-medium" style={{ color: c.fg, backgroundColor: c.bg }}>{d.nombre}</span>; })()}
                           <Badge variant="outline" className="text-[10px] px-1">{dias}/30d</Badge>
-                          <button type="button" onClick={(e) => { e.stopPropagation(); setEditPersonaForm({ nombre: p.nombre, apellido: p.apellido, telefono: p.telefono || "", edad: p.edad?.toString() || "", observaciones: p.observaciones || "" }); setShowEditDialog(p); }} className="text-blue-400 hover:text-blue-600 text-[10px] p-0.5">✏️</button>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); setEditPersonaForm({ nombre: p.nombre, apellido: p.apellido, telefono: p.telefono || "", edad: p.edad?.toString() || "", observaciones: p.observaciones || "", estado: p.estado }); setShowEditDialog(p); }} className="text-blue-400 hover:text-blue-600 text-[10px] p-0.5">✏️</button>
                           <button type="button" onClick={(e) => { e.stopPropagation(); handleEliminarPersona(p.id); }} className="text-red-400 hover:text-red-600 text-[10px] p-0.5">🗑</button>
                         </div>
                         <div className="mt-1.5 h-1 bg-muted rounded-full overflow-hidden">
                           <div className={cn("h-full rounded-full", prog >= 100 ? "bg-emerald-500" : "bg-blue-500")} style={{ width: `${prog}%` }} />
                         </div>
                         {dias >= 30 && <p className="text-[10px] text-amber-500 mt-1">⚠ Listo para avanzar</p>}
+                        {p.observaciones && <p className="text-[10px] text-muted-foreground truncate mt-0.5">{p.observaciones}</p>}
                       </div>
                     );
                   })}
@@ -483,6 +502,7 @@ export default function EvangelismoPage() {
                     <div><span className="text-xs text-muted-foreground">Estado:</span> <Badge variant="outline">{meta?.label}</Badge></div>
                     <div><span className="text-xs text-muted-foreground">Agregado:</span> <p>{format(new Date(p.fecha_creacion), "dd/MM/yyyy")}</p></div>
                     {(() => { const d = discipulos.find((x) => x.id === p.discipulo_id); if (!d) return null; const c = getDiscipuloColor(d.id); return <div className="col-span-2"><span className="text-xs text-muted-foreground">Contacto de:</span> <p className="font-medium" style={{ color: c.fg }}>{d.nombre} {d.apellido}</p></div>; })()}
+                    {p.observaciones && <div className="col-span-2"><span className="text-xs text-muted-foreground">Observaciones:</span> <p className="text-sm">{p.observaciones}</p></div>}
                   </div>
 
                   {/* PROGRESS BAR */}
@@ -520,7 +540,7 @@ export default function EvangelismoPage() {
                     {p.estado === "predicacion_evangelio" && <><Button size="sm" variant="outline" onClick={() => { handleCambiarEstado(p.id, "actos_servicio"); setSelectedPersona(null); }} className="px-2">←</Button></>}
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline" className="flex-1" onClick={() => { setEditPersonaForm({ nombre: p.nombre, apellido: p.apellido, telefono: p.telefono || "", edad: p.edad?.toString() || "", observaciones: p.observaciones || "" }); setShowEditDialog(p); }}>Editar</Button>
+                    <Button size="sm" variant="outline" className="flex-1" onClick={() => { setEditPersonaForm({ nombre: p.nombre, apellido: p.apellido, telefono: p.telefono || "", edad: p.edad?.toString() || "", observaciones: p.observaciones || "", estado: p.estado }); setShowEditDialog(p); }}>Editar</Button>
                     <Button size="sm" variant="destructive" className="flex-1" onClick={() => handleEliminarPersona(p.id)}>Eliminar</Button>
                   </div>
 
@@ -609,6 +629,18 @@ export default function EvangelismoPage() {
               <div className="space-y-1"><Label className="text-xs">Edad</Label><Input type="number" className="h-9 text-sm" value={editPersonaForm.edad} onChange={(e) => setEditPersonaForm((f: any) => ({ ...f, edad: e.target.value }))} /></div>
             </div>
             <div className="space-y-1"><Label className="text-xs">Observaciones</Label><Textarea rows={2} className="text-sm" value={editPersonaForm.observaciones} onChange={(e) => setEditPersonaForm((f: any) => ({ ...f, observaciones: e.target.value }))} /></div>
+            <div className="space-y-1"><Label className="text-xs">Estado</Label>
+              <div className="flex flex-wrap gap-1">
+                {Object.entries(estadosMeta).map(([key, m]) => {
+                  const ItemIcon = m.icon;
+                  return (
+                    <button key={key} type="button" onClick={() => setEditPersonaForm((f: any) => ({ ...f, estado: key }))}
+                      className={cn("flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium border transition-colors", editPersonaForm.estado === key ? m.bgColor : "bg-background")}
+                    ><ItemIcon className="h-3.5 w-3.5" />{m.label}</button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEditDialog(null)}>Cancelar</Button>
