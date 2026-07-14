@@ -97,6 +97,12 @@ export default function SeguimientoPage() {
   const [valores, setValores] = useState<Record<number, number>>({});
   const [evalObs, setEvalObs] = useState<Record<number, string>>({});
   const [dondeSirvio, setDondeSirvio] = useState<string[]>([]);
+  const [pasajeLeido, setPasajeLeido] = useState("");
+  const [materialLeido, setMaterialLeido] = useState("");
+  const [motivosOracion, setMotivosOracion] = useState("");
+  const [mensajeoAlguien, setMensajeoAlguien] = useState<number | undefined>(undefined);
+  const [visitoAlguien, setVisitoAlguien] = useState<number | undefined>(undefined);
+  const [actoServicio, setActoServicio] = useState<number | undefined>(undefined);
   const [obsGenerales, setObsGenerales] = useState("");
   const [compromisos, setCompromisos] = useState<string[]>([]);
   const [desafioPersonalizado, setDesafioPersonalizado] = useState("");
@@ -129,6 +135,12 @@ export default function SeguimientoPage() {
     setValores({});
     setEvalObs({});
     setDondeSirvio([]);
+    setPasajeLeido("");
+    setMaterialLeido("");
+    setMotivosOracion("");
+    setMensajeoAlguien(undefined);
+    setVisitoAlguien(undefined);
+    setActoServicio(undefined);
     setObsGenerales("");
     setCompromisos([]);
     setDesafioPersonalizado("");
@@ -155,9 +167,18 @@ export default function SeguimientoPage() {
     setSaving(true);
     if (!user) { toast.error("Debés iniciar sesión"); setSaving(false); return; }
     const today = format(new Date(), "yyyy-MM-dd");
+    const extras: string[] = [];
+    if (pasajeLeido) extras.push(`Pasaje leído: ${pasajeLeido}`);
+    if (materialLeido) extras.push(`Material leído: ${materialLeido}`);
+    if (motivosOracion) extras.push(`Motivos de oración: ${motivosOracion}`);
+    if (mensajeoAlguien !== undefined) extras.push(`Contactó a alguien: ${mensajeoAlguien === 1 ? "Sí" : "No"}`);
+    if (visitoAlguien !== undefined) extras.push(`Visitó a alguien: ${visitoAlguien === 1 ? "Sí" : "No"}`);
+    if (actoServicio !== undefined) extras.push(`Acto de servicio: ${actoServicio === 1 ? "Sí" : "No"}`);
+    const obsFinal = [obsGenerales, ...extras].filter(Boolean).join("\n\n");
+
     const { data: reunion } = await supabase.from("reuniones").insert({
       discipulo_id: selectedId, lider_id: user.id, fecha: today,
-      observaciones_generales: obsGenerales || null,
+      observaciones_generales: obsFinal || null,
       compromisos: compromisos.length > 0 || desafioPersonalizado ? [...compromisos, ...(desafioPersonalizado ? [desafioPersonalizado] : [])].join("\n") : null,
       proxima_reunion: proximaReunion || null,
     }).select().single();
@@ -281,6 +302,76 @@ export default function SeguimientoPage() {
               {/* STEP CONTENT */}
               {step < 6 && (
                 <div className="space-y-3">
+                  {/* Extra fields for Step 1: Vida Devocional */}
+                  {step === 1 && (
+                    <Card>
+                      <CardHeader className="p-3 pb-0">
+                        <CardTitle className="text-sm">Lectura y oración de la semana</CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-3 space-y-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Pasaje bíblico, libro o capítulo que leyó esta semana</Label>
+                          <Input placeholder="Ej: Juan 1-5, Salmos 23..." className="h-9 text-sm" value={pasajeLeido} onChange={(e) => setPasajeLeido(e.target.value)} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Libro cristiano u otro material leído</Label>
+                          <Input placeholder="Título del libro o material..." className="h-9 text-sm" value={materialLeido} onChange={(e) => setMaterialLeido(e.target.value)} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">¿Cuáles fueron sus motivos de oración en la semana?</Label>
+                          <Textarea rows={2} className="text-sm" value={motivosOracion} onChange={(e) => setMotivosOracion(e.target.value)} placeholder="Familia, trabajo, salud, etc." />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Extra fields for Step 2: Comunión */}
+                  {step === 2 && (
+                    <Card>
+                      <CardHeader className="p-3 pb-0">
+                        <CardTitle className="text-sm">Contacto y servicio semanal</CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-3 space-y-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs">¿Envió mensaje o llamó a alguien esta semana?</Label>
+                          <div className="flex gap-2 mt-1">
+                            {["No", "Sí"].map((label, v) => (
+                              <button key={v} type="button" onClick={() => setMensajeoAlguien(v)}
+                                className={`flex-1 h-9 rounded-lg text-sm font-medium transition-all ${
+                                  (mensajeoAlguien ?? -1) === v ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                                }`}
+                              >{label}</button>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">¿Visitó a alguien en la semana?</Label>
+                          <div className="flex gap-2 mt-1">
+                            {["No", "Sí"].map((label, v) => (
+                              <button key={v} type="button" onClick={() => setVisitoAlguien(v)}
+                                className={`flex-1 h-9 rounded-lg text-sm font-medium transition-all ${
+                                  (visitoAlguien ?? -1) === v ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                                }`}
+                              >{label}</button>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">¿Realizó algún acto de servicio?</Label>
+                          <div className="flex gap-2 mt-1">
+                            {["No", "Sí"].map((label, v) => (
+                              <button key={v} type="button" onClick={() => setActoServicio(v)}
+                                className={`flex-1 h-9 rounded-lg text-sm font-medium transition-all ${
+                                  (actoServicio ?? -1) === v ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                                }`}
+                              >{label}</button>
+                            ))}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
                   {stepAreas.map((aid) => {
                     const area = areas.find((a) => a.id === aid);
                     if (!area) return null;
