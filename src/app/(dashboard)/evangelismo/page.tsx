@@ -60,6 +60,10 @@ export default function EvangelismoPage() {
 
   const [dragItem, setDragItem] = useState<any>(null);
   const [recienAgregadoId, setRecienAgregadoId] = useState<string | null>(null);
+  const [showConfirmAvanzar, setShowConfirmAvanzar] = useState<{ persona: any; nuevoEstado: string } | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState<any>(null);
+  const [editPersonaForm, setEditPersonaForm] = useState<any>({ nombre: "", apellido: "", telefono: "", edad: "", observaciones: "" });
+  const [personasOracion, setPersonasOracion] = useState<any[]>([]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user));
@@ -67,10 +71,12 @@ export default function EvangelismoPage() {
       supabase.from("discipulos").select("*, etapas:etapa_id(*)").order("apellido"),
       supabase.from("acompanamiento_evangelistico").select("*").order("fecha_inicio_estado", { ascending: false }),
       supabase.from("eventos_evangelismo").select("*").order("fecha", { ascending: false }),
-    ]).then(([dRes, pRes, eRes]) => {
+      supabase.from("personas_oracion").select("*").eq("activo", true).order("created_at", { ascending: false }),
+    ]).then(([dRes, pRes, eRes, poRes]) => {
       setDiscipulos(dRes.data || []);
       setPersonas(pRes.data || []);
       setEventos(eRes.data || []);
+      setPersonasOracion(poRes.data || []);
       setLoading(false);
     });
   }, []);
@@ -127,18 +133,22 @@ export default function EvangelismoPage() {
 
     const dias = diasEnEstado(p);
     if (dias < 30) {
-      const confirmar = window.confirm(`Solo llevan ${dias} días en ${estadosMeta[p.estado]?.label}. ¿Desea avanzar igual?`);
-      if (!confirmar) return;
+      setShowConfirmAvanzar({ persona: p, nuevoEstado });
+      return;
     }
 
+    await ejecutarCambioEstado(p, nuevoEstado);
+  };
+
+  const ejecutarCambioEstado = async (p: any, nuevoEstado: string) => {
     const labelNuevo = estadosMeta[nuevoEstado]?.label || nuevoEstado;
-    await supabase.from("acompanamiento_evangelistico").update({ estado: nuevoEstado, fecha_inicio_estado: format(new Date(), "yyyy-MM-dd") }).eq("id", personaId);
+    await supabase.from("acompanamiento_evangelistico").update({ estado: nuevoEstado, fecha_inicio_estado: format(new Date(), "yyyy-MM-dd") }).eq("id", p.id);
     await supabase.from("eventos_evangelismo").insert({
-      persona_id: personaId, tipo: "cambio_estado",
+      persona_id: p.id, tipo: "cambio_estado",
       descripcion: `Cambio a ${labelNuevo}.`,
     });
 
-    setPersonas((prev) => prev.map((x) => x.id === personaId ? { ...x, estado: nuevoEstado, fecha_inicio_estado: format(new Date(), "yyyy-MM-dd") } : x));
+    setPersonas((prev) => prev.map((x) => x.id === p.id ? { ...x, estado: nuevoEstado, fecha_inicio_estado: format(new Date(), "yyyy-MM-dd") } : x));
     toast.success(`Avanzó a ${labelNuevo}`);
   };
 
@@ -153,8 +163,45 @@ export default function EvangelismoPage() {
   const handleDragOver = (e: React.DragEvent) => e.preventDefault();
   const handleDrop = async (nuevoEstado: string) => {
     if (!dragItem) return;
-    await handleCambiarEstado(dragItem.id, nuevoEstado);
+    if (dragItem.es_oracion) {
+      // Move from personas_oracion to acompanamiento_evangelistico
+      await handleMoverAOracion(dragItem, nuevoEstado);
+    } else {
+      await handleCambiarEstado(dragItem.id, nuevoEstado);
+    }
     setDragItem(null);
+  };
+
+  const handleEditarPersona = async () => {
+    if (!showEditDialog || !editPersonaForm.nombre.trim() || !editPersonaForm.apellido.trim()) return;
+    await supabase.from("acompanamiento_evangelistico").update({
+      nombre: editPersonaForm.nombre.trim(), apellido: editPersonaForm.apellido.trim(),
+      telefono: editPersonaForm.telefono || null, edad: editPersonaForm.edad ? parseInt(editPersonaForm.edad) : null,
+      observaciones: editPersonaForm.observaciones || null,
+    }).eq("id", showEditDialog.id);
+    setPersonas((prev) => prev.map((x) => x.id === showEditDialog.id ? { ...x, ...editPersonaForm } : x));
+    setShowEditDialog(null);
+    toast.success("Persona actualizada");
+  };
+
+  const handleEliminarPersona = async (id: string) => {
+    if (!window.confirm("¿Estás seguro de eliminar esta persona?")) return;
+    await supabase.from("acompanamiento_evangelistico").delete().eq("id", id);
+    setPersonas((prev) => prev.filter((x) => x.id !== id));
+    setSelectedPersona(null);
+    toast.success("Persona eliminada");
+  };
+
+  const handleMoverAOracion = async (p: any, nuevoEstado?: string) => {
+    const { data } = await supabase.from("acompanamiento_evangelistico").insert({
+      nombre: p.nombre, apellido: p.apellido, creado_por: user?.id, estado: nuevoEstado || "oracion",
+    }).select().single();
+    if (data) {
+      setPersonas((prev) => [...prev, data]);
+      await supabase.from("personas_oracion").delete().eq("id", p.id);
+      setPersonasOracion((prev) => prev.filter((x) => x.id !== p.id));
+      toast.success("Persona movida a acompañamiento");
+    }
   };
 
   if (loading) return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -215,6 +262,26 @@ export default function EvangelismoPage() {
                 </div>
               );
             })}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* PERSONAS POR LAS QUE ORA */}
+      {personasOracion.length > 0 && (
+        <Card className="border-blue-200 dark:border-blue-800">
+          <CardContent className="p-3 space-y-2">
+            <p className="text-xs font-semibold flex items-center gap-1 text-blue-600"><Heart className="h-3 w-3" /> Personas por las que ora ({personasOracion.length})</p>
+            <div className="flex flex-wrap gap-1.5">
+              {personasOracion.map((p) => (
+                <div key={p.id} className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/40 rounded-lg px-2.5 py-1.5 text-xs"
+                  draggable onDragStart={() => handleDragStart({ ...p, es_oracion: true })}
+                >
+                  <span className="font-medium">{p.nombre} {p.apellido}</span>
+                  <span className="text-muted-foreground">· {p.estado}</span>
+                  <button type="button" onClick={() => handleMoverAOracion(p)} className="text-emerald-600 hover:text-emerald-700 ml-1 font-medium">→ Acompañar</button>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}
@@ -430,6 +497,10 @@ export default function EvangelismoPage() {
                     {p.estado === "servicio" && <Button size="sm" className="flex-1" onClick={() => { handleCambiarEstado(p.id, "evangelismo"); setSelectedPersona(null); }}>Comenzar Evangelismo <ArrowRight className="h-3 w-3 ml-1" /></Button>}
                     {p.estado === "evangelismo" && <Button size="sm" variant="outline" className="flex-1" onClick={() => { handleCambiarEstado(p.id, "completado"); setSelectedPersona(null); }}>Completar proceso <CheckCircle2 className="h-3 w-3 ml-1" /></Button>}
                   </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" className="flex-1" onClick={() => { setEditPersonaForm({ nombre: p.nombre, apellido: p.apellido, telefono: p.telefono || "", edad: p.edad?.toString() || "", observaciones: p.observaciones || "" }); setShowEditDialog(p); }}>Editar</Button>
+                    <Button size="sm" variant="destructive" className="flex-1" onClick={() => handleEliminarPersona(p.id)}>Eliminar</Button>
+                  </div>
 
                   {/* REGISTRAR ACCIONES */}
                   {p.estado === "servicio" && (
@@ -485,6 +556,42 @@ export default function EvangelismoPage() {
               </>
             );
           })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* CONFIRM AVANZAR DIALOG */}
+      <Dialog open={!!showConfirmAvanzar} onOpenChange={(o) => { if (!o) setShowConfirmAvanzar(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>¿Avanzar de etapa?</DialogTitle></DialogHeader>
+          {showConfirmAvanzar && (
+            <p className="text-sm text-muted-foreground">Solo lleva{showConfirmAvanzar.persona ? `n ${diasEnEstado(showConfirmAvanzar.persona)} días` : " menos de 30 días"} en {estadosMeta[showConfirmAvanzar.persona?.estado]?.label}. ¿Desea avanzar igual?</p>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowConfirmAvanzar(null)}>Cancelar</Button>
+            <Button onClick={async () => { if (showConfirmAvanzar) { await ejecutarCambioEstado(showConfirmAvanzar.persona, showConfirmAvanzar.nuevoEstado); setShowConfirmAvanzar(null); } }}>Avanzar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* EDIT DIALOG */}
+      <Dialog open={!!showEditDialog} onOpenChange={(o) => { if (!o) setShowEditDialog(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Editar persona</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1"><Label className="text-xs">Nombre *</Label><Input className="h-9 text-sm" value={editPersonaForm.nombre} onChange={(e) => setEditPersonaForm((f: any) => ({ ...f, nombre: e.target.value }))} /></div>
+              <div className="space-y-1"><Label className="text-xs">Apellido *</Label><Input className="h-9 text-sm" value={editPersonaForm.apellido} onChange={(e) => setEditPersonaForm((f: any) => ({ ...f, apellido: e.target.value }))} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1"><Label className="text-xs">Teléfono</Label><Input className="h-9 text-sm" value={editPersonaForm.telefono} onChange={(e) => setEditPersonaForm((f: any) => ({ ...f, telefono: e.target.value }))} /></div>
+              <div className="space-y-1"><Label className="text-xs">Edad</Label><Input type="number" className="h-9 text-sm" value={editPersonaForm.edad} onChange={(e) => setEditPersonaForm((f: any) => ({ ...f, edad: e.target.value }))} /></div>
+            </div>
+            <div className="space-y-1"><Label className="text-xs">Observaciones</Label><Textarea rows={2} className="text-sm" value={editPersonaForm.observaciones} onChange={(e) => setEditPersonaForm((f: any) => ({ ...f, observaciones: e.target.value }))} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditDialog(null)}>Cancelar</Button>
+            <Button onClick={handleEditarPersona}>Guardar</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

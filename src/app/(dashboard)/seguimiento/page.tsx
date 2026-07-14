@@ -87,6 +87,16 @@ export default function SeguimientoPage() {
   const [indicadores, setIndicadores] = useState<any[]>([]);
   const [objetivosNivel, setObjetivosNivel] = useState<Record<string, string>>({});
   const [selectedId, setSelectedId] = useState<string>("");
+
+  useEffect(() => {
+    const saved = localStorage.getItem("ultimoDiscipuloId");
+    if (saved) setSelectedId(saved);
+  }, []);
+
+  const handleSelectDiscipulo = (id: string) => {
+    setSelectedId(id);
+    localStorage.setItem("ultimoDiscipuloId", id);
+  };
   const [reuniones, setReuniones] = useState<any[]>([]);
   const [evaluaciones, setEvaluaciones] = useState<any[]>([]);
   const [desafios, setDesafios] = useState<any[]>([]);
@@ -104,6 +114,8 @@ export default function SeguimientoPage() {
   const [materialLeido, setMaterialLeido] = useState("");
   const [motivosOracion, setMotivosOracion] = useState("");
   const [personasOracion, setPersonasOracion] = useState<{ nombre: string; apellido: string; estado: string }[]>([]);
+  const [editPersonaIdx, setEditPersonaIdx] = useState(-1);
+  const [editPersonaVal, setEditPersonaVal] = useState({ nombre: "", apellido: "", estado: "Oración" });
   const [guardandoPersonas, setGuardandoPersonas] = useState(false);
   const handleGuardarPersonasOracion = async () => {
     if (!user || !selectedId) { toast.error("Seleccioná un discípulo primero"); return; }
@@ -294,7 +306,7 @@ export default function SeguimientoPage() {
         </div>
         <div className="flex flex-wrap gap-1.5 justify-end max-w-[60%]">
           {discipulos.map((d) => (
-            <button key={d.id} type="button" onClick={() => setSelectedId(d.id)}
+            <button key={d.id} type="button" onClick={() => handleSelectDiscipulo(d.id)}
               className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors ${
                 selectedId === d.id ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
               }`}
@@ -382,11 +394,24 @@ export default function SeguimientoPage() {
                         </CardHeader>
                         <CardContent className="p-3 space-y-3">
                           {personasOracion.map((p, i) => (
-                            <div key={i} className="flex items-center gap-2 text-sm bg-muted/30 rounded-lg p-2">
-                              <span className="flex-1">{p.nombre} {p.apellido}</span>
-                              <span className="text-xs text-muted-foreground px-2 py-0.5 rounded-full bg-muted">{p.estado}</span>
-                              <button type="button" onClick={() => setPersonasOracion((prev) => prev.filter((_, j) => j !== i))} className="text-red-400 hover:text-red-600 text-xs font-medium">Quitar</button>
-                            </div>
+                            editPersonaIdx === i ? (
+                              <div key={i} className="flex items-center gap-2 text-sm bg-blue-50 dark:bg-blue-950/30 rounded-lg p-2">
+                                <Input className="h-7 text-xs flex-1" value={editPersonaVal.nombre} onChange={(e) => setEditPersonaVal((v) => ({ ...v, nombre: e.target.value }))} placeholder="Nombre" />
+                                <Input className="h-7 text-xs flex-1" value={editPersonaVal.apellido} onChange={(e) => setEditPersonaVal((v) => ({ ...v, apellido: e.target.value }))} placeholder="Apellido" />
+                                <select className="h-7 text-xs rounded-md border border-input bg-transparent px-1" value={editPersonaVal.estado} onChange={(e) => setEditPersonaVal((v) => ({ ...v, estado: e.target.value }))}>
+                                  <option>Oración</option><option>Oración y servicio</option><option>Oración y predicación</option>
+                                </select>
+                                <button type="button" onClick={() => { setPersonasOracion((prev) => prev.map((x, j) => j === i ? editPersonaVal : x)); setEditPersonaIdx(-1); }} className="text-green-600 hover:text-green-700 text-xs font-medium">OK</button>
+                                <button type="button" onClick={() => setEditPersonaIdx(-1)} className="text-muted-foreground hover:text-foreground text-xs">X</button>
+                              </div>
+                            ) : (
+                              <div key={i} className="flex items-center gap-2 text-sm bg-muted/30 rounded-lg p-2">
+                                <span className="flex-1">{p.nombre} {p.apellido}</span>
+                                <span className="text-xs text-muted-foreground px-2 py-0.5 rounded-full bg-muted">{p.estado}</span>
+                                <button type="button" onClick={() => { setEditPersonaVal({ nombre: p.nombre, apellido: p.apellido, estado: p.estado }); setEditPersonaIdx(i); }} className="text-blue-400 hover:text-blue-600 text-xs font-medium">Editar</button>
+                                <button type="button" onClick={() => setPersonasOracion((prev) => prev.filter((_, j) => j !== i))} className="text-red-400 hover:text-red-600 text-xs font-medium">Quitar</button>
+                              </div>
+                            )
                           ))}
                           <PersonaOracionForm onAgregar={(p) => setPersonasOracion((prev) => [...prev, p])} />
                           <button type="button" onClick={handleGuardarPersonasOracion} disabled={guardandoPersonas || personasOracion.length === 0}
