@@ -100,7 +100,7 @@ export default function EvangelismoPage() {
   const handleAddPersona = async () => {
     if (!user || !nuevaPersona.nombre.trim() || !nuevaPersona.apellido.trim()) return;
     const { data, error } = await supabase.from("acompanamiento_evangelistico").insert({
-      discipulo_id: nuevaPersona.discipulo_id || user.id,
+      discipulo_id: nuevaPersona.discipulo_id || null,
       creado_por: user.id,
       nombre: nuevaPersona.nombre.trim(),
       apellido: nuevaPersona.apellido.trim(),

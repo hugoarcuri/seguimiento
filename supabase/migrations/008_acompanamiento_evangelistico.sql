@@ -4,7 +4,7 @@
 
 create table if not exists acompanamiento_evangelistico (
   id uuid primary key default gen_random_uuid(),
-  discipulo_id uuid not null references discipulos(id) on delete cascade,
+  discipulo_id uuid references profiles(id) on delete cascade,
   creado_por uuid not null references profiles(id),
   nombre text not null,
   apellido text not null,
