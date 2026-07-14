@@ -74,9 +74,10 @@ export default function EvangelismoPage() {
       supabase.from("personas_oracion").select("*").eq("activo", true).order("created_at", { ascending: false }),
     ]).then(([dRes, pRes, eRes, poRes]) => {
       setDiscipulos(dRes.data || []);
-      setPersonas(pRes.data || []);
+      const oracion = (poRes.data || []).map((p: any) => ({ ...p, es_oracion: true, estado: "oracion", fecha_inicio_estado: format(new Date(p.created_at), "yyyy-MM-dd"), fecha_creacion: format(new Date(p.created_at), "yyyy-MM-dd") }));
+      setPersonas([...(pRes.data || []), ...oracion]);
       setEventos(eRes.data || []);
-      setPersonasOracion(poRes.data || []);
+      setPersonasOracion(oracion);
       setLoading(false);
     });
   }, []);
@@ -131,6 +132,19 @@ export default function EvangelismoPage() {
     const p = personas.find((x) => x.id === personaId);
     if (!p) return;
 
+    // If it's a prayer contact (es_oracion), move to acompanamiento_evangelistico
+    if (p.es_oracion) {
+      const { data, error } = await supabase.from("acompanamiento_evangelistico").insert({
+        nombre: p.nombre, apellido: p.apellido, discipulo_id: p.discipulo_id || null, creado_por: user?.id, estado: nuevoEstado,
+      }).select().single();
+      if (error) { toast.error("Error: " + error.message); return; }
+      await supabase.from("personas_oracion").delete().eq("id", p.id);
+      setPersonas((prev) => prev.filter((x) => x.id !== p.id).concat(data));
+      setPersonasOracion((prev) => prev.filter((x) => x.id !== p.id));
+      toast.success(`Avanzó a ${estadosMeta[nuevoEstado]?.label}`);
+      return;
+    }
+
     const dias = diasEnEstado(p);
     if (dias < 30) {
       setShowConfirmAvanzar({ persona: p, nuevoEstado });
@@ -163,12 +177,7 @@ export default function EvangelismoPage() {
   const handleDragOver = (e: React.DragEvent) => e.preventDefault();
   const handleDrop = async (nuevoEstado: string) => {
     if (!dragItem) return;
-    if (dragItem.es_oracion) {
-      // Move from personas_oracion to acompanamiento_evangelistico
-      await handleMoverAOracion(dragItem, nuevoEstado);
-    } else {
-      await handleCambiarEstado(dragItem.id, nuevoEstado);
-    }
+    await handleCambiarEstado(dragItem.id, nuevoEstado);
     setDragItem(null);
   };
 
@@ -192,7 +201,13 @@ export default function EvangelismoPage() {
 
   const ejecutarEliminarPersona = async () => {
     if (!showConfirmEliminar) return;
-    await supabase.from("acompanamiento_evangelistico").delete().eq("id", showConfirmEliminar);
+    const p = personas.find((x) => x.id === showConfirmEliminar);
+    if (p?.es_oracion) {
+      await supabase.from("personas_oracion").delete().eq("id", showConfirmEliminar);
+      setPersonasOracion((prev) => prev.filter((x) => x.id !== showConfirmEliminar));
+    } else {
+      await supabase.from("acompanamiento_evangelistico").delete().eq("id", showConfirmEliminar);
+    }
     setPersonas((prev) => prev.filter((x) => x.id !== showConfirmEliminar));
     setSelectedPersona(null);
     setShowConfirmEliminar(null);
@@ -280,34 +295,7 @@ export default function EvangelismoPage() {
         </Card>
       )}
 
-      {/* PERSONAS POR LAS QUE ORA */}
-      {personasOracion.length > 0 && (
-        <Card className="border-blue-200 dark:border-blue-800">
-          <CardContent className="p-3 space-y-3">
-            <p className="text-xs font-semibold flex items-center gap-1 text-blue-600"><Heart className="h-3 w-3" /> Personas por las que ora ({personasOracion.length})</p>
-            {discipulos.filter((d) => personasOracion.some((p) => p.discipulo_id === d.id)).map((disc) => {
-              const items = personasOracion.filter((p) => p.discipulo_id === disc.id);
-              return (
-                <div key={disc.id}>
-                  <p className="text-[11px] font-medium text-blue-700 dark:text-blue-300 mb-1">{disc.nombre} {disc.apellido}</p>
-                  <div className="space-y-1">
-                    {items.map((p) => (
-                      <div key={p.id} className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/40 rounded-lg px-3 py-2 text-xs"
-                        draggable onDragStart={() => handleDragStart({ ...p, es_oracion: true })}
-                      >
-                        <span className="font-medium min-w-[120px]">{p.nombre} {p.apellido}</span>
-                        <span className="text-muted-foreground">{p.estado}</span>
-                        <button type="button" onClick={() => handleMoverAOracion(p)} className="text-emerald-600 hover:text-emerald-700 font-medium shrink-0 ml-auto">→ Acompañar</button>
-                        <button type="button" onClick={() => handleEliminarPersonaOracion(p.id)} className="text-red-400 hover:text-red-600 text-xs p-1">🗑</button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
-      )}
+      {/* FILTROS + VIEW TOGGLE */}
 
       {/* FILTROS + VIEW TOGGLE */}
       <div className="flex items-center gap-2">
