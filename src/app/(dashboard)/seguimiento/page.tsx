@@ -104,6 +104,17 @@ export default function SeguimientoPage() {
   const [materialLeido, setMaterialLeido] = useState("");
   const [motivosOracion, setMotivosOracion] = useState("");
   const [personasOracion, setPersonasOracion] = useState<{ nombre: string; apellido: string; estado: string }[]>([]);
+  const [guardandoPersonas, setGuardandoPersonas] = useState(false);
+  const handleGuardarPersonasOracion = async () => {
+    if (!user || !selectedId) { toast.error("Seleccioná un discípulo primero"); return; }
+    setGuardandoPersonas(true);
+    await supabase.from("personas_oracion").delete().eq("discipulo_id", selectedId);
+    for (const p of personasOracion) {
+      await supabase.from("personas_oracion").insert({ discipulo_id: selectedId, nombre: p.nombre, apellido: p.apellido, estado: p.estado });
+    }
+    setGuardandoPersonas(false);
+    toast.success("Personas guardadas");
+  };
   const [mensajeoAlguien, setMensajeoAlguien] = useState<number | undefined>(undefined);
   const [mensajeoQuien, setMensajeoQuien] = useState("");
   const [visitoAlguien, setVisitoAlguien] = useState<number | undefined>(undefined);
@@ -161,17 +172,12 @@ export default function SeguimientoPage() {
       supabase.from("reuniones").select("*").eq("discipulo_id", selectedId).order("fecha", { ascending: false }),
       supabase.from("desafios").select("*").eq("discipulo_id", selectedId).order("fecha_asignado", { ascending: false }),
       supabase.from("alertas").select("*").eq("discipulo_id", selectedId).eq("activa", true).order("created_at", { ascending: false }),
-    ]).then(([rRes, dRes, aRes]) => {
+      supabase.from("personas_oracion").select("*").eq("discipulo_id", selectedId).eq("activo", true),
+    ]).then(([rRes, dRes, aRes, pRes]) => {
       setReuniones(rRes.data || []);
       setDesafios(dRes.data || []);
       setAlertas(aRes.data || []);
-      const ultima = rRes.data?.[0];
-      if (ultima?.observaciones_generales) {
-        const m = ultima.observaciones_generales.match(/__PERSONAS_JSON__:(.+)/);
-        if (m) {
-          try { setPersonasOracion(JSON.parse(m[1])); } catch {}
-        }
-      }
+      if (pRes.data?.length) setPersonasOracion(pRes.data.map((p: any) => ({ nombre: p.nombre, apellido: p.apellido, estado: p.estado })));
     });
   }, [selectedId]);
 
@@ -197,8 +203,7 @@ export default function SeguimientoPage() {
     if (personasOracion.length > 0) {
       extras.push(`Personas por las que ora: ${personasOracion.map((p) => `${p.nombre} ${p.apellido} (${p.estado})`).join(", ")}`);
     }
-    const personasMarker = personasOracion.length > 0 ? `\n__PERSONAS_JSON__:${JSON.stringify(personasOracion)}` : "";
-    const obsFinal = [obsGenerales, ...extras].filter(Boolean).join("\n\n") + personasMarker;
+    const obsFinal = [obsGenerales, ...extras].filter(Boolean).join("\n\n");
 
     const { data: reunion } = await supabase.from("reuniones").insert({
       discipulo_id: selectedId, lider_id: user.id, fecha: today,
@@ -223,6 +228,13 @@ export default function SeguimientoPage() {
     if (desafioPersonalizado.trim()) desafiosACrear.push(desafioPersonalizado.trim());
     for (const desc of desafiosACrear) {
       await supabase.from("desafios").insert({ discipulo_id: selectedId, lider_id: user.id, descripcion: desc });
+    }
+
+    if (personasOracion.length > 0) {
+      await supabase.from("personas_oracion").delete().eq("discipulo_id", selectedId);
+      for (const p of personasOracion) {
+        await supabase.from("personas_oracion").insert({ discipulo_id: selectedId, nombre: p.nombre, apellido: p.apellido, estado: p.estado });
+      }
     }
 
     setSaved(true);
@@ -377,6 +389,9 @@ export default function SeguimientoPage() {
                             </div>
                           ))}
                           <PersonaOracionForm onAgregar={(p) => setPersonasOracion((prev) => [...prev, p])} />
+                          <button type="button" onClick={handleGuardarPersonasOracion} disabled={guardandoPersonas || personasOracion.length === 0}
+                            className="w-full h-9 rounded-lg text-sm font-medium bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                          >{guardandoPersonas ? "Guardando..." : "Guardar personas"}</button>
                         </CardContent>
                       </Card>
                     </>
