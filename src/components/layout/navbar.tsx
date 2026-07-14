@@ -13,16 +13,23 @@ import {
 import { useTheme } from "next-themes";
 import { Moon, Sun, LogOut, User, Settings } from "lucide-react";
 import Link from "next/link";
+import { useFontSize } from "@/components/font-size-provider";
 
 export function Navbar() {
   const { user, logout } = useUser();
   const { theme, setTheme } = useTheme();
+  const { scale, increase, decrease, reset } = useFontSize();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-14 items-center px-4 lg:px-6">
         <div className="flex-1" />
         <div className="flex items-center gap-2">
+          <div className="flex items-center gap-0.5 mr-1 border-r pr-2">
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-xs font-bold" onClick={decrease} title="Reducir texto">A−</Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-xs text-muted-foreground" onClick={reset} title="Restablecer tamaño">{Math.round(scale * 100)}%</Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-sm font-bold" onClick={increase} title="Aumentar texto">A+</Button>
+          </div>
           <Button
             variant="ghost"
             size="icon"
