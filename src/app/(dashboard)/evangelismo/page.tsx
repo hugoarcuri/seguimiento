@@ -100,7 +100,7 @@ export default function EvangelismoPage() {
 
   const handleAddPersona = async () => {
     if (!user || !nuevaPersona.nombre.trim() || !nuevaPersona.apellido.trim()) return;
-    const { data, error } = await supabase.from("acompanamiento_evangelistico").insert({
+    const { error } = await supabase.from("acompanamiento_evangelistico").insert({
       discipulo_id: nuevaPersona.discipulo_id || null,
       creado_por: user.id,
       nombre: nuevaPersona.nombre.trim(),
@@ -109,21 +109,16 @@ export default function EvangelismoPage() {
       edad: nuevaPersona.edad ? parseInt(nuevaPersona.edad) : null,
       observaciones: nuevaPersona.observaciones || null,
       estado: "oracion",
-    }).select().single();
-    if (error) { toast.error("Error al agregar"); return; }
-
-    await supabase.from("eventos_evangelismo").insert({
-      persona_id: data.id,
-      tipo: "cambio_estado",
-      descripcion: "Se agregó al seguimiento. Estado: Oración",
     });
+    if (error) { toast.error("Error al agregar"); console.error(error); return; }
 
-    setPersonas((prev) => [data, ...prev]);
     setShowAddDialog(false);
     setNuevaPersona({ discipulo_id: "", nombre: "", apellido: "", telefono: "", edad: "", observaciones: "" });
-    setRecienAgregadoId(data.id);
-    setTimeout(() => setRecienAgregadoId(null), 3000);
     toast.success("Persona agregada");
+
+    // Refetch list
+    const { data } = await supabase.from("acompanamiento_evangelistico").select("*").order("fecha_inicio_estado", { ascending: false });
+    if (data) { setPersonas(data); }
   };
 
   const handleCambiarEstado = async (personaId: string, nuevoEstado: string) => {
