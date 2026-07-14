@@ -116,7 +116,7 @@ export default function EvangelismoPage() {
       observaciones: nuevaPersona.observaciones || null,
       estado: "oracion",
     });
-    if (error) { toast.error("Error al agregar"); console.error(error); return; }
+    if (error) { toast.error("Error al agregar: " + error.message); console.error("INSERT ERROR", JSON.stringify(error, null, 2)); return; }
 
     setShowAddDialog(false);
     setNuevaPersona({ discipulo_id: "", nombre: "", apellido: "", telefono: "", edad: "", observaciones: "" });
