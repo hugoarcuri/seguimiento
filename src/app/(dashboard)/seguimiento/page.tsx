@@ -103,6 +103,7 @@ export default function SeguimientoPage() {
   const [mensajeoAlguien, setMensajeoAlguien] = useState<number | undefined>(undefined);
   const [visitoAlguien, setVisitoAlguien] = useState<number | undefined>(undefined);
   const [actoServicio, setActoServicio] = useState<number | undefined>(undefined);
+  const [actoServicioDesc, setActoServicioDesc] = useState("");
   const [obsGenerales, setObsGenerales] = useState("");
   const [compromisos, setCompromisos] = useState<string[]>([]);
   const [desafioPersonalizado, setDesafioPersonalizado] = useState("");
@@ -141,6 +142,7 @@ export default function SeguimientoPage() {
     setMensajeoAlguien(undefined);
     setVisitoAlguien(undefined);
     setActoServicio(undefined);
+    setActoServicioDesc("");
     setObsGenerales("");
     setCompromisos([]);
     setDesafioPersonalizado("");
@@ -173,7 +175,7 @@ export default function SeguimientoPage() {
     if (motivosOracion) extras.push(`Motivos de oración: ${motivosOracion}`);
     if (mensajeoAlguien !== undefined) extras.push(`Contactó a alguien: ${mensajeoAlguien === 1 ? "Sí" : "No"}`);
     if (visitoAlguien !== undefined) extras.push(`Visitó a alguien: ${visitoAlguien === 1 ? "Sí" : "No"}`);
-    if (actoServicio !== undefined) extras.push(`Acto de servicio: ${actoServicio === 1 ? "Sí" : "No"}`);
+    if (actoServicio !== undefined) extras.push(`Acto de servicio: ${actoServicio === 1 ? `Sí — ${actoServicioDesc || "(no especificó)"}` : "No"}`);
     const obsFinal = [obsGenerales, ...extras].filter(Boolean).join("\n\n");
 
     const { data: reunion } = await supabase.from("reuniones").insert({
@@ -360,13 +362,16 @@ export default function SeguimientoPage() {
                           <Label className="text-xs">¿Realizó algún acto de servicio?</Label>
                           <div className="flex gap-2 mt-1">
                             {["No", "Sí"].map((label, v) => (
-                              <button key={v} type="button" onClick={() => setActoServicio(v)}
+                              <button key={v} type="button" onClick={() => { setActoServicio(v); if (v === 0) setActoServicioDesc(""); }}
                                 className={`flex-1 h-9 rounded-lg text-sm font-medium transition-all ${
                                   (actoServicio ?? -1) === v ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
                                 }`}
                               >{label}</button>
                             ))}
                           </div>
+                          {actoServicio === 1 && (
+                            <Input placeholder="¿Qué hizo?" className="h-9 text-sm mt-1" value={actoServicioDesc} onChange={(e) => setActoServicioDesc(e.target.value)} />
+                          )}
                         </div>
                       </CardContent>
                     </Card>
