@@ -184,11 +184,24 @@ export default function EvangelismoPage() {
     toast.success("Persona actualizada");
   };
 
+  const [showConfirmEliminar, setShowConfirmEliminar] = useState<string | null>(null);
+
   const handleEliminarPersona = async (id: string) => {
-    if (!window.confirm("¿Estás seguro de eliminar esta persona?")) return;
-    await supabase.from("acompanamiento_evangelistico").delete().eq("id", id);
-    setPersonas((prev) => prev.filter((x) => x.id !== id));
+    setShowConfirmEliminar(id);
+  };
+
+  const ejecutarEliminarPersona = async () => {
+    if (!showConfirmEliminar) return;
+    await supabase.from("acompanamiento_evangelistico").delete().eq("id", showConfirmEliminar);
+    setPersonas((prev) => prev.filter((x) => x.id !== showConfirmEliminar));
     setSelectedPersona(null);
+    setShowConfirmEliminar(null);
+    toast.success("Persona eliminada");
+  };
+
+  const handleEliminarPersonaOracion = async (id: string) => {
+    await supabase.from("personas_oracion").delete().eq("id", id);
+    setPersonasOracion((prev) => prev.filter((x) => x.id !== id));
     toast.success("Persona eliminada");
   };
 
@@ -284,6 +297,7 @@ export default function EvangelismoPage() {
                         <span className="font-medium min-w-[120px]">{p.nombre} {p.apellido}</span>
                         <span className="text-muted-foreground">{p.estado}</span>
                         <button type="button" onClick={() => handleMoverAOracion(p)} className="text-emerald-600 hover:text-emerald-700 font-medium shrink-0 ml-auto">→ Acompañar</button>
+                        <button type="button" onClick={() => handleEliminarPersonaOracion(p.id)} className="text-red-400 hover:text-red-600 text-xs p-1">🗑</button>
                       </div>
                     ))}
                   </div>
@@ -340,6 +354,10 @@ export default function EvangelismoPage() {
                     {p.estado === "oracion" && <Button size="sm" variant="outline" className="h-7 text-xs" onClick={(e) => { e.stopPropagation(); handleCambiarEstado(p.id, "servicio"); }}>Servicio <ArrowRight className="h-3 w-3 ml-1" /></Button>}
                     {p.estado === "servicio" && <Button size="sm" variant="outline" className="h-7 text-xs" onClick={(e) => { e.stopPropagation(); handleCambiarEstado(p.id, "evangelismo"); }}>Evangelismo <ArrowRight className="h-3 w-3 ml-1" /></Button>}
                     {p.estado === "evangelismo" && <Button size="sm" variant="outline" className="h-7 text-xs" onClick={(e) => { e.stopPropagation(); handleCambiarEstado(p.id, "completado"); }}>Completar <CheckCircle2 className="h-3 w-3 ml-1" /></Button>}
+                    <span className="flex items-center gap-0.5 border-l border-muted pl-2 ml-1">
+                      <button type="button" onClick={(e) => { e.stopPropagation(); setEditPersonaForm({ nombre: p.nombre, apellido: p.apellido, telefono: p.telefono || "", edad: p.edad?.toString() || "", observaciones: p.observaciones || "" }); setShowEditDialog(p); }} className="text-blue-400 hover:text-blue-600 text-xs p-1">✏️</button>
+                      <button type="button" onClick={(e) => { e.stopPropagation(); handleEliminarPersona(p.id); }} className="text-red-400 hover:text-red-600 text-xs p-1">🗑</button>
+                    </span>
                   </div>
                 </CardContent>
               </Card>
@@ -377,6 +395,8 @@ export default function EvangelismoPage() {
                           <GripVertical className="h-3 w-3 text-muted-foreground shrink-0" />
                           <p className="text-xs font-medium truncate flex-1">{p.nombre} {p.apellido}</p>
                           <Badge variant="outline" className="text-[10px] px-1">{dias}/30d</Badge>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); setEditPersonaForm({ nombre: p.nombre, apellido: p.apellido, telefono: p.telefono || "", edad: p.edad?.toString() || "", observaciones: p.observaciones || "" }); setShowEditDialog(p); }} className="text-blue-400 hover:text-blue-600 text-[10px] p-0.5">✏️</button>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); handleEliminarPersona(p.id); }} className="text-red-400 hover:text-red-600 text-[10px] p-0.5">🗑</button>
                         </div>
                         <div className="mt-1.5 h-1 bg-muted rounded-full overflow-hidden">
                           <div className={cn("h-full rounded-full", prog >= 100 ? "bg-emerald-500" : "bg-blue-500")} style={{ width: `${prog}%` }} />
@@ -597,6 +617,18 @@ export default function EvangelismoPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEditDialog(null)}>Cancelar</Button>
             <Button onClick={handleEditarPersona}>Guardar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* CONFIRM ELIMINAR DIALOG */}
+      <Dialog open={!!showConfirmEliminar} onOpenChange={(o) => { if (!o) setShowConfirmEliminar(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>¿Eliminar persona?</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Esta acción no se puede deshacer.</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowConfirmEliminar(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={ejecutarEliminarPersona}>Eliminar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
