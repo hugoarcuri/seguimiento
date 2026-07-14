@@ -206,9 +206,10 @@ export default function EvangelismoPage() {
   };
 
   const handleMoverAOracion = async (p: any, nuevoEstado?: string) => {
-    const { data } = await supabase.from("acompanamiento_evangelistico").insert({
+    const { data, error } = await supabase.from("acompanamiento_evangelistico").insert({
       nombre: p.nombre, apellido: p.apellido, discipulo_id: p.discipulo_id || null, creado_por: user?.id, estado: nuevoEstado || "oracion",
     }).select().single();
+    if (error) { toast.error("Error al mover: " + error.message); console.error(error); return; }
     if (data) {
       setPersonas((prev) => [...prev, data]);
       await supabase.from("personas_oracion").delete().eq("id", p.id);
