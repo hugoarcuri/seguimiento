@@ -22,11 +22,19 @@ create table if not exists personas_oracion (
 
 alter table personas_oracion enable row level security;
 
-create policy "Admins gestionan personas_oracion"
+create policy "Admins todo personas_oracion"
   on personas_oracion for all
   using (public.is_admin())
   with check (public.is_admin());
 
-create policy "Discípulos ven sus personas_oracion"
+create policy "Discípulos leen sus personas_oracion"
   on personas_oracion for select
+  using (discipulo_id = auth.uid());
+
+create policy "Discípulos insertan sus personas_oracion"
+  on personas_oracion for insert
+  with check (discipulo_id = auth.uid());
+
+create policy "Discípulos eliminan sus personas_oracion"
+  on personas_oracion for delete
   using (discipulo_id = auth.uid());
