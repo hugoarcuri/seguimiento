@@ -15,10 +15,9 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const estadosMeta: Record<string, { label: string; color: string; bgColor: string; icon: any }> = {
-  oracion: { label: "Oración", color: "text-blue-600 dark:text-blue-400", bgColor: "bg-blue-100 dark:bg-blue-900/40", icon: Heart },
-  servicio: { label: "Servicio", color: "text-amber-600 dark:text-amber-400", bgColor: "bg-amber-100 dark:bg-amber-900/40", icon: Hand },
-  evangelismo: { label: "Evangelismo", color: "text-emerald-600 dark:text-emerald-400", bgColor: "bg-emerald-100 dark:bg-emerald-900/40", icon: Book },
-  completado: { label: "Completado", color: "text-green-600", bgColor: "bg-green-100", icon: CheckCircle2 },
+  oracion_salvacion: { label: "Oración por salvación", color: "text-blue-600 dark:text-blue-400", bgColor: "bg-blue-100 dark:bg-blue-900/40", icon: Heart },
+  actos_servicio: { label: "Actos de servicio", color: "text-amber-600 dark:text-amber-400", bgColor: "bg-amber-100 dark:bg-amber-900/40", icon: Hand },
+  predicacion_evangelio: { label: "Predicación del Evangelio", color: "text-emerald-600 dark:text-emerald-400", bgColor: "bg-emerald-100 dark:bg-emerald-900/40", icon: Book },
 };
 
 const eventosEvangelismo = [
@@ -74,7 +73,7 @@ export default function EvangelismoPage() {
       supabase.from("personas_oracion").select("*").eq("activo", true).order("created_at", { ascending: false }),
     ]).then(([dRes, pRes, eRes, poRes]) => {
       setDiscipulos(dRes.data || []);
-      const oracion = (poRes.data || []).map((p: any) => ({ ...p, es_oracion: true, estado: "oracion", fecha_inicio_estado: format(new Date(p.created_at), "yyyy-MM-dd"), fecha_creacion: format(new Date(p.created_at), "yyyy-MM-dd") }));
+      const oracion = (poRes.data || []).map((p: any) => ({ ...p, es_oracion: true, estado: "oracion_salvacion", fecha_inicio_estado: format(new Date(p.created_at), "yyyy-MM-dd"), fecha_creacion: format(new Date(p.created_at), "yyyy-MM-dd") }));
       setPersonas([...(pRes.data || []), ...oracion]);
       setEventos(eRes.data || []);
       setPersonasOracion(oracion);
@@ -96,13 +95,12 @@ export default function EvangelismoPage() {
   const diasEnEstado = useCallback((p: any) => differenceInDays(new Date(), new Date(p.fecha_inicio_estado)), []);
   const progresoEstado = useCallback((p: any) => Math.min(100, Math.round((diasEnEstado(p) / 30) * 100)), [diasEnEstado]);
 
-  const alertas = personas.filter((p) => diasEnEstado(p) >= 30).filter((p) => p.estado !== "completado");
+  const alertas = personas.filter((p) => diasEnEstado(p) >= 30);
 
   const counts = {
-    oracion: personas.filter((p) => p.estado === "oracion").length,
-    servicio: personas.filter((p) => p.estado === "servicio").length,
-    evangelismo: personas.filter((p) => p.estado === "evangelismo").length,
-    completado: personas.filter((p) => p.estado === "completado").length,
+    oracion_salvacion: personas.filter((p) => p.estado === "oracion_salvacion").length,
+    actos_servicio: personas.filter((p) => p.estado === "actos_servicio").length,
+    predicacion_evangelio: personas.filter((p) => p.estado === "predicacion_evangelio").length,
   };
 
   const handleAddPersona = async () => {
@@ -115,7 +113,7 @@ export default function EvangelismoPage() {
       telefono: nuevaPersona.telefono || null,
       edad: nuevaPersona.edad ? parseInt(nuevaPersona.edad) : null,
       observaciones: nuevaPersona.observaciones || null,
-      estado: "oracion",
+      estado: "oracion_salvacion",
     });
     if (error) { toast.error("Error al agregar: " + error.message); console.error("INSERT ERROR", JSON.stringify(error, null, 2)); return; }
 
@@ -272,12 +270,12 @@ export default function EvangelismoPage() {
             <p className="text-xs font-semibold flex items-center gap-1 text-amber-600"><AlertTriangle className="h-3 w-3" /> Alertas automáticas</p>
             {alertas.map((a) => {
               const meta = estadosMeta[a.estado];
-              const siguiente = a.estado === "oracion" ? "Servicio" : a.estado === "servicio" ? "Evangelismo" : "Completado";
-              const msj = a.estado === "oracion"
-                ? "Ya finalizó el tiempo de oración. Se recomienda comenzar la etapa de Servicio."
-                : a.estado === "servicio"
-                ? "Ya finalizó la etapa de Servicio. Se recomienda compartir el Evangelio."
-                : "Persona lista para completar.";
+              const siguiente = a.estado === "oracion_salvacion" ? "Actos de servicio" : a.estado === "actos_servicio" ? "Predicación del Evangelio" : "";
+              const msj = a.estado === "oracion_salvacion"
+                ? "Ya finalizó el tiempo de oración. Se recomienda comenzar con actos de servicio."
+                : a.estado === "actos_servicio"
+                ? "Ya finalizó la etapa de servicio. Se recomienda compartir el Evangelio."
+                : "Persona lista para siguiente etapa.";
               return (
                 <div key={a.id} className="flex items-start gap-2 text-sm bg-amber-50 dark:bg-amber-950/30 rounded-lg p-2">
                   <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
@@ -285,7 +283,7 @@ export default function EvangelismoPage() {
                     <p className="font-medium">{a.nombre} {a.apellido}</p>
                     <p className="text-xs text-muted-foreground">{msj}</p>
                   </div>
-                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleCambiarEstado(a.id, a.estado === "oracion" ? "servicio" : a.estado === "servicio" ? "evangelismo" : "completado")}>
+                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleCambiarEstado(a.id, a.estado === "oracion_salvacion" ? "actos_servicio" : "predicacion_evangelio")}>
                     Avanzar <ArrowRight className="h-3 w-3 ml-1" />
                   </Button>
                 </div>
@@ -341,9 +339,13 @@ export default function EvangelismoPage() {
                     </div>
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    {p.estado === "oracion" && <Button size="sm" variant="outline" className="h-7 text-xs" onClick={(e) => { e.stopPropagation(); handleCambiarEstado(p.id, "servicio"); }}>Servicio <ArrowRight className="h-3 w-3 ml-1" /></Button>}
-                    {p.estado === "servicio" && <Button size="sm" variant="outline" className="h-7 text-xs" onClick={(e) => { e.stopPropagation(); handleCambiarEstado(p.id, "evangelismo"); }}>Evangelismo <ArrowRight className="h-3 w-3 ml-1" /></Button>}
-                    {p.estado === "evangelismo" && <Button size="sm" variant="outline" className="h-7 text-xs" onClick={(e) => { e.stopPropagation(); handleCambiarEstado(p.id, "completado"); }}>Completar <CheckCircle2 className="h-3 w-3 ml-1" /></Button>}
+                    <span className="flex items-center gap-0.5">
+                      {["actos_servicio", "predicacion_evangelio"].includes(p.estado) && (
+                        <button type="button" onClick={(e) => { e.stopPropagation(); handleCambiarEstado(p.id, p.estado === "actos_servicio" ? "oracion_salvacion" : "actos_servicio"); }} className="text-muted-foreground hover:text-foreground text-xs p-1" title="Regresar">←</button>
+                      )}
+                    </span>
+                    {p.estado === "oracion_salvacion" && <Button size="sm" variant="outline" className="h-7 text-xs" onClick={(e) => { e.stopPropagation(); handleCambiarEstado(p.id, "actos_servicio"); }}>Actos de servicio <ArrowRight className="h-3 w-3 ml-1" /></Button>}
+                    {p.estado === "actos_servicio" && <Button size="sm" variant="outline" className="h-7 text-xs" onClick={(e) => { e.stopPropagation(); handleCambiarEstado(p.id, "predicacion_evangelio"); }}>Predicar Evangelio <ArrowRight className="h-3 w-3 ml-1" /></Button>}
                     <span className="flex items-center gap-0.5 border-l border-muted pl-2 ml-1">
                       <button type="button" onClick={(e) => { e.stopPropagation(); setEditPersonaForm({ nombre: p.nombre, apellido: p.apellido, telefono: p.telefono || "", edad: p.edad?.toString() || "", observaciones: p.observaciones || "" }); setShowEditDialog(p); }} className="text-blue-400 hover:text-blue-600 text-xs p-1">✏️</button>
                       <button type="button" onClick={(e) => { e.stopPropagation(); handleEliminarPersona(p.id); }} className="text-red-400 hover:text-red-600 text-xs p-1">🗑</button>
@@ -359,7 +361,7 @@ export default function EvangelismoPage() {
       {/* KANBAN VIEW */}
       {viewMode === "kanban" && (
         <div className="grid gap-3 sm:grid-cols-3">
-          {["oracion", "servicio", "evangelismo"].map((estado) => {
+          {["oracion_salvacion", "actos_servicio", "predicacion_evangelio"].map((estado) => {
             const meta = estadosMeta[estado];
             const Icon = meta?.icon || Users;
             const items = filteredPersonas.filter((p) => p.estado === estado);
@@ -496,9 +498,10 @@ export default function EvangelismoPage() {
 
                   {/* PROGRESO GENERAL */}
                   <div className="space-y-1 text-xs">
-                    {["oracion", "servicio", "evangelismo", "completado"].map((est) => {
+                    {["oracion_salvacion", "actos_servicio", "predicacion_evangelio"].map((est) => {
                       const m = estadosMeta[est];
-                      const completado = est === "oracion" || (p.estado !== "oracion" && ["servicio", "evangelismo", "completado"].includes(est));
+                      const estados = ["oracion_salvacion", "actos_servicio", "predicacion_evangelio"];
+                      const completado = estados.indexOf(est) < estados.indexOf(p.estado);
                       const activo = p.estado === est;
                       return (
                         <div key={est} className="flex items-center gap-2">
@@ -511,9 +514,9 @@ export default function EvangelismoPage() {
 
                   {/* ACCIONES */}
                   <div className="flex gap-2">
-                    {p.estado === "oracion" && <Button size="sm" className="flex-1" onClick={() => { handleCambiarEstado(p.id, "servicio"); setSelectedPersona(null); }}>Pasar a Servicio <ArrowRight className="h-3 w-3 ml-1" /></Button>}
-                    {p.estado === "servicio" && <Button size="sm" className="flex-1" onClick={() => { handleCambiarEstado(p.id, "evangelismo"); setSelectedPersona(null); }}>Comenzar Evangelismo <ArrowRight className="h-3 w-3 ml-1" /></Button>}
-                    {p.estado === "evangelismo" && <Button size="sm" variant="outline" className="flex-1" onClick={() => { handleCambiarEstado(p.id, "completado"); setSelectedPersona(null); }}>Completar proceso <CheckCircle2 className="h-3 w-3 ml-1" /></Button>}
+                    {p.estado === "oracion_salvacion" && <Button size="sm" className="flex-1" onClick={() => { handleCambiarEstado(p.id, "actos_servicio"); setSelectedPersona(null); }}>Actos de servicio <ArrowRight className="h-3 w-3 ml-1" /></Button>}
+                    {p.estado === "actos_servicio" && <><Button size="sm" variant="outline" onClick={() => { handleCambiarEstado(p.id, "oracion_salvacion"); setSelectedPersona(null); }} className="px-2">←</Button><Button size="sm" className="flex-1" onClick={() => { handleCambiarEstado(p.id, "predicacion_evangelio"); setSelectedPersona(null); }}>Predicar Evangelio <ArrowRight className="h-3 w-3 ml-1" /></Button></>}
+                    {p.estado === "predicacion_evangelio" && <><Button size="sm" variant="outline" onClick={() => { handleCambiarEstado(p.id, "actos_servicio"); setSelectedPersona(null); }} className="px-2">←</Button></>}
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" className="flex-1" onClick={() => { setEditPersonaForm({ nombre: p.nombre, apellido: p.apellido, telefono: p.telefono || "", edad: p.edad?.toString() || "", observaciones: p.observaciones || "" }); setShowEditDialog(p); }}>Editar</Button>
@@ -521,7 +524,7 @@ export default function EvangelismoPage() {
                   </div>
 
                   {/* REGISTRAR ACCIONES */}
-                  {p.estado === "servicio" && (
+                  {p.estado === "actos_servicio" && (
                     <details>
                       <summary className="text-xs font-medium cursor-pointer text-muted-foreground">Registrar acto de servicio</summary>
                       <div className="mt-2 flex flex-wrap gap-1">
@@ -535,7 +538,7 @@ export default function EvangelismoPage() {
                     </details>
                   )}
 
-                  {p.estado === "evangelismo" && (
+                  {p.estado === "predicacion_evangelio" && (
                     <details>
                       <summary className="text-xs font-medium cursor-pointer text-muted-foreground">Registrar evento de evangelismo</summary>
                       <div className="mt-2 flex flex-wrap gap-1">
