@@ -12,6 +12,7 @@ import { Loader2, CheckCircle2, Book, Heart, Users, Target, Sparkles, Hand, Grad
 import { format, parseISO } from "date-fns";
 import Link from "next/link";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 
 const areasMeta: Record<number, { label: string; icon: any; color: string }> = {
@@ -292,6 +293,43 @@ export default function SeguimientoPage() {
     return Object.entries(byDate).map(([fecha, areas]) => ({
       fecha, ...Object.fromEntries(Object.entries(areas).map(([aid, vals]) => [aid, Math.round((vals as number[]).reduce((a, b) => a + b, 0) / (vals as number[]).length)])),
     })).sort((a, b) => a.fecha.localeCompare(b.fecha)).slice(-12);
+  };
+
+  const monthlyData = () => {
+    const byMonth: Record<string, Record<number, number[]>> = {};
+    const allEvs = saved ? allEvalData : evaluaciones;
+    allEvs.forEach((ev: any) => {
+      if (ev.valor === null) return;
+      const ind = indicadores.find((i) => i.id === ev.indicador_id);
+      if (!ind) return;
+      const fecha = ev.reunion_id ? reuniones.find((r) => r.id === ev.reunion_id)?.fecha : format(new Date(), "yyyy-MM-dd");
+      if (!fecha) return;
+      const mes = fecha.slice(0, 7);
+      if (!byMonth[mes]) byMonth[mes] = {};
+      if (!byMonth[mes][ind.area_id]) byMonth[mes][ind.area_id] = [];
+      byMonth[mes][ind.area_id].push(ev.valor);
+    });
+    return Object.entries(byMonth).map(([mes, areas]) => ({
+      mes, ...Object.fromEntries(Object.entries(areas).map(([aid, vals]) => [aid, Math.round((vals as number[]).reduce((a, b) => a + b, 0) / (vals as number[]).length * 20)])),
+    })).sort((a, b) => a.mes.localeCompare(b.mes)).slice(-6);
+  };
+
+  const weeklyDetalle = () => {
+    const byDate: Record<string, Record<number, number>> = {};
+    const allEvs = saved ? allEvalData : evaluaciones;
+    allEvs.forEach((ev: any) => {
+      if (ev.valor === null) return;
+      const ind = indicadores.find((i) => i.id === ev.indicador_id);
+      if (!ind || (ind.area_id !== 1 && ind.area_id !== 2)) return;
+      const fecha = ev.reunion_id ? reuniones.find((r) => r.id === ev.reunion_id)?.fecha : format(new Date(), "yyyy-MM-dd");
+      if (!fecha) return;
+      if (!byDate[fecha]) byDate[fecha] = {};
+      byDate[fecha][ev.indicador_id] = (ev.valor / 5) * 100;
+    });
+    const indicadoresDev = indicadores.filter((i) => i.area_id === 1 || i.area_id === 2);
+    return Object.entries(byDate).sort((a, b) => a[0].localeCompare(b[0])).slice(-8).map(([fecha, vals]) => ({
+      fecha, ...Object.fromEntries(indicadoresDev.map((ind) => [ind.nombre, vals[ind.id] ?? null])),
+    }));
   };
 
   if (loading) return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -677,6 +715,69 @@ export default function SeguimientoPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* MENSUAL */}
+              {(() => { const md = monthlyData(); if (md.length === 0) return null;
+                return (
+                  <Card>
+                    <CardHeader className="p-3 pb-0"><CardTitle className="text-sm">Resumen Mensual</CardTitle></CardHeader>
+                    <CardContent className="p-3 overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead><tr className="border-b text-muted-foreground">
+                          <th className="text-left py-1 pr-2">Mes</th>
+                          {areas.map((a) => <th key={a.id} className="text-center py-1 px-1">{a.nombre}</th>)}
+                        </tr></thead>
+                        <tbody>
+                          {md.map((row: any) => (
+                            <tr key={row.mes} className="border-b last:border-0">
+                              <td className="py-1.5 pr-2 font-medium whitespace-nowrap">{format(parseISO(row.mes + "-01"), "MMMM yyyy")}</td>
+                              {areas.map((a) => {
+                                const v = row[a.id];
+                                return <td key={a.id} className="text-center py-1.5 px-1">
+                                  <span className={cn("inline-block w-6 h-6 rounded-full text-[10px] font-bold leading-6", v >= 70 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : v >= 40 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400" : "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400")}>{v ?? "-"}</span>
+                                </td>;
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </CardContent>
+                  </Card>
+                );
+              })()}
+
+              {/* DETALLE SEMANAL - VIDA DEVOCIONAL */}
+              {(() => { const wd = weeklyDetalle(); if (wd.length === 0) return null;
+                const indDev = indicadores.filter((i) => i.area_id === 1 || i.area_id === 2);
+                return (
+                  <Card>
+                    <CardHeader className="p-3 pb-0"><CardTitle className="text-sm">Detalle Semanal — Vida Devocional</CardTitle></CardHeader>
+                    <CardContent className="p-3 overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead><tr className="border-b text-muted-foreground">
+                          <th className="text-left py-1 pr-2">Semana</th>
+                          {indDev.map((ind) => <th key={ind.id} className="text-center py-1 px-1 min-w-[70px]">{ind.nombre}</th>)}
+                        </tr></thead>
+                        <tbody>
+                          {wd.slice(-8).map((row: any) => (
+                            <tr key={row.fecha} className="border-b last:border-0">
+                              <td className="py-1.5 pr-2 font-medium whitespace-nowrap">{format(parseISO(row.fecha), "dd/MM")}</td>
+                              {indDev.map((ind) => {
+                                const v = row[ind.nombre];
+                                return <td key={ind.id} className="text-center py-1.5 px-1">
+                                  {v !== null && v !== undefined ? (
+                                    <span className={cn("inline-block w-6 h-6 rounded-full text-[10px] font-bold leading-6", v >= 80 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : v >= 50 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400" : "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400")}>{v}</span>
+                                  ) : <span className="text-muted-foreground">-</span>}
+                                </td>;
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </CardContent>
+                  </Card>
+                );
+              })()}
 
               {/* FORTALEZAS + DEBILIDADES + ALERTAS */}
               <div className="grid gap-3 sm:grid-cols-3">
