@@ -23,13 +23,6 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -37,7 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Search, MoreHorizontal, Edit, Trash2, Eye, UserPlus, Filter } from "lucide-react";
+import { Plus, Search, Edit, Trash2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import type { Discipulo, Etapa } from "@/types/database";
 
@@ -161,16 +154,18 @@ export function DiscipulosClient({ discipulos, etapas }: DiscipulosClientProps) 
                 filtered.map((discipulo) => (
                   <TableRow key={discipulo.id}>
                     <TableCell>
-                      <div>
-                        <p className="font-medium">
-                          {discipulo.apellido}, {discipulo.nombre}
-                        </p>
-                        {discipulo.email && (
-                          <p className="text-xs text-muted-foreground">
-                            {discipulo.email}
+                      <Link href={`/discipulos/${discipulo.id}`}>
+                        <div className="cursor-pointer hover:underline">
+                          <p className="font-medium">
+                            {discipulo.apellido}, {discipulo.nombre}
                           </p>
-                        )}
-                      </div>
+                          {discipulo.email && (
+                            <p className="text-xs text-muted-foreground">
+                              {discipulo.email}
+                            </p>
+                          )}
+                        </div>
+                      </Link>
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary">
@@ -199,37 +194,10 @@ export function DiscipulosClient({ discipulos, etapas }: DiscipulosClientProps) 
                      </TableCell>
                      <TableCell>{discipulo.telefono || "—"}</TableCell>
                     <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger
-                          render={
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          }
-                        />
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => router.push(`/discipulos/${discipulo.id}`)}
-                          >
-                            <Eye className="mr-2 h-4 w-4" />
-                            Ver
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => router.push(`/discipulos/editar?id=${discipulo.id}`)}
-                          >
-                            <Edit className="mr-2 h-4 w-4" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() => setDeleteDialog(discipulo.id)}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Eliminar
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <div className="flex items-center gap-1">
+                        <button type="button" onClick={() => router.push(`/discipulos/editar?id=${discipulo.id}`)} className="text-blue-400 hover:text-blue-600 p-1"><Edit className="h-4 w-4" /></button>
+                        <button type="button" onClick={() => setDeleteDialog(discipulo.id)} className="text-red-400 hover:text-red-600 p-1"><Trash2 className="h-4 w-4" /></button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
