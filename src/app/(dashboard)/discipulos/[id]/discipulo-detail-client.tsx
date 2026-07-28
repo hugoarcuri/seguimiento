@@ -63,7 +63,7 @@ export function DiscipuloDetailClient({
           </div>
         </div>
         <Link
-          href={`/discipulos/${discipulo.id}/editar`}
+          href={`/discipulos/editar?id=${discipulo.id}`}
           className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/80 h-8 gap-1.5 px-2.5 text-sm font-medium"
         >
           <Edit className="h-4 w-4" />
