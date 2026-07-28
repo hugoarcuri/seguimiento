@@ -4,10 +4,20 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { DiscipuloDetailClient } from "./discipulo-detail-client";
+import type { Discipulo, Etapa, Encuentro, Oracion, Tarea, Timeline } from "@/types/database";
+
+interface WrapperData {
+  discipulo: Discipulo;
+  etapas: Etapa[];
+  encuentros: Encuentro[];
+  oraciones: Oracion[];
+  tareas: Tarea[];
+  timeline: Timeline[];
+}
 
 export function DiscipuloDetailWrapper() {
   const { id } = useParams<{ id: string }>();
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<WrapperData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

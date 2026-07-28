@@ -43,9 +43,10 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import type { Encuentro } from "@/types/database";
 
 interface EncuentrosClientProps {
-  encuentros: any[];
+  encuentros: (Encuentro & { discipulos?: { nombre: string; apellido: string } })[];
   discipulos: Array<{ id: string; nombre: string; apellido: string }>;
 }
 
@@ -55,7 +56,7 @@ export function EncuentrosClient({
 }: EncuentrosClientProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<any>(null);
+  const [editing, setEditing] = useState<Encuentro | null>(null);
 
   const form = useForm<EncuentroInput>({
     resolver: zodResolver(encuentroSchema),
@@ -67,7 +68,7 @@ export function EncuentrosClient({
     setOpen(true);
   };
 
-  const openEdit = (encuentro: any) => {
+  const openEdit = (encuentro: Encuentro & { discipulos?: { nombre: string; apellido: string } }) => {
     setEditing(encuentro);
     form.reset({
       discipulo_id: encuentro.discipulo_id,
@@ -132,7 +133,7 @@ export function EncuentrosClient({
                 <Label>Discípulo *</Label>
                   <Select
                     value={form.watch("discipulo_id") || undefined}
-                    onValueChange={(value: any) => form.setValue("discipulo_id", value ?? "")}
+                    onValueChange={(value) => form.setValue("discipulo_id", value?.toString() ?? "")}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar discípulo" />

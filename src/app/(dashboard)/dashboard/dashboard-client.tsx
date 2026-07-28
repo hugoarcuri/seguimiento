@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, UserPlus, TrendingUp, CalendarCheck, Church, AlertCircle, Cake, BookOpen, CheckCircle2 } from "lucide-react";
+import { Users, UserPlus, TrendingUp, CalendarCheck, Church, AlertCircle, Cake } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 
 const COLORS = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
@@ -14,7 +14,7 @@ interface DiscipuloBasico {
   id: string;
   nombre: string;
   apellido: string;
-  fecha_nacimiento: string;
+  fecha_nacimiento?: string;
   etapa_id: number;
 }
 
@@ -212,7 +212,8 @@ export function DashboardClient({
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {proximosCumples.map((d: any) => {
+                  {proximosCumples.map((d) => {
+                    if (!d.fecha_nacimiento) return null;
                     const nac = new Date(d.fecha_nacimiento);
                     const cumple = new Date(new Date().getFullYear(), nac.getMonth(), nac.getDate());
                     return (

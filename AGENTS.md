@@ -1,5 +1,9 @@
 # Agents
 
+## Always commit after changes
+
+Después de cada cambio en el código, hacer commit automáticamente con un mensaje descriptivo en español.
+
 ## Commands
 
 - `npm run dev` - Start development server

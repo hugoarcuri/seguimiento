@@ -33,7 +33,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 
 interface OracionClientProps {
-  oraciones: any[];
+  oraciones: Array<{ id: string; discipulo_id: string; pedido: string; respuesta?: string; estado: string; fecha: string; discipulos?: { nombre: string; apellido: string } }>;
   discipulos: Array<{ id: string; nombre: string; apellido: string }>;
 }
 
@@ -113,7 +113,7 @@ export function OracionClient({ oraciones, discipulos }: OracionClientProps) {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label>Discípulo *</Label>
-                <Select onValueChange={(v: any) => setDiscipuloId(v ?? "")} required>
+                 <Select onValueChange={(v) => setDiscipuloId(v?.toString() ?? "")} required>
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar discípulo" />
                   </SelectTrigger>

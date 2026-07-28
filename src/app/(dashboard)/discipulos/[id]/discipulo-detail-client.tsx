@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -11,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Edit, Calendar, Church, BookOpen, Clock } from "lucide-react";
+import { ArrowLeft, Edit } from "lucide-react";
 import { format } from "date-fns";
 import type { Discipulo, Encuentro, Oracion, Tarea, Timeline, Etapa } from "@/types/database";
 

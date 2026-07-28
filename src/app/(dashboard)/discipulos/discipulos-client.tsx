@@ -30,9 +30,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Search, Edit, Trash2, UserPlus } from "lucide-react";
+import { Search, Edit, Trash2, UserPlus, Upload } from "lucide-react";
 import { toast } from "sonner";
 import type { Discipulo, Etapa } from "@/types/database";
+import { ImportarDiscipulos } from "./importar-discipulos";
 
 const estadoColors: Record<string, string> = {
   activo: "bg-green-500",
@@ -70,7 +71,9 @@ export function DiscipulosClient({ discipulos, etapas }: DiscipulosClientProps) 
     const { error } = await supabase.from("discipulos").delete().eq("id", id);
 
     if (error) {
-      toast.error("Error al eliminar discípulo");
+      toast.error(error.message === "new row violates row-level security policy for table \"discipulos\""
+        ? "Solo los administradores pueden eliminar discípulos"
+        : `Error al eliminar: ${error.message}`);
     } else {
       toast.success("Discípulo eliminado");
       setDeleteDialog(null);
@@ -94,6 +97,7 @@ export function DiscipulosClient({ discipulos, etapas }: DiscipulosClientProps) 
           <UserPlus className="h-4 w-4" />
           Nuevo Discípulo
         </Link>
+        <ImportarDiscipulos etapas={etapas} />
       </div>
 
       <Card>

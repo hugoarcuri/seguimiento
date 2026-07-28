@@ -17,12 +17,11 @@ const FontSizeContext = createContext<FontSizeContextType>({
 });
 
 export function FontSizeProvider({ children }: { children: ReactNode }) {
-  const [scale, setScale] = useState(1);
-
-  useEffect(() => {
+  const [scale, setScale] = useState(() => {
+    if (typeof window === "undefined") return 1;
     const stored = localStorage.getItem("font-scale");
-    if (stored) setScale(parseFloat(stored));
-  }, []);
+    return stored ? parseFloat(stored) : 1;
+  });
 
   useEffect(() => {
     localStorage.setItem("font-scale", scale.toString());

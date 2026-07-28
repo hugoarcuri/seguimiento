@@ -3,10 +3,13 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { OracionClient } from "./oracion-client";
+import type { Oracion } from "@/types/database";
+
+type OracionConDiscipulo = Oracion & { discipulos?: { nombre: string; apellido: string } };
 
 export default function OracionPage() {
-  const [oraciones, setOraciones] = useState<any[]>([]);
-  const [discipulos, setDiscipulos] = useState<any[]>([]);
+  const [oraciones, setOraciones] = useState<OracionConDiscipulo[]>([]);
+  const [discipulos, setDiscipulos] = useState<Array<{ id: string; nombre: string; apellido: string }>>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

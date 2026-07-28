@@ -46,6 +46,7 @@ export function DiscipuloForm({
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<DiscipuloInput>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(discipuloSchema) as any,
     defaultValues: initialData || {
       etapa_id: 1,
@@ -127,7 +128,7 @@ export function DiscipuloForm({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="sexo" className="text-xs">Sexo</Label>
-              <Select onValueChange={(v: any) => setValue("sexo", v)} defaultValue={initialData?.sexo || undefined}>
+              <Select onValueChange={(v) => setValue("sexo", (v?.toString() ?? "M") as "M" | "F")} defaultValue={initialData?.sexo || undefined}>
                 <SelectTrigger className={inputClass}><SelectValue placeholder="—" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="M">Masculino</SelectItem>
@@ -167,7 +168,7 @@ export function DiscipuloForm({
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs flex items-center gap-1"><Target className="h-3 w-3" /> Etapa</Label>
-              <Select onValueChange={(v: any) => setValue("etapa_id", parseInt(v ?? "1"))} defaultValue={String(initialData?.etapa_id || 1)}>
+              <Select onValueChange={(v) => setValue("etapa_id", parseInt(v?.toString() ?? "1"))} defaultValue={String(initialData?.etapa_id || 1)}>
                 <SelectTrigger className={inputClass}><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {etapas.map((etapa) => (
@@ -178,7 +179,7 @@ export function DiscipuloForm({
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs flex items-center gap-1"><Activity className="h-3 w-3" /> Estado</Label>
-              <Select onValueChange={(v: any) => setValue("estado", v)} defaultValue={initialData?.estado || "activo"}>
+              <Select onValueChange={(v) => setValue("estado", (v?.toString() ?? "activo") as "activo" | "pausado" | "completado" | "retirado")} defaultValue={initialData?.estado || "activo"}>
                 <SelectTrigger className={inputClass}><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="activo">Activo</SelectItem>

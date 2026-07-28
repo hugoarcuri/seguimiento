@@ -3,10 +3,13 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { EncuentrosClient } from "./encuentros-client";
+import type { Encuentro } from "@/types/database";
+
+type EncuentroConDiscipulo = Encuentro & { discipulos?: { nombre: string; apellido: string } };
 
 export default function EncuentrosPage() {
-  const [encuentros, setEncuentros] = useState<any[]>([]);
-  const [discipulos, setDiscipulos] = useState<any[]>([]);
+  const [encuentros, setEncuentros] = useState<EncuentroConDiscipulo[]>([]);
+  const [discipulos, setDiscipulos] = useState<Array<{ id: string; nombre: string; apellido: string }>>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

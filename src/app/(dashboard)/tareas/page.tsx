@@ -20,7 +20,6 @@ import {
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -31,7 +30,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Table,
@@ -67,13 +65,19 @@ const formatDate = (iso: string | null | undefined) => {
   return `${d}/${m}/${y}`;
 };
 
-const estadoConfig: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; label: string; icon: any }> = {
+interface EstadoConfig {
+  variant: "default" | "secondary" | "destructive" | "outline";
+  label: string;
+  icon: typeof Clock;
+}
+
+const estadoConfig: Record<string, EstadoConfig> = {
   pendiente: { variant: "secondary", label: "Pendiente", icon: Clock },
   completada: { variant: "default", label: "Completada", icon: CheckCircle2 },
   vencida: { variant: "destructive", label: "Vencida", icon: AlertTriangle },
 };
 
-const materialTipoIcon: Record<string, any> = {
+const materialTipoIcon: Record<string, typeof BookOpen> = {
   libro: BookOpen, pdf: FileText, video: Film, audio: Headphones, link: Link2, nota: StickyNote,
 };
 
@@ -119,13 +123,14 @@ export default function TareasPage() {
       supabase.from("materiales").select("*, etapas:etapa_id(nombre)").order("created_at", { ascending: false }),
       supabase.from("etapas").select("*").order("orden", { ascending: true }),
     ]);
-    setTareas((tareasRes.data as any) || []);
+    setTareas((tareasRes.data as (Tarea & { discipulo?: Discipulo })[]) || []);
     setDiscipulos(discipulosRes.data || []);
-    setMateriales((matRes.data as any) || []);
+    setMateriales((matRes.data as (Material & { etapas?: { nombre: string } })[]) || []);
     setEtapas(etapasRes.data || []);
     setLoading(false);
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchData() }, []);
 
   const openCreate = () => {
@@ -193,7 +198,7 @@ export default function TareasPage() {
     setMatSubmitting(true);
     const { data: { user: authUser } } = await supabase.auth.getUser();
     if (!authUser) { toast.error("Debés iniciar sesión"); setMatSubmitting(false); return }
-    const payload: any = { titulo: matForm.titulo, tipo: matForm.tipo, creado_por: authUser.id };
+    const payload: Record<string, string | number | null> = { titulo: matForm.titulo, tipo: matForm.tipo, creado_por: authUser.id };
     if (matForm.descripcion) payload.descripcion = matForm.descripcion;
     if (matForm.url) payload.url = matForm.url;
     if (matForm.etapa_id) payload.etapa_id = parseInt(matForm.etapa_id);
@@ -364,7 +369,7 @@ export default function TareasPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Tipo</Label>
-                <Select onValueChange={(v: any) => setMatForm({ ...matForm, tipo: v })} value={matForm.tipo}>
+                 <Select onValueChange={(v) => setMatForm({ ...matForm, tipo: v?.toString() ?? "" })} value={matForm.tipo}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {Object.entries(materialTipoLabel).map(([k, v]) => (
@@ -375,7 +380,7 @@ export default function TareasPage() {
               </div>
               <div className="space-y-2">
                 <Label>Etapa</Label>
-                <Select onValueChange={(v: any) => setMatForm({ ...matForm, etapa_id: v ?? "" })} value={matForm.etapa_id || undefined}>
+                 <Select onValueChange={(v) => setMatForm({ ...matForm, etapa_id: v?.toString() ?? "" })} value={matForm.etapa_id || undefined}>
                   <SelectTrigger><SelectValue placeholder="Sin etapa" /></SelectTrigger>
                   <SelectContent>
                     {etapas.map((etapa) => (
@@ -413,7 +418,7 @@ export default function TareasPage() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label>Discípulo</Label>
-              <Select value={form.watch("discipulo_id") || undefined} onValueChange={(v: any) => form.setValue("discipulo_id", v ?? "")}>
+              <Select value={form.watch("discipulo_id") || undefined} onValueChange={(v) => form.setValue("discipulo_id", v?.toString() ?? "")}>
                 <SelectTrigger><SelectValue placeholder="Seleccionar discípulo" /></SelectTrigger>
                 <SelectContent>
                   {discipulos.map((d) => (
@@ -435,7 +440,7 @@ export default function TareasPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Tipo</Label>
-                <Select onValueChange={(v: any) => form.setValue("tipo", v)} value={form.watch("tipo")}>
+                 <Select onValueChange={(v) => form.setValue("tipo", (v?.toString() ?? "") as "lectura" | "memorizacion" | "preguntas" | "practica")} value={form.watch("tipo")}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {Object.entries(tipoLabels).map(([k, v]) => (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,13 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 
-const areasMeta: Record<number, { label: string; icon: any; color: string }> = {
+interface AreaMeta {
+  label: string;
+  icon: typeof Book;
+  color: string;
+}
+
+const areasMeta: Record<number, AreaMeta> = {
   1: { label: "Vida Devocional", icon: Book, color: "hsl(var(--chart-1))" },
   2: { label: "Relación con Dios", icon: Heart, color: "hsl(var(--chart-2))" },
   3: { label: "Carácter Cristiano", icon: Sparkles, color: "hsl(var(--chart-3))" },
@@ -80,28 +86,85 @@ const desafiosPredefinidos = [
 
 const ministerios = ["Club Bíblico", "Escuela Dominical", "JH", "Enfoque", "Alabanza"];
 
+interface SupabaseUser {
+  id: string;
+  email?: string;
+  rol?: string;
+}
+
+interface SupabaseDiscipulo {
+  id: string;
+  nombre: string;
+  apellido: string;
+  etapa_id: number;
+  etapas?: { nombre: string };
+}
+
+interface SupabaseArea {
+  id: number;
+  nombre: string;
+  orden: number;
+}
+
+interface SupabaseIndicador {
+  id: number;
+  area_id: number;
+  nombre: string;
+  orden: number;
+}
+
+interface SupabaseEvaluacion {
+  id?: string;
+  reunion_id: string;
+  indicador_id: number;
+  valor: number | null;
+  no_evaluado?: boolean;
+  observaciones?: string | null;
+}
+
+interface SupabaseReunion {
+  id: string;
+  discipulo_id: string;
+  fecha: string;
+  observaciones_generales?: string;
+  compromisos?: string;
+  proxima_reunion?: string;
+}
+
+interface SupabaseDesafio {
+  id: string;
+  discipulo_id: string;
+  descripcion: string;
+  fecha_asignado?: string;
+}
+
+interface SupabaseAlerta {
+  id: string;
+  discipulo_id: string;
+  mensaje: string;
+  activa: boolean;
+}
+
 export default function SeguimientoPage() {
   const supabase = createClient();
-  const [user, setUser] = useState<any>(null);
-  const [discipulos, setDiscipulos] = useState<any[]>([]);
-  const [areas, setAreas] = useState<any[]>([]);
-  const [indicadores, setIndicadores] = useState<any[]>([]);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [discipulos, setDiscipulos] = useState<SupabaseDiscipulo[]>([]);
+  const [areas, setAreas] = useState<SupabaseArea[]>([]);
+  const [indicadores, setIndicadores] = useState<SupabaseIndicador[]>([]);
   const [objetivosNivel, setObjetivosNivel] = useState<Record<string, string>>({});
-  const [selectedId, setSelectedId] = useState<string>("");
-
-  useEffect(() => {
-    const saved = localStorage.getItem("ultimoDiscipuloId");
-    if (saved) setSelectedId(saved);
-  }, []);
+  const [selectedId, setSelectedId] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    return localStorage.getItem("ultimoDiscipuloId") || "";
+  });
 
   const handleSelectDiscipulo = (id: string) => {
     setSelectedId(id);
     localStorage.setItem("ultimoDiscipuloId", id);
   };
-  const [reuniones, setReuniones] = useState<any[]>([]);
-  const [evaluaciones, setEvaluaciones] = useState<any[]>([]);
-  const [desafios, setDesafios] = useState<any[]>([]);
-  const [alertas, setAlertas] = useState<any[]>([]);
+  const [reuniones, setReuniones] = useState<SupabaseReunion[]>([]);
+  const [evaluaciones, setEvaluaciones] = useState<SupabaseEvaluacion[]>([]);
+  const [_desafios, setDesafios] = useState<SupabaseDesafio[]>([]);
+  const [alertas, setAlertas] = useState<SupabaseAlerta[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -153,7 +216,7 @@ export default function SeguimientoPage() {
       setAreas(aRes.data || []);
       setIndicadores(iRes.data || []);
       const objMap: Record<string, string> = {};
-      (oRes.data || []).forEach((o: any) => { objMap[`${o.indicador_id}-${o.nivel_id}`] = o.objetivo; });
+      (oRes.data || []).forEach((o: { indicador_id: number; nivel_id: number; objetivo: string }) => { objMap[`${o.indicador_id}-${o.nivel_id}`] = o.objetivo; });
       setObjetivosNivel(objMap);
       setLoading(false);
     });
@@ -161,6 +224,7 @@ export default function SeguimientoPage() {
 
   useEffect(() => {
     if (!selectedId) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSaved(false);
     setStep(1);
     setValores({});
@@ -188,10 +252,11 @@ export default function SeguimientoPage() {
       supabase.from("personas_oracion").select("*").eq("discipulo_id", selectedId).eq("activo", true),
     ]).then(([rRes, dRes, aRes, pRes]) => {
       setReuniones(rRes.data || []);
-      setDesafios(dRes.data || []);
+      setDesafios((dRes.data || []) as SupabaseDesafio[]);
       setAlertas(aRes.data || []);
-      if (pRes.data?.length) setPersonasOracion(pRes.data.map((p: any) => ({ nombre: p.nombre, apellido: p.apellido, estado: p.estado })));
+      if (pRes.data?.length) setPersonasOracion(pRes.data.map((p: { nombre: string; apellido: string; estado: string }) => ({ nombre: p.nombre, apellido: p.apellido, estado: p.estado })));
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
 
   const getIndicadoresByArea = (areaId: number) => indicadores.filter((i) => i.area_id === areaId);
@@ -233,7 +298,7 @@ export default function SeguimientoPage() {
 
     if (inserts.length > 0) {
       for (const ins of inserts) {
-        await supabase.from("evaluaciones").upsert(ins as any, { onConflict: "reunion_id, indicador_id" });
+        await supabase.from("evaluaciones").upsert(ins as Record<string, unknown>, { onConflict: "reunion_id, indicador_id" });
       }
     }
 
@@ -255,7 +320,7 @@ export default function SeguimientoPage() {
     toast.success("Evaluación guardada");
 
     supabase.from("reuniones").select("*").eq("discipulo_id", selectedId).order("fecha", { ascending: false }).then((r) => setReuniones(r.data || []));
-    supabase.from("desafios").select("*").eq("discipulo_id", selectedId).order("fecha_asignado", { ascending: false }).then((d) => setDesafios(d.data || []));
+    supabase.from("desafios").select("*").eq("discipulo_id", selectedId).order("fecha_asignado", { ascending: false }).then((d) => setDesafios((d.data || []) as SupabaseDesafio[]));
     supabase.from("evaluaciones").select("*").in("reunion_id", [reunion.id]).then((res) => setEvaluaciones((prev) => [...prev, ...(res.data || [])]));
   };
 
@@ -264,23 +329,23 @@ export default function SeguimientoPage() {
     if (items.length === 0) return 0;
     const vals = items.map((i) => valores[i.id] ?? -1).filter((v) => v >= 0);
     if (vals.length === 0) {
-      const evs = evaluaciones.filter((ev: any) => items.some((i) => i.id === ev.indicador_id) && ev.valor !== null);
+      const evs = evaluaciones.filter((ev) => items.some((i) => i.id === ev.indicador_id) && ev.valor !== null);
       if (evs.length === 0) return 0;
-      return Math.round((evs.reduce((s: number, ev: any) => s + ev.valor, 0) / evs.length / 5) * 100);
+      return Math.round((evs.reduce((s, ev) => s + (ev.valor ?? 0), 0) / evs.length / 5) * 100);
     }
     return Math.round((vals.reduce((a, b) => a + b, 0) / vals.length / 5) * 100);
   };
 
-  const allEvalData = [...evaluaciones, ...(saved ? indicadores.map((i) => ({ indicador_id: i.id, valor: valores[i.id] })).filter((x) => x.valor !== undefined) : [])];
+  const allEvalData = [...evaluaciones, ...(saved ? indicadores.map((i) => ({ indicador_id: i.id, valor: valores[i.id], reunion_id: undefined as string | undefined })).filter((x) => x.valor !== undefined) : [])];
   const radarData = areas.map((a) => ({ area: a.nombre, valor: avgByArea(a.id) }));
-  const areasConValor = (arr: any[]) => arr.filter((a) => a.valor > 0);
+  const areasConValor = (arr: Array<{ id: number; nombre: string; valor: number }>) => arr.filter((a) => a.valor > 0);
   const fortalezas = areasConValor(areas.map((a) => ({ id: a.id, nombre: a.nombre, valor: avgByArea(a.id) }))).sort((a, b) => b.valor - a.valor).slice(0, 3);
   const debilidades = areasConValor(areas.map((a) => ({ id: a.id, nombre: a.nombre, valor: avgByArea(a.id) }))).sort((a, b) => a.valor - b.valor).slice(0, 3);
 
   const evolutionData = () => {
     const byDate: Record<string, Record<number, number[]>> = {};
     const allEvs = saved ? allEvalData : evaluaciones;
-    allEvs.forEach((ev: any) => {
+    allEvs.forEach((ev) => {
       if (ev.valor === null) return;
       const ind = indicadores.find((i) => i.id === ev.indicador_id);
       if (!ind) return;
@@ -298,7 +363,7 @@ export default function SeguimientoPage() {
   const monthlyData = () => {
     const byMonth: Record<string, Record<number, number[]>> = {};
     const allEvs = saved ? allEvalData : evaluaciones;
-    allEvs.forEach((ev: any) => {
+    allEvs.forEach((ev) => {
       if (ev.valor === null) return;
       const ind = indicadores.find((i) => i.id === ev.indicador_id);
       if (!ind) return;
@@ -317,7 +382,7 @@ export default function SeguimientoPage() {
   const weeklyDetalle = () => {
     const byDate: Record<string, Record<number, number>> = {};
     const allEvs = saved ? allEvalData : evaluaciones;
-    allEvs.forEach((ev: any) => {
+    allEvs.forEach((ev) => {
       if (ev.valor === null) return;
       const ind = indicadores.find((i) => i.id === ev.indicador_id);
       if (!ind || (ind.area_id !== 1 && ind.area_id !== 2)) return;
@@ -554,7 +619,7 @@ export default function SeguimientoPage() {
                                     </div>
                                     {(valores[ind.id] ?? -1) === 1 && (
                                       <div className="space-y-2">
-                                        <Select value={ministerioSeleccionado} onValueChange={(v) => setMinisterioSeleccionado(v ?? "")}>
+                                        <Select value={ministerioSeleccionado} onValueChange={(v) => setMinisterioSeleccionado(v?.toString() ?? "")}>
                                           <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccionar ministerio" /></SelectTrigger>
                                           <SelectContent>
                                             {ministerios.map((m) => <SelectItem key={m} value={m} className="text-xs">{m}</SelectItem>)}
@@ -701,13 +766,13 @@ export default function SeguimientoPage() {
                       <div className="flex items-center justify-center h-full text-xs text-muted-foreground">Sin datos históricos</div>
                     ) : (
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={evolutionData()}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="fecha" tick={{ fontSize: 9 }} tickFormatter={(v) => format(parseISO(v), "dd/MM")} />
-                          <YAxis domain={[0, 5]} tick={false} />
-                          <Tooltip labelFormatter={(v) => format(parseISO(v as string), "dd/MM/yyyy")} />
-                          {areas.filter((a) => evolutionData().some((ed: any) => ed[a.id] !== undefined)).map((a) => (
-                            <Bar key={a.id} dataKey={a.id} name={a.nombre} fill={areasMeta[a.id]?.color || "hsl(var(--primary))"} stackId="a" />
+            <BarChart data={evolutionData()}>
+                           <CartesianGrid strokeDasharray="3 3" />
+                           <XAxis dataKey="fecha" tick={{ fontSize: 9 }} tickFormatter={(v) => format(parseISO(v), "dd/MM")} />
+                           <YAxis domain={[0, 5]} tick={false} />
+                           <Tooltip labelFormatter={(v) => format(parseISO(v as string), "dd/MM/yyyy")} />
+                           {areas.filter((a) => evolutionData().some((ed) => (ed as unknown as Record<string, number>)[String(a.id)] !== undefined)).map((a) => (
+                             <Bar key={a.id} dataKey={a.id} name={a.nombre} fill={areasMeta[a.id]?.color || "hsl(var(--primary))"} stackId="a" />
                           ))}
                         </BarChart>
                       </ResponsiveContainer>
@@ -728,11 +793,11 @@ export default function SeguimientoPage() {
                           {areas.map((a) => <th key={a.id} className="text-center py-1 px-1">{a.nombre}</th>)}
                         </tr></thead>
                         <tbody>
-                          {md.map((row: any) => (
+                          {md.map((row) => (
                             <tr key={row.mes} className="border-b last:border-0">
                               <td className="py-1.5 pr-2 font-medium whitespace-nowrap">{format(parseISO(row.mes + "-01"), "MMMM yyyy")}</td>
                               {areas.map((a) => {
-                                const v = row[a.id];
+                                const v = (row as unknown as Record<string, number>)[String(a.id)];
                                 return <td key={a.id} className="text-center py-1.5 px-1">
                                   <span className={cn("inline-block w-6 h-6 rounded-full text-[10px] font-bold leading-6", v >= 70 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : v >= 40 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400" : "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400")}>{v ?? "-"}</span>
                                 </td>;
@@ -759,11 +824,11 @@ export default function SeguimientoPage() {
                           {indDev.map((ind) => <th key={ind.id} className="text-center py-1 px-1 min-w-[70px]">{ind.nombre}</th>)}
                         </tr></thead>
                         <tbody>
-                          {wd.slice(-8).map((row: any) => (
+                          {wd.slice(-8).map((row) => (
                             <tr key={row.fecha} className="border-b last:border-0">
                               <td className="py-1.5 pr-2 font-medium whitespace-nowrap">{format(parseISO(row.fecha), "dd/MM")}</td>
                               {indDev.map((ind) => {
-                                const v = row[ind.nombre];
+                                const v = (row as unknown as Record<string, number | null>)[ind.nombre];
                                 return <td key={ind.id} className="text-center py-1.5 px-1">
                                   {v !== null && v !== undefined ? (
                                     <span className={cn("inline-block w-6 h-6 rounded-full text-[10px] font-bold leading-6", v >= 80 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : v >= 50 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400" : "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400")}>{v}</span>
@@ -839,7 +904,7 @@ function PersonaOracionForm({ onAgregar }: { onAgregar: (p: { nombre: string; ap
       </div>
       <div className="space-y-1">
         <Label className="text-xs">Estado</Label>
-        <Select value={estado} onValueChange={(v) => setEstado(v ?? "Oración")}>
+        <Select value={estado} onValueChange={(v) => setEstado(v?.toString() ?? "Oración")}>
           <SelectTrigger className="h-8 text-xs w-[150px]"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="Oración" className="text-xs">Oración</SelectItem>
