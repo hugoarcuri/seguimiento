@@ -158,7 +158,7 @@ export function DiscipulosClient({ discipulos, etapas }: DiscipulosClientProps) 
                 filtered.map((discipulo) => (
                   <TableRow key={discipulo.id}>
                     <TableCell>
-                      <Link href={`/discipulos/${discipulo.id}`}>
+                      <Link href={`/discipulos/ver?id=${discipulo.id}`}>
                         <div className="cursor-pointer hover:underline">
                           <p className="font-medium">
                             {discipulo.apellido}, {discipulo.nombre}
