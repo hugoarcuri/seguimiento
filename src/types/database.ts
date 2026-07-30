@@ -28,6 +28,7 @@ export interface Discipulo {
   estado: "activo" | "pausado" | "completado" | "retirado";
   ministerio?: string;
   dones?: string;
+  avatar_url?: string;
   observaciones?: string;
   created_at: string;
   updated_at: string;

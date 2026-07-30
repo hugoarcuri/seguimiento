@@ -14,6 +14,7 @@ export const discipuloSchema = z.object({
   estado: z.enum(["activo", "pausado", "completado", "retirado"]).default("activo"),
   ministerio: z.string().optional().nullable(),
   dones: z.string().optional().nullable(),
+  avatar_url: z.string().optional().nullable(),
   observaciones: z.string().optional().nullable(),
 });
 

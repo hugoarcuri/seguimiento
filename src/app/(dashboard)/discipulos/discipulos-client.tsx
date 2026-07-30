@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import Image from "next/image";
 import { Search, UserPlus, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Discipulo, Etapa, Encuentro, Oracion, Tarea, Timeline } from "@/types/database";
@@ -156,9 +157,13 @@ export function DiscipulosClient({ discipulos, etapas }: DiscipulosClientProps) 
                   selectedId === d.id ? "bg-primary/10" : "hover:bg-muted/50"
                 )}
               >
-                <div className={cn("w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0", getAvatarColor(d.id))}>
-                  {d.nombre?.charAt(0)?.toUpperCase()}{d.apellido?.charAt(0)?.toUpperCase()}
-                </div>
+                {d.avatar_url ? (
+                  <img src={d.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
+                ) : (
+                  <div className={cn("w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0", getAvatarColor(d.id))}>
+                    {d.nombre?.charAt(0)?.toUpperCase()}{d.apellido?.charAt(0)?.toUpperCase()}
+                  </div>
+                )}
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium truncate">{d.apellido}, {d.nombre}</p>
                   <p className="text-[11px] text-muted-foreground truncate">{etapas.find((e) => e.id === d.etapa_id)?.nombre || "Sin etapa"}</p>

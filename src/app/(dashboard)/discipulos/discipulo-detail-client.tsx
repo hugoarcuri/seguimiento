@@ -10,10 +10,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Edit } from "lucide-react";
+import { ArrowLeft, Edit, Camera, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import type { Discipulo, Encuentro, Oracion, Tarea, Timeline, Etapa } from "@/types/database";
 import { estadoColors, calcularEdad } from "@/lib/utils";
+import { useState, useRef } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 
 interface DiscipuloDetailClientProps {
   discipulo: Discipulo;
@@ -25,14 +28,37 @@ interface DiscipuloDetailClientProps {
 }
 
 export function DiscipuloDetailClient({
-  discipulo,
+  discipulo: initialDiscipulo,
   etapas,
   encuentros,
   oraciones,
   tareas,
   timeline,
 }: DiscipuloDetailClientProps) {
-  const etapaActual = etapas.find((e) => e.id === discipulo.etapa_id);
+  const etapaActual = etapas.find((e) => e.id === initialDiscipulo.etapa_id);
+  const [discipulo, setDiscipulo] = useState(initialDiscipulo);
+  const [subiendoAvatar, setSubiendoAvatar] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleSubirAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSubiendoAvatar(true);
+    const supabase = createClient();
+    const ext = file.name.split(".").pop();
+    const path = `${discipulo.id}.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from("discipulo-avatars")
+      .upload(path, file, { upsert: true });
+    if (uploadError) { toast.error("Error al subir: " + uploadError.message); setSubiendoAvatar(false); return; }
+    const { data: urlData } = supabase.storage.from("discipulo-avatars").getPublicUrl(path);
+    const avatarUrl = urlData.publicUrl;
+    const { error: updateError } = await supabase.from("discipulos").update({ avatar_url: avatarUrl }).eq("id", discipulo.id);
+    if (updateError) { toast.error("Error al guardar"); setSubiendoAvatar(false); return; }
+    setDiscipulo((prev) => ({ ...prev, avatar_url: avatarUrl }));
+    setSubiendoAvatar(false);
+    toast.success("Foto actualizada");
+  };
 
   return (
     <div className="space-y-6">
@@ -44,6 +70,24 @@ export function DiscipuloDetailClient({
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>
+          <div className="relative group shrink-0">
+            {discipulo.avatar_url ? (
+              <img src={discipulo.avatar_url} alt="" className="w-14 h-14 rounded-full object-cover" />
+            ) : (
+              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
+                {discipulo.nombre?.charAt(0)?.toUpperCase()}{discipulo.apellido?.charAt(0)?.toUpperCase()}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              disabled={subiendoAvatar}
+              className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+            >
+              {subiendoAvatar ? <Loader2 className="h-5 w-5 text-white animate-spin" /> : <Camera className="h-5 w-5 text-white" />}
+            </button>
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleSubirAvatar} />
+          </div>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-3xl font-bold">
