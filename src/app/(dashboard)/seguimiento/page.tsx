@@ -47,18 +47,12 @@ const opcionesIndicador: Record<string, { type: "escala" | "si_no"; labels: stri
   "Lectura bíblica": { type: "escala", labels: ["Nunca", "1-2 días", "3-4 días", "5-6 días", "Todos los días"] },
   "Tiempo devocional": { type: "escala", labels: ["Muy malo", "Malo", "Regular", "Bueno", "Excelente"] },
   "Memorización bíblica": { type: "escala", labels: ["No memoriza", "1 versículo", "2-3 versículos", "4-5 versículos", "6+ versículos"] },
-  Meditación: { type: "escala", labels: ["Nunca", "Rara vez", "A veces", "Frecuentemente", "Siempre"] },
-  Ayuno: { type: "escala", labels: ["No ayuna", "1 vez al mes", "Cada 15 días", "1 vez/semana", "Regularmente"] },
   "Seguridad de salvación": { type: "escala", labels: ["No seguro", "Poco seguro", "Algo seguro", "Seguro", "Muy seguro"] },
-  "Dependencia de Dios": { type: "escala", labels: ["No depende", "Poco", "A veces", "Frecuentemente", "Siempre"] },
   "Confesión de pecados": { type: "escala", labels: ["No confiesa", "Rara vez", "A veces", "Frecuentemente", "Siempre"] },
   Gratitud: { type: "escala", labels: ["Quejoso", "Poco agradecido", "A veces", "Agradecido", "Muy agradecido"] },
   Adoración: { type: "escala", labels: ["No adora", "Rara vez", "A veces", "Frecuentemente", "Siempre"] },
-  Fe: { type: "escala", labels: ["Incrédulo", "Duda mucho", "Duda a veces", "Confía", "Fe firme"] },
   "Asistencia al culto": { type: "escala", labels: ["Nunca", "1 vez/mes", "2 veces/mes", "3 veces/mes", "Siempre"] },
   "Asistencia al grupo pequeño": { type: "escala", labels: ["Nunca", "Casi nunca", "A veces", "Frecuentemente", "Siempre"] },
-  Participación: { type: "escala", labels: ["No participa", "Poco", "A veces", "Activamente", "Lidera"] },
-  "Relaciones sanas": { type: "escala", labels: ["Muy malas", "Malas", "Regulares", "Buenas", "Excelentes"] },
   "Sujeción pastoral": { type: "escala", labels: ["No acepta", "Se resiste", "A veces", "Acepta", "Ejemplar"] },
   "Integración con la iglesia": { type: "escala", labels: ["No integrado", "Poco", "A veces", "Integrado", "Muy integrado"] },
   "Participa en un ministerio": { type: "si_no", labels: ["No", "Sí"] },
@@ -213,7 +207,7 @@ export default function SeguimientoPage() {
     Promise.all([
       supabase.from("discipulos").select("*, etapas:etapa_id(*)").order("apellido"),
       supabase.from("areas").select("*").order("orden"),
-      supabase.from("indicadores").select("*").order("orden"),
+      supabase.from("indicadores").select("*").eq("activo", true).order("orden"),
       supabase.from("indicador_nivel").select("*"),
     ]).then(([dRes, aRes, iRes, oRes]) => {
       setDiscipulos(dRes.data || []);
