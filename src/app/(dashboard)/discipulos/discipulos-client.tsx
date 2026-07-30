@@ -1,27 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -30,11 +20,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Search, Edit, Trash2, UserPlus, Upload } from "lucide-react";
+import { Search, UserPlus, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import type { Discipulo, Etapa } from "@/types/database";
+import type { Discipulo, Etapa, Encuentro, Oracion, Tarea, Timeline } from "@/types/database";
 import { ImportarDiscipulos } from "./importar-discipulos";
-import { estadoColors, calcularEdad } from "@/lib/utils";
+import { DiscipuloDetailClient } from "./discipulo-detail-client";
+import { cn } from "@/lib/utils";
+
+const avatarColors = [
+  "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500", "bg-purple-500",
+  "bg-pink-500", "bg-indigo-500", "bg-teal-500", "bg-orange-500", "bg-cyan-500",
+];
+
+function getAvatarColor(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = ((hash << 5) - hash) + id.charCodeAt(i);
+  return avatarColors[Math.abs(hash) % avatarColors.length];
+}
 
 interface DiscipulosClientProps {
   discipulos: Discipulo[];
@@ -46,6 +48,15 @@ export function DiscipulosClient({ discipulos, etapas }: DiscipulosClientProps) 
   const [search, setSearch] = useState("");
   const [etapaFilter, setEtapaFilter] = useState<number | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [detailData, setDetailData] = useState<{
+    discipulo: Discipulo;
+    encuentros: Encuentro[];
+    oraciones: Oracion[];
+    tareas: Tarea[];
+    timeline: Timeline[];
+  } | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
 
   const filtered = discipulos.filter((d) => {
     if (etapaFilter !== null && d.etapa_id !== etapaFilter) return false;
@@ -56,14 +67,32 @@ export function DiscipulosClient({ discipulos, etapas }: DiscipulosClientProps) 
     );
   });
 
-  const getEtapaNombre = (etapaId: number) => {
-    return etapas.find((e) => e.id === etapaId)?.nombre || "Sin etapa";
-  };
+  useEffect(() => {
+    if (!selectedId) { setDetailData(null); return; }
+    setLoadingDetail(true);
+    const supabase = createClient();
+    Promise.all([
+      supabase.from("discipulos").select("*").eq("id", selectedId).single(),
+      supabase.from("encuentros").select("*").eq("discipulo_id", selectedId).order("fecha", { ascending: false }),
+      supabase.from("oraciones").select("*").eq("discipulo_id", selectedId).order("fecha", { ascending: false }),
+      supabase.from("tareas").select("*").eq("discipulo_id", selectedId).order("created_at", { ascending: false }),
+      supabase.from("timeline").select("*").eq("discipulo_id", selectedId).order("created_at", { ascending: false }),
+    ]).then(([dRes, eRes, oRes, tRes, tlRes]) => {
+      if (!dRes.data) { setLoadingDetail(false); return; }
+      setDetailData({
+        discipulo: dRes.data,
+        encuentros: eRes.data || [],
+        oraciones: oRes.data || [],
+        tareas: tRes.data || [],
+        timeline: tlRes.data || [],
+      });
+      setLoadingDetail(false);
+    }).catch(() => setLoadingDetail(false));
+  }, [selectedId]);
 
   const handleDelete = async (id: string) => {
     const supabase = createClient();
     const { error } = await supabase.from("discipulos").delete().eq("id", id);
-
     if (error) {
       toast.error(error.message === "new row violates row-level security policy for table \"discipulos\""
         ? "Solo los administradores pueden eliminar discípulos"
@@ -71,157 +100,110 @@ export function DiscipulosClient({ discipulos, etapas }: DiscipulosClientProps) 
     } else {
       toast.success("Discípulo eliminado");
       setDeleteDialog(null);
+      if (selectedId === id) { setSelectedId(null); }
       router.refresh();
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Discípulos</h1>
-          <p className="text-muted-foreground">
-            Gestiona todos los discípulos
-          </p>
+    <div className="flex gap-6 h-[calc(100vh-8rem)]">
+      {/* LEFT PANEL */}
+      <div className="w-[380px] shrink-0 flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold">Discípulos</h1>
+            <p className="text-xs text-muted-foreground">{filtered.length} de {discipulos.length}</p>
+          </div>
+          <div className="flex gap-1">
+            <Link
+              href="/discipulos/nuevo"
+              className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/80 h-8 gap-1 px-2 text-xs font-medium"
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              Nuevo
+            </Link>
+            <ImportarDiscipulos etapas={etapas} />
+          </div>
         </div>
-        <Link
-          href="/discipulos/nuevo"
-          className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/80 h-8 gap-1.5 px-2.5 text-sm font-medium"
-        >
-          <UserPlus className="h-4 w-4" />
-          Nuevo Discípulo
-        </Link>
-        <ImportarDiscipulos etapas={etapas} />
+
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Buscar..." className="pl-9 h-9 text-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
+        </div>
+
+        <div className="flex flex-wrap gap-1">
+          <button type="button" onClick={() => setEtapaFilter(null)}
+            className={cn("text-xs rounded-full px-2.5 py-1 font-medium transition-colors", etapaFilter === null ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80")}
+          >Todas</button>
+          {etapas.map((e) => (
+            <button key={e.id} type="button" onClick={() => setEtapaFilter(e.id)}
+              className={cn("text-xs rounded-full px-2.5 py-1 font-medium transition-colors", etapaFilter === e.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80")}
+            >{e.nombre}</button>
+          ))}
+        </div>
+
+        <div className="flex-1 overflow-y-auto space-y-0.5 -mx-1 px-1">
+          {filtered.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">No se encontraron discípulos</p>
+          ) : (
+            filtered.map((d) => (
+              <button
+                key={d.id}
+                type="button"
+                onClick={() => setSelectedId(d.id)}
+                className={cn(
+                  "w-full flex items-center gap-3 p-2 rounded-lg text-left transition-colors group",
+                  selectedId === d.id ? "bg-primary/10" : "hover:bg-muted/50"
+                )}
+              >
+                <div className={cn("w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0", getAvatarColor(d.id))}>
+                  {d.nombre?.charAt(0)?.toUpperCase()}{d.apellido?.charAt(0)?.toUpperCase()}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium truncate">{d.apellido}, {d.nombre}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{etapas.find((e) => e.id === d.etapa_id)?.nombre || "Sin etapa"}</p>
+                </div>
+                <button type="button" onClick={(e) => { e.stopPropagation(); setDeleteDialog(d.id); }} className="shrink-0 text-muted-foreground/50 hover:text-destructive transition-colors opacity-0 group-hover:opacity-100">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </button>
+            ))
+          )}
+        </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Todos los Discípulos</CardTitle>
-          <CardDescription>
-            {filtered.length} de {discipulos.length} registros
-          </CardDescription>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Buscar discípulos..."
-              className="pl-9"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+      {/* RIGHT PANEL */}
+      <div className="flex-1 min-w-0 overflow-y-auto">
+        {selectedId && detailData ? (
+          <DiscipuloDetailClient
+            discipulo={detailData.discipulo}
+            etapas={etapas}
+            encuentros={detailData.encuentros}
+            oraciones={detailData.oraciones}
+            tareas={detailData.tareas}
+            timeline={detailData.timeline}
+          />
+        ) : selectedId && loadingDetail ? (
+          <div className="flex items-center justify-center h-full">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
-          <div className="flex flex-wrap gap-2 mt-4">
-            <Button
-              variant={etapaFilter === null ? "default" : "outline"}
-              size="sm"
-              onClick={() => setEtapaFilter(null)}
-            >
-              Todas
-            </Button>
-            {etapas.map((etapa) => (
-              <Button
-                key={etapa.id}
-                variant={etapaFilter === etapa.id ? "default" : "outline"}
-                size="sm"
-                onClick={() => setEtapaFilter(etapa.id)}
-              >
-                {etapa.nombre}
-              </Button>
-            ))}
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-muted-foreground text-sm">Seleccioná un discípulo para ver su información</p>
           </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Etapa</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead>Edad</TableHead>
-                <TableHead>Teléfono</TableHead>
-                <TableHead className="w-[100px]">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.length === 0 ? (
-                  <TableRow>
-                   <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    No se encontraron discípulos
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filtered.map((discipulo) => (
-                  <TableRow key={discipulo.id}>
-                    <TableCell>
-                      <Link href={`/discipulos/ver?id=${discipulo.id}`}>
-                        <div className="cursor-pointer hover:underline">
-                          <p className="font-medium">
-                            {discipulo.apellido}, {discipulo.nombre}
-                          </p>
-                          {discipulo.email && (
-                            <p className="text-xs text-muted-foreground">
-                              {discipulo.email}
-                            </p>
-                          )}
-                        </div>
-                      </Link>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">
-                        {getEtapaNombre(discipulo.etapa_id)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                         <div
-                           className={`h-2 w-2 rounded-full ${estadoColors[discipulo.estado]}`}
-                         />
-                         <span className="capitalize">{discipulo.estado}</span>
-                       </div>
-                     </TableCell>
-                     <TableCell>
-                      {discipulo.fecha_nacimiento
-                          ? calcularEdad(discipulo.fecha_nacimiento)
-                          : "—"}
-                     </TableCell>
-                     <TableCell>{discipulo.telefono || "—"}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <button type="button" onClick={() => router.push(`/discipulos/editar?id=${discipulo.id}`)} className="text-blue-400 hover:text-blue-600 p-1"><Edit className="h-4 w-4" /></button>
-                        <button type="button" onClick={() => setDeleteDialog(discipulo.id)} className="text-red-400 hover:text-red-600 p-1"><Trash2 className="h-4 w-4" /></button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+        )}
+      </div>
 
-      <Dialog
-        open={!!deleteDialog}
-        onOpenChange={() => setDeleteDialog(null)}
-      >
+      {/* DELETE DIALOG */}
+      <Dialog open={!!deleteDialog} onOpenChange={() => setDeleteDialog(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Eliminar Discípulo</DialogTitle>
-            <DialogDescription>
-              ¿Estás seguro? Esta acción no se puede deshacer.
-            </DialogDescription>
+            <DialogDescription>¿Estás seguro? Esta acción no se puede deshacer.</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDeleteDialog(null)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => deleteDialog && handleDelete(deleteDialog)}
-            >
-              Eliminar
-            </Button>
+            <Button variant="outline" onClick={() => setDeleteDialog(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={() => deleteDialog && handleDelete(deleteDialog)}>Eliminar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
