@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,6 +26,8 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -47,16 +48,18 @@ import type { Encuentro } from "@/types/database";
 
 interface EncuentrosClientProps {
   encuentros: (Encuentro & { discipulos?: { nombre: string; apellido: string } })[];
+  setEncuentros: React.Dispatch<React.SetStateAction<(Encuentro & { discipulos?: { nombre: string; apellido: string } })[]>>;
   discipulos: Array<{ id: string; nombre: string; apellido: string }>;
 }
 
 export function EncuentrosClient({
   encuentros,
+  setEncuentros,
   discipulos,
 }: EncuentrosClientProps) {
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Encuentro | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const form = useForm<EncuentroInput>({
     resolver: zodResolver(encuentroSchema),
@@ -90,9 +93,9 @@ export function EncuentrosClient({
     if (!user) return;
 
     const payload = { ...data, lider_id: user.id };
-    const { error } = editing
-      ? await supabase.from("encuentros").update(payload).eq("id", editing.id)
-      : await supabase.from("encuentros").insert(payload);
+    const { error, data: result } = editing
+      ? await supabase.from("encuentros").update(payload).eq("id", editing.id).select("*, discipulos:discipulo_id(nombre, apellido)").single()
+      : await supabase.from("encuentros").insert(payload).select("*, discipulos:discipulo_id(nombre, apellido)").single();
 
     if (error) {
       toast.error(editing ? "Error al actualizar encuentro" : "Error al registrar encuentro");
@@ -101,16 +104,18 @@ export function EncuentrosClient({
       setOpen(false);
       setEditing(null);
       form.reset();
-      router.refresh();
+      if (!editing && result) setEncuentros((prev) => [result as never, ...prev]);
+      if (editing && result) setEncuentros((prev) => prev.map((e) => e.id === editing.id ? result as never : e));
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("¿Eliminar este encuentro?")) return;
-    const { error } = await createClient().from("encuentros").delete().eq("id", id);
-    if (error) { toast.error("Error al eliminar encuentro"); return }
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    const { error } = await createClient().from("encuentros").delete().eq("id", deleteId);
+    if (error) { toast.error("Error al eliminar encuentro"); setDeleteId(null); return }
     toast.success("Encuentro eliminado");
-    router.refresh();
+    setDeleteId(null);
+    setEncuentros((prev) => prev.filter((e) => e.id !== deleteId));
   };
 
   return (
@@ -256,7 +261,7 @@ export function EncuentrosClient({
                         <Button variant="outline" size="sm" onClick={() => openEdit(encuentro)}>
                           <Pencil className="mr-1 h-3.5 w-3.5" /> Editar
                         </Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleDelete(encuentro.id)}>
+                        <Button variant="destructive" size="sm" onClick={() => setDeleteId(encuentro.id)}>
                           <Trash2 className="mr-1 h-3.5 w-3.5" /> Eliminar
                         </Button>
                       </div>
@@ -268,6 +273,19 @@ export function EncuentrosClient({
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={deleteId !== null} onOpenChange={() => setDeleteId(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Eliminar Encuentro</DialogTitle>
+            <DialogDescription>¿Estás seguro de eliminar este encuentro? Esta acción no se puede deshacer.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteId(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleDelete}>Eliminar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,6 +22,8 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -32,17 +33,32 @@ import { Plus, Loader2, Church } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
+interface OracionConDiscipulo {
+  id: string;
+  discipulo_id: string;
+  lider_id?: string;
+  pedido: string;
+  respuesta?: string;
+  estado: string;
+  fecha: string;
+  created_at?: string;
+  updated_at?: string;
+  discipulos?: { nombre: string; apellido: string };
+}
+
 interface OracionClientProps {
-  oraciones: Array<{ id: string; discipulo_id: string; pedido: string; respuesta?: string; estado: string; fecha: string; discipulos?: { nombre: string; apellido: string } }>;
+  oraciones: OracionConDiscipulo[];
+  setOraciones: React.Dispatch<React.SetStateAction<OracionConDiscipulo[]>>;
   discipulos: Array<{ id: string; nombre: string; apellido: string }>;
 }
 
-export function OracionClient({ oraciones, discipulos }: OracionClientProps) {
-  const router = useRouter();
+export function OracionClient({ oraciones, setOraciones, discipulos }: OracionClientProps) {
   const [open, setOpen] = useState(false);
   const [discipuloId, setDiscipuloId] = useState("");
   const [pedido, setPedido] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [responderId, setResponderId] = useState<string | null>(null);
+  const [respuestaTexto, setRespuestaTexto] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,11 +71,11 @@ export function OracionClient({ oraciones, discipulos }: OracionClientProps) {
 
     if (!user) return;
 
-    const { error } = await supabase.from("oraciones").insert({
+    const { data, error } = await supabase.from("oraciones").insert({
       discipulo_id: discipuloId,
       lider_id: user.id,
       pedido,
-    });
+    }).select("*, discipulos:discipulo_id(nombre, apellido)").single();
 
     if (error) {
       toast.error("Error al registrar pedido");
@@ -68,7 +84,7 @@ export function OracionClient({ oraciones, discipulos }: OracionClientProps) {
       setOpen(false);
       setDiscipuloId("");
       setPedido("");
-      router.refresh();
+      if (data) setOraciones((prev) => [data as never, ...prev]);
     }
     setSubmitting(false);
   };
@@ -84,8 +100,21 @@ export function OracionClient({ oraciones, discipulos }: OracionClientProps) {
       toast.error("Error al actualizar");
     } else {
       toast.success("Estado actualizado");
-      router.refresh();
+      setOraciones((prev) => prev.map((o) => o.id === id ? { ...o, estado } : o));
     }
+  };
+
+  const handleResponder = async () => {
+    if (!responderId || !respuestaTexto.trim()) return;
+    const supabase = createClient();
+    await supabase
+      .from("oraciones")
+      .update({ estado: "respondida", respuesta: respuestaTexto.trim() })
+      .eq("id", responderId);
+    toast.success("Respuesta registrada");
+    setResponderId(null);
+    setRespuestaTexto("");
+    setOraciones((prev) => prev.map((o) => o.id === responderId ? { ...o, estado: "respondida", respuesta: respuestaTexto.trim() } : o));
   };
 
   return (
@@ -208,18 +237,8 @@ export function OracionClient({ oraciones, discipulos }: OracionClientProps) {
                       <Button
                         size="sm"
                         onClick={() => {
-                          const respuesta = prompt("¿Cuál fue la respuesta?");
-                          if (respuesta) {
-                            const supabase = createClient();
-                            supabase
-                              .from("oraciones")
-                              .update({ estado: "respondida", respuesta })
-                              .eq("id", oracion.id)
-                              .then(() => {
-                                toast.success("Respuesta registrada");
-                                router.refresh();
-                              });
-                          }
+                          setResponderId(oracion.id);
+                          setRespuestaTexto("");
                         }}
                       >
                         Responder
@@ -230,18 +249,8 @@ export function OracionClient({ oraciones, discipulos }: OracionClientProps) {
                     <Button
                       size="sm"
                       onClick={() => {
-                        const respuesta = prompt("¿Cuál fue la respuesta?");
-                        if (respuesta) {
-                          const supabase = createClient();
-                          supabase
-                            .from("oraciones")
-                            .update({ estado: "respondida", respuesta })
-                            .eq("id", oracion.id)
-                            .then(() => {
-                              toast.success("Respuesta registrada");
-                              router.refresh();
-                            });
-                        }
+                        setResponderId(oracion.id);
+                        setRespuestaTexto("");
                       }}
                     >
                       Marcar Respondida
@@ -253,6 +262,25 @@ export function OracionClient({ oraciones, discipulos }: OracionClientProps) {
           ))
         )}
       </div>
+
+      <Dialog open={responderId !== null} onOpenChange={() => setResponderId(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Registrar Respuesta</DialogTitle>
+            <DialogDescription>¿Cuál fue la respuesta a esta oración?</DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={respuestaTexto}
+            onChange={(e) => setRespuestaTexto(e.target.value)}
+            placeholder="Escribí la respuesta..."
+            rows={3}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResponderId(null)}>Cancelar</Button>
+            <Button onClick={handleResponder} disabled={!respuestaTexto.trim()}>Guardar Respuesta</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

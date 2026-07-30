@@ -11,12 +11,15 @@ export function useUser() {
   const router = useRouter();
 
   useEffect(() => {
+    let mounted = true;
     const supabase = createClient();
 
     const getUser = async () => {
       const {
         data: { user: authUser },
       } = await supabase.auth.getUser();
+
+      if (!mounted) return;
 
       if (authUser) {
         const { data: profile } = await supabase
@@ -25,9 +28,10 @@ export function useUser() {
           .eq("id", authUser.id)
           .single();
 
+        if (!mounted) return;
         setUser(profile);
       }
-      setLoading(false);
+      if (mounted) setLoading(false);
     };
 
     getUser();
@@ -35,6 +39,7 @@ export function useUser() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
       if (session?.user) {
         const { data: profile } = await supabase
           .from("profiles")
@@ -42,14 +47,15 @@ export function useUser() {
           .eq("id", session.user.id)
           .single();
 
+        if (!mounted) return;
         setUser(profile);
       } else {
         setUser(null);
       }
-      setLoading(false);
+      if (mounted) setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => { mounted = false; subscription.unsubscribe(); };
   }, []);
 
   const logout = async () => {

@@ -8,12 +8,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, CheckCircle2, Book, Heart, Users, Target, Sparkles, Hand, GraduationCap, Crown, User as UserIcon, AlertTriangle, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, ClipboardCheck } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { Loader2, CheckCircle2, Book, Heart, Users, Target, Sparkles, Hand, GraduationCap, Crown, User as UserIcon, ChevronLeft, ChevronRight, ClipboardCheck } from "lucide-react";
+import { format } from "date-fns";
 import Link from "next/link";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import { ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
+import { ResultadoEvaluacion } from "./resultado-evaluacion";
+import { PersonaOracionForm } from "./persona-oracion-form";
 
 interface AreaMeta {
   label: string;
@@ -219,7 +219,7 @@ export default function SeguimientoPage() {
       (oRes.data || []).forEach((o: { indicador_id: number; nivel_id: number; objetivo: string }) => { objMap[`${o.indicador_id}-${o.nivel_id}`] = o.objetivo; });
       setObjetivosNivel(objMap);
       setLoading(false);
-    });
+    }).catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -255,7 +255,7 @@ export default function SeguimientoPage() {
       setDesafios((dRes.data || []) as SupabaseDesafio[]);
       setAlertas(aRes.data || []);
       if (pRes.data?.length) setPersonasOracion(pRes.data.map((p: { nombre: string; apellido: string; estado: string }) => ({ nombre: p.nombre, apellido: p.apellido, estado: p.estado })));
-    });
+    }).catch(console.error);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
 
@@ -725,195 +725,23 @@ export default function SeguimientoPage() {
               </div>
             </>
           ) : (
-            /* SAVED - SHOW ANALYSIS */
-            <div className="space-y-4">
-              <Card className="border-emerald-200 dark:border-emerald-800">
-                <CardContent className="p-4 flex items-center gap-3">
-                  <CheckCircle2 className="h-6 w-6 text-emerald-500 shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Evaluación guardada</p>
-                    <p className="text-xs text-muted-foreground">{format(new Date(), "dd/MM/yyyy")} · {indicadores.filter((i) => valores[i.id] !== undefined).length} indicadores evaluados</p>
-                  </div>
-                  <Button size="sm" variant="outline" className="ml-auto" onClick={() => { setSaved(false); setValores({}); setEvalObs({}); setObsGenerales(""); setCompromisos([]); setDesafioPersonalizado(""); setProximaReunion(""); setStep(1); }}>
-                    Nueva evaluación
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* RADAR */}
-              <Card>
-                <CardHeader className="p-3 pb-0"><CardTitle className="text-sm">Índice de Salud Espiritual</CardTitle></CardHeader>
-                <CardContent className="p-3">
-                  <div className="h-[240px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RadarChart data={radarData}>
-                        <PolarGrid />
-                        <PolarAngleAxis dataKey="area" tick={{ fontSize: 10 }} />
-                        <PolarRadiusAxis domain={[0, 100]} tick={false} />
-                        <Radar dataKey="valor" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.2} />
-                      </RadarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* EVOLUTION */}
-              <Card>
-                <CardHeader className="p-3 pb-0"><CardTitle className="text-sm">Evolución</CardTitle></CardHeader>
-                <CardContent className="p-3">
-                  <div className="h-[200px]">
-                    {evolutionData().length === 0 ? (
-                      <div className="flex items-center justify-center h-full text-xs text-muted-foreground">Sin datos históricos</div>
-                    ) : (
-                      <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={evolutionData()}>
-                           <CartesianGrid strokeDasharray="3 3" />
-                           <XAxis dataKey="fecha" tick={{ fontSize: 9 }} tickFormatter={(v) => format(parseISO(v), "dd/MM")} />
-                           <YAxis domain={[0, 5]} tick={false} />
-                           <Tooltip labelFormatter={(v) => format(parseISO(v as string), "dd/MM/yyyy")} />
-                           {areas.filter((a) => evolutionData().some((ed) => (ed as unknown as Record<string, number>)[String(a.id)] !== undefined)).map((a) => (
-                             <Bar key={a.id} dataKey={a.id} name={a.nombre} fill={areasMeta[a.id]?.color || "hsl(var(--primary))"} stackId="a" />
-                          ))}
-                        </BarChart>
-                      </ResponsiveContainer>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* MENSUAL */}
-              {(() => { const md = monthlyData(); if (md.length === 0) return null;
-                return (
-                  <Card>
-                    <CardHeader className="p-3 pb-0"><CardTitle className="text-sm">Resumen Mensual</CardTitle></CardHeader>
-                    <CardContent className="p-3 overflow-x-auto">
-                      <table className="w-full text-xs">
-                        <thead><tr className="border-b text-muted-foreground">
-                          <th className="text-left py-1 pr-2">Mes</th>
-                          {areas.map((a) => <th key={a.id} className="text-center py-1 px-1">{a.nombre}</th>)}
-                        </tr></thead>
-                        <tbody>
-                          {md.map((row) => (
-                            <tr key={row.mes} className="border-b last:border-0">
-                              <td className="py-1.5 pr-2 font-medium whitespace-nowrap">{format(parseISO(row.mes + "-01"), "MMMM yyyy")}</td>
-                              {areas.map((a) => {
-                                const v = (row as unknown as Record<string, number>)[String(a.id)];
-                                return <td key={a.id} className="text-center py-1.5 px-1">
-                                  <span className={cn("inline-block w-6 h-6 rounded-full text-[10px] font-bold leading-6", v >= 70 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : v >= 40 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400" : "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400")}>{v ?? "-"}</span>
-                                </td>;
-                              })}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </CardContent>
-                  </Card>
-                );
-              })()}
-
-              {/* DETALLE SEMANAL - VIDA DEVOCIONAL */}
-              {(() => { const wd = weeklyDetalle(); if (wd.length === 0) return null;
-                const indDev = indicadores.filter((i) => i.area_id === 1 || i.area_id === 2);
-                return (
-                  <Card>
-                    <CardHeader className="p-3 pb-0"><CardTitle className="text-sm">Detalle Semanal — Vida Devocional</CardTitle></CardHeader>
-                    <CardContent className="p-3 overflow-x-auto">
-                      <table className="w-full text-xs">
-                        <thead><tr className="border-b text-muted-foreground">
-                          <th className="text-left py-1 pr-2">Semana</th>
-                          {indDev.map((ind) => <th key={ind.id} className="text-center py-1 px-1 min-w-[70px]">{ind.nombre}</th>)}
-                        </tr></thead>
-                        <tbody>
-                          {wd.slice(-8).map((row) => (
-                            <tr key={row.fecha} className="border-b last:border-0">
-                              <td className="py-1.5 pr-2 font-medium whitespace-nowrap">{format(parseISO(row.fecha), "dd/MM")}</td>
-                              {indDev.map((ind) => {
-                                const v = (row as unknown as Record<string, number | null>)[ind.nombre];
-                                return <td key={ind.id} className="text-center py-1.5 px-1">
-                                  {v !== null && v !== undefined ? (
-                                    <span className={cn("inline-block w-6 h-6 rounded-full text-[10px] font-bold leading-6", v >= 80 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : v >= 50 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400" : "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400")}>{v}</span>
-                                  ) : <span className="text-muted-foreground">-</span>}
-                                </td>;
-                              })}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </CardContent>
-                  </Card>
-                );
-              })()}
-
-              {/* FORTALEZAS + DEBILIDADES + ALERTAS */}
-              <div className="grid gap-3 sm:grid-cols-3">
-                <Card>
-                  <CardHeader className="p-3 pb-0"><CardTitle className="text-xs flex items-center gap-1"><TrendingUp className="h-3 w-3 text-emerald-500" /> Fortalezas</CardTitle></CardHeader>
-                  <CardContent className="p-3">
-                    {fortalezas.length === 0 ? <p className="text-xs text-muted-foreground">Sin datos</p> : (
-                      <ul className="space-y-0.5">{fortalezas.map((f) => <li key={f.id} className="flex items-center gap-1.5 text-xs"><span className="w-1 h-1 rounded-full bg-emerald-500" />{f.nombre} <span className="text-muted-foreground">({f.valor}%)</span></li>)}</ul>
-                    )}
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="p-3 pb-0"><CardTitle className="text-xs flex items-center gap-1"><TrendingDown className="h-3 w-3 text-red-500" /> A crecer</CardTitle></CardHeader>
-                  <CardContent className="p-3">
-                    {debilidades.length === 0 ? <p className="text-xs text-muted-foreground">Sin datos</p> : (
-                      <ul className="space-y-0.5">{debilidades.map((d) => <li key={d.id} className="flex items-center gap-1.5 text-xs"><span className="w-1 h-1 rounded-full bg-red-500" />{d.nombre} <span className="text-muted-foreground">({d.valor}%)</span></li>)}</ul>
-                    )}
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="p-3 pb-0"><CardTitle className="text-xs flex items-center gap-1"><AlertTriangle className="h-3 w-3 text-amber-500" /> Alertas</CardTitle></CardHeader>
-                  <CardContent className="p-3">
-                    {alertas.length === 0 ? <p className="text-xs text-muted-foreground">Sin alertas</p> : (
-                      <ul className="space-y-1">{alertas.map((a) => <li key={a.id} className="flex items-start gap-1 text-xs"><AlertTriangle className="h-3 w-3 text-amber-500 mt-0.5 shrink-0" />{a.mensaje}</li>)}</ul>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
+              <ResultadoEvaluacion
+                radarData={radarData}
+                evolutionData={evolutionData()}
+                monthlyData={monthlyData()}
+                weeklyDetalle={weeklyDetalle()}
+                fortalezas={fortalezas}
+                debilidades={debilidades}
+                alertas={alertas}
+                areas={areas}
+                areasMeta={areasMeta}
+                indicadores={indicadores}
+                saving={saving}
+                onNuevaEvaluacion={() => { setSaved(false); setValores({}); setEvalObs({}); setObsGenerales(""); setCompromisos([]); setDesafioPersonalizado(""); setProximaReunion(""); setStep(1); }}
+              />
           )}
         </>
       ) : null}
-    </div>
-  );
-}
-
-function PersonaOracionForm({ onAgregar }: { onAgregar: (p: { nombre: string; apellido: string; estado: string }) => void }) {
-  const [nombre, setNombre] = useState("");
-  const [apellido, setApellido] = useState("");
-  const [estado, setEstado] = useState("Oración");
-
-  const handleAgregar = () => {
-    if (!nombre.trim() || !apellido.trim()) return;
-    onAgregar({ nombre: nombre.trim(), apellido: apellido.trim(), estado });
-    setNombre("");
-    setApellido("");
-    setEstado("Oración");
-  };
-
-  return (
-    <div className="flex items-end gap-2">
-      <div className="flex-1 space-y-1">
-        <Label className="text-xs">Nombre</Label>
-        <Input className="h-8 text-xs" placeholder="Nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} />
-      </div>
-      <div className="flex-1 space-y-1">
-        <Label className="text-xs">Apellido</Label>
-        <Input className="h-8 text-xs" placeholder="Apellido" value={apellido} onChange={(e) => setApellido(e.target.value)} />
-      </div>
-      <div className="space-y-1">
-        <Label className="text-xs">Estado</Label>
-        <Select value={estado} onValueChange={(v) => setEstado(v?.toString() ?? "Oración")}>
-          <SelectTrigger className="h-8 text-xs w-[150px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Oración" className="text-xs">Oración</SelectItem>
-            <SelectItem value="Oración y servicio" className="text-xs">Oración y servicio</SelectItem>
-            <SelectItem value="Oración y predicación" className="text-xs">Oración y predicación</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <Button size="sm" className="h-8" onClick={handleAgregar} disabled={!nombre.trim() || !apellido.trim()}>Agregar</Button>
     </div>
   );
 }

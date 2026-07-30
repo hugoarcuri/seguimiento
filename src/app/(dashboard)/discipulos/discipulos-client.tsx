@@ -34,13 +34,7 @@ import { Search, Edit, Trash2, UserPlus, Upload } from "lucide-react";
 import { toast } from "sonner";
 import type { Discipulo, Etapa } from "@/types/database";
 import { ImportarDiscipulos } from "./importar-discipulos";
-
-const estadoColors: Record<string, string> = {
-  activo: "bg-green-500",
-  pausado: "bg-yellow-500",
-  completado: "bg-blue-500",
-  retirado: "bg-red-500",
-};
+import { estadoColors, calcularEdad } from "@/lib/utils";
 
 interface DiscipulosClientProps {
   discipulos: Discipulo[];
@@ -185,16 +179,9 @@ export function DiscipulosClient({ discipulos, etapas }: DiscipulosClientProps) 
                        </div>
                      </TableCell>
                      <TableCell>
-                       {discipulo.fecha_nacimiento
-                         ? (() => {
-                             const hoy = new Date();
-                             const nac = new Date(discipulo.fecha_nacimiento);
-                             let edad = hoy.getFullYear() - nac.getFullYear();
-                             const m = hoy.getMonth() - nac.getMonth();
-                             if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) edad--;
-                             return edad;
-                           })()
-                         : "—"}
+                      {discipulo.fecha_nacimiento
+                          ? calcularEdad(discipulo.fecha_nacimiento)
+                          : "—"}
                      </TableCell>
                      <TableCell>{discipulo.telefono || "—"}</TableCell>
                     <TableCell>

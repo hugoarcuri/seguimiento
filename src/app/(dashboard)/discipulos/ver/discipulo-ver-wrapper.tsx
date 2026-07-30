@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { DiscipuloDetailClient } from "../[id]/discipulo-detail-client";
+import { DiscipuloDetailClient } from "../discipulo-detail-client";
 import type { Discipulo, Etapa, Encuentro, Oracion, Tarea, Timeline } from "@/types/database";
 
 interface WrapperData {
@@ -46,7 +46,7 @@ function DiscipuloVerInner() {
         timeline: timelineRes.data || [],
       });
       setLoading(false);
-    });
+    }).catch(console.error);
   }, [id]);
 
   if (loading) return <div className="flex items-center justify-center min-h-[50vh]"><p className="text-muted-foreground">Cargando...</p></div>;

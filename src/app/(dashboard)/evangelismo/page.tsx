@@ -9,68 +9,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, UserPlus, Users, Heart, Hand, Book, CheckCircle2, AlertTriangle, Clock, ArrowRight, Search, LayoutGrid, List, GripVertical } from "lucide-react";
+import { Loader2, UserPlus, Users, CheckCircle2, AlertTriangle, Clock, ArrowRight, Search, LayoutGrid, List, GripVertical } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { getDiscipuloColor } from "@/lib/discipulo-color";
-
-interface EstadoMeta {
-  label: string;
-  color: string;
-  bgColor: string;
-  icon: typeof Heart;
-}
-
-interface PersonaData {
-  id: string;
-  nombre: string;
-  apellido: string;
-  telefono?: string;
-  edad?: number;
-  observaciones?: string;
-  estado: string;
-  fecha_inicio_estado: string;
-  fecha_creacion?: string;
-  discipulo_id?: string;
-  creado_por?: string;
-  es_oracion?: boolean;
-}
-
-interface EventoData {
-  id: string;
-  persona_id: string;
-  tipo: string;
-  descripcion: string;
-  fecha: string;
-}
-
-const estadosMeta: Record<string, EstadoMeta> = {
-  oracion_salvacion: { label: "Oración por salvación", color: "text-blue-600 dark:text-blue-400", bgColor: "bg-blue-100 dark:bg-blue-900/40", icon: Heart },
-  actos_servicio: { label: "Actos de servicio", color: "text-amber-600 dark:text-amber-400", bgColor: "bg-amber-100 dark:bg-amber-900/40", icon: Hand },
-  predicacion_evangelio: { label: "Predicación del Evangelio", color: "text-emerald-600 dark:text-emerald-400", bgColor: "bg-emerald-100 dark:bg-emerald-900/40", icon: Book },
-};
-
-const eventosEvangelismo = [
-  "Compartí mi testimonio",
-  "Compartí el Evangelio",
-  "Lo invité a la iglesia",
-  "Asistió",
-  "Aceptó una Biblia",
-  "Hicimos seguimiento",
-  "Decidió seguir a Cristo",
-  "No mostró interés",
-  "Continuar orando",
-];
-
-const actosServicio = [
-  "Invitarlo a tomar un café",
-  "Ayudarlo en una necesidad",
-  "Visitarlo",
-  "Compartir tiempo",
-  "Escucharlo",
-  "Acompañarlo",
-];
+import { estadosMeta, eventosEvangelismo, actosServicio } from "./tipos-estados";
+import type { PersonaData, EventoData } from "./tipos-estados";
+import { ObservacionInput } from "./observacion-input";
 
 export default function EvangelismoPage() {
   const supabase = createClient();
@@ -105,7 +51,7 @@ export default function EvangelismoPage() {
       setPersonas((pRes.data || []) as PersonaData[]);
       setEventos((eRes.data || []) as EventoData[]);
       setLoading(false);
-    });
+    }).catch(console.error);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -660,21 +606,6 @@ export default function EvangelismoPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
-
-function ObservacionInput({ personaId, onRegistrar, labelOnly }: { personaId: string; onRegistrar: (id: string, tipo: string, desc: string) => void; labelOnly?: boolean }) {
-  const [val, setVal] = useState("");
-  const handle = () => {
-    if (!val.trim()) return;
-    onRegistrar(personaId, labelOnly ? "observacion" : "acto_servicio", val.trim());
-    setVal("");
-  };
-  return (
-    <div className="flex gap-1 w-full mt-1">
-      <Input placeholder={labelOnly ? "Escribí una observación..." : "Otro..."} className="h-7 text-xs flex-1" value={val} onChange={(e) => setVal(e.target.value)} />
-      <Button size="sm" className="h-7 text-xs" onClick={handle} disabled={!val.trim()}>+</Button>
     </div>
   );
 }

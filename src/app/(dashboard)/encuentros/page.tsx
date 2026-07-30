@@ -21,10 +21,10 @@ export default function EncuentrosPage() {
       setEncuentros(encuentrosRes.data || []);
       setDiscipulos(discipulosRes.data || []);
       setLoading(false);
-    });
+    }).catch(console.error);
   }, []);
 
   if (loading) return <div className="flex items-center justify-center min-h-[50vh]"><p className="text-muted-foreground">Cargando...</p></div>;
 
-  return <EncuentrosClient encuentros={encuentros} discipulos={discipulos} />;
+  return <EncuentrosClient encuentros={encuentros} setEncuentros={setEncuentros} discipulos={discipulos} />;
 }

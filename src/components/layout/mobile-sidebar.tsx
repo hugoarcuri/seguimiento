@@ -8,36 +8,8 @@ import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/useUser";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import {
-  LayoutDashboard,
-  Users,
-  CalendarCheck,
-  Church,
-  BookOpen,
-  Settings,
-  User,
-  ClipboardCheck,
-  Menu,
-} from "lucide-react";
-
-const adminMenuItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/discipulos", label: "Discípulos", icon: Users },
-  { href: "/tareas", label: "Tareas", icon: ClipboardCheck },
-  { href: "/seguimiento", label: "Seguimiento", icon: BookOpen },
-  { href: "/encuentros", label: "Encuentros", icon: CalendarCheck },
-  { href: "/oracion", label: "Oración", icon: Church },
-  { href: "/configuracion", label: "Configuración", icon: Settings },
-];
-
-const discipuloMenuItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/tareas", label: "Tareas", icon: ClipboardCheck },
-  { href: "/seguimiento", label: "Seguimiento", icon: BookOpen },
-  { href: "/oracion", label: "Oración", icon: Church },
-  { href: "/perfil", label: "Mi Perfil", icon: User },
-  { href: "/configuracion", label: "Configuración", icon: Settings },
-];
+import { Menu } from "lucide-react";
+import { adminMenuItems, discipuloMenuItems } from "@/lib/constants/navigation";
 
 export function MobileSidebar() {
   const [open, setOpen] = useState(false);

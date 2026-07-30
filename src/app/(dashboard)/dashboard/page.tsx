@@ -127,7 +127,7 @@ export default function DashboardPage() {
         oracionesPendientesList: (oracionesRes.data || []) as OracionBasica[],
         proximosCumples,
       });
-    });
+    }).catch(console.error);
   }, []);
 
   if (!data) return <div className="flex items-center justify-center min-h-[50vh]"><p className="text-muted-foreground">Cargando...</p></div>;

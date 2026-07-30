@@ -13,13 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Edit } from "lucide-react";
 import { format } from "date-fns";
 import type { Discipulo, Encuentro, Oracion, Tarea, Timeline, Etapa } from "@/types/database";
-
-const estadoColors: Record<string, string> = {
-  activo: "bg-green-500",
-  pausado: "bg-yellow-500",
-  completado: "bg-blue-500",
-  retirado: "bg-red-500",
-};
+import { estadoColors, calcularEdad } from "@/lib/utils";
 
 interface DiscipuloDetailClientProps {
   discipulo: Discipulo;
@@ -103,14 +97,7 @@ export function DiscipuloDetailClient({
                   <span className="text-muted-foreground">Edad</span>
                   <span>
                     {discipulo.fecha_nacimiento
-                      ? (() => {
-                          const hoy = new Date();
-                          const nac = new Date(discipulo.fecha_nacimiento);
-                          let edad = hoy.getFullYear() - nac.getFullYear();
-                          const m = hoy.getMonth() - nac.getMonth();
-                          if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) edad--;
-                          return `${edad} años`;
-                        })()
+                      ? `${calcularEdad(discipulo.fecha_nacimiento)} años`
                       : "—"}
                   </span>
                   <span className="text-muted-foreground">Sexo</span>

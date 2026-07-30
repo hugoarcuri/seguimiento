@@ -99,6 +99,7 @@ export default function TareasPage() {
   const [matDialogOpen, setMatDialogOpen] = useState(false);
   const [matForm, setMatForm] = useState({ titulo: "", tipo: "libro", etapa_id: "", url: "", descripcion: "" });
   const [matSubmitting, setMatSubmitting] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const form = useForm<TareaInput>({
     resolver: zodResolver(tareaSchema),
@@ -130,8 +131,7 @@ export default function TareasPage() {
     setLoading(false);
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { fetchData() }, []);
+  useEffect(() => { fetchData().catch(console.error) }, []);
 
   const openCreate = () => {
     setEditingId(null);
@@ -174,11 +174,12 @@ export default function TareasPage() {
     fetchData();
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("¿Eliminar esta tarea?")) return;
-    const { error } = await supabase.from("tareas").delete().eq("id", id);
-    if (error) { toast.error("Error al eliminar tarea"); return }
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    const { error } = await supabase.from("tareas").delete().eq("id", deleteId);
+    if (error) { toast.error("Error al eliminar tarea"); setDeleteId(null); return }
     toast.success("Tarea eliminada");
+    setDeleteId(null);
     fetchData();
   };
 
@@ -294,7 +295,7 @@ export default function TareasPage() {
                               <Button variant="ghost" size="icon" onClick={() => openEdit(tarea)} title="Editar">
                                 <Pencil className="h-4 w-4" />
                               </Button>
-                              <Button variant="ghost" size="icon" onClick={() => handleDelete(tarea.id)} title="Eliminar">
+                              <Button variant="ghost" size="icon" onClick={() => setDeleteId(tarea.id)} title="Eliminar">
                                 <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>
                             </>
@@ -465,6 +466,19 @@ export default function TareasPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteId !== null} onOpenChange={() => setDeleteId(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Eliminar Tarea</DialogTitle>
+            <DialogDescription>¿Estás seguro de eliminar esta tarea? Esta acción no se puede deshacer.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteId(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleDelete}>Eliminar</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
