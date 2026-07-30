@@ -152,10 +152,7 @@ export default function SeguimientoPage() {
   const [areas, setAreas] = useState<SupabaseArea[]>([]);
   const [indicadores, setIndicadores] = useState<SupabaseIndicador[]>([]);
   const [objetivosNivel, setObjetivosNivel] = useState<Record<string, string>>({});
-  const [selectedId, setSelectedId] = useState<string>(() => {
-    if (typeof window === "undefined") return "";
-    return localStorage.getItem("ultimoDiscipuloId") || "";
-  });
+  const [selectedId, setSelectedId] = useState<string>("");
 
   const handleSelectDiscipulo = (id: string) => {
     setSelectedId(id);
@@ -170,6 +167,13 @@ export default function SeguimientoPage() {
   const [saved, setSaved] = useState(false);
 
   const [step, setStep] = useState(1);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("ultimoDiscipuloId");
+      if (stored) setSelectedId(stored);
+    }
+  }, []);
   const [valores, setValores] = useState<Record<number, number>>({});
   const [evalObs, setEvalObs] = useState<Record<number, string>>({});
   const [ministerioSeleccionado, setMinisterioSeleccionado] = useState("");
