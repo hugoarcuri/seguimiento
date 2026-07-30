@@ -181,6 +181,7 @@ export function DiscipulosClient({ discipulos, etapas }: DiscipulosClientProps) 
       <div className="flex-1 min-w-0 overflow-y-auto">
         {selectedId && detailData ? (
           <DiscipuloDetailClient
+            key={selectedId}
             discipulo={detailData.discipulo}
             etapas={etapas}
             encuentros={detailData.encuentros}

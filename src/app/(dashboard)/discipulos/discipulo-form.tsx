@@ -19,8 +19,9 @@ import {
   Card,
   CardContent,
 } from "@/components/ui/card";
-import { Loader2, User, Calendar, Phone, Mail, MapPin, Church, Target, Activity, FileText } from "lucide-react";
+import { Loader2, User, Calendar, Phone, Mail, MapPin, Church, Target, Activity, FileText, Camera } from "lucide-react";
 import { toast } from "sonner";
+import { useState, useRef } from "react";
 import type { Etapa, Profile } from "@/types/database";
 
 interface DiscipuloFormProps {
@@ -39,6 +40,10 @@ export function DiscipuloForm({
   isEditing,
 }: DiscipuloFormProps) {
   const router = useRouter();
+  const [subiendoAvatar, setSubiendoAvatar] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const {
     register,
@@ -53,6 +58,33 @@ export function DiscipuloForm({
       estado: "activo",
     },
   });
+
+  const uploadAvatar = async (file: File, discipuloId: string) => {
+    setSubiendoAvatar(true);
+    const supabase = createClient();
+    const ext = file.name.split(".").pop();
+    const path = `${discipuloId}.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from("discipulo-avatars")
+      .upload(path, file, { upsert: true });
+    if (uploadError) { toast.error("Error al subir foto"); setSubiendoAvatar(false); return; }
+    const { data: urlData } = supabase.storage.from("discipulo-avatars").getPublicUrl(path);
+    setValue("avatar_url", urlData.publicUrl);
+    setSubiendoAvatar(false);
+    toast.success("Foto actualizada");
+  };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setAvatarPreview(reader.result as string);
+    reader.readAsDataURL(file);
+    setPendingFile(file);
+    if (isEditing && initialData?.id) {
+      uploadAvatar(file, initialData.id);
+    }
+  };
 
   const onSubmit = async (data: DiscipuloInput) => {
     const supabase = createClient();
@@ -94,11 +126,18 @@ export function DiscipuloForm({
         router.refresh();
       }
     } else {
-      const { error } = await supabase.from("discipulos").insert(payload);
+      const { data: newDiscipulo, error } = await supabase
+        .from("discipulos")
+        .insert(payload)
+        .select("id")
+        .single();
 
       if (error) {
         toast.error("Error al crear discípulo");
       } else {
+        if (pendingFile) {
+          await uploadAvatar(pendingFile, newDiscipulo.id);
+        }
         toast.success("Discípulo creado exitosamente");
         router.push("/discipulos");
         router.refresh();
@@ -110,6 +149,26 @@ export function DiscipuloForm({
     <form onSubmit={handleSubmit(onSubmit)}>
       <Card className="overflow-hidden">
         <CardContent className="p-6">
+          <div className="flex justify-center mb-6">
+            <div className="relative group">
+              {avatarPreview || initialData?.avatar_url ? (
+                <img src={avatarPreview || initialData?.avatar_url || ""} alt="" className="w-20 h-20 rounded-full object-cover" />
+              ) : (
+                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-2xl">
+                  {initialData?.nombre?.charAt(0)?.toUpperCase()}{initialData?.apellido?.charAt(0)?.toUpperCase()}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={subiendoAvatar}
+                className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+              >
+                {subiendoAvatar ? <Loader2 className="h-6 w-6 text-white animate-spin" /> : <Camera className="h-6 w-6 text-white" />}
+              </button>
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+            </div>
+          </div>
           <div className="grid gap-5 md:grid-cols-3">
             <div className="space-y-1.5 md:col-span-3">
               <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground border-b pb-1.5 mb-3">
