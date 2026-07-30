@@ -8,10 +8,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, CheckCircle2, Book, Heart, Users, Target, Sparkles, Hand, GraduationCap, Crown, User as UserIcon, ChevronLeft, ChevronRight, ClipboardCheck } from "lucide-react";
+import { Loader2, CheckCircle2, Book, Heart, Users, Target, Sparkles, Hand, GraduationCap, Crown, User as UserIcon, ChevronLeft, ChevronRight, ClipboardCheck, Plus, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 import { toast } from "sonner";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
 import { ResultadoEvaluacion } from "./resultado-evaluacion";
 import { PersonaOracionForm } from "./persona-oracion-form";
 
@@ -129,6 +132,7 @@ interface SupabaseDesafio {
   id: string;
   discipulo_id: string;
   descripcion: string;
+  estado: string;
   fecha_asignado?: string;
 }
 
@@ -154,7 +158,9 @@ export default function SeguimientoPage() {
   };
   const [reuniones, setReuniones] = useState<SupabaseReunion[]>([]);
   const [evaluaciones, setEvaluaciones] = useState<SupabaseEvaluacion[]>([]);
-  const [_desafios, setDesafios] = useState<SupabaseDesafio[]>([]);
+  const [desafios, setDesafios] = useState<SupabaseDesafio[]>([]);
+  const [nuevoDesafio, setNuevoDesafio] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [alertas, setAlertas] = useState<SupabaseAlerta[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -188,6 +194,24 @@ export default function SeguimientoPage() {
     }
     setGuardandoPersonas(false);
     toast.success("Personas guardadas");
+  };
+  const handleAgregarDesafio = async () => {
+    if (!user || !selectedId || !nuevoDesafio.trim()) return;
+    const { data } = await supabase.from("desafios").insert({
+      discipulo_id: selectedId, lider_id: user.id, descripcion: nuevoDesafio.trim(),
+    }).select().single();
+    if (data) {
+      setDesafios((prev) => [data as SupabaseDesafio, ...prev]);
+      setNuevoDesafio("");
+      toast.success("Desafío agregado");
+    }
+  };
+  const handleEliminarDesafio = async () => {
+    if (!deleteId) return;
+    await supabase.from("desafios").delete().eq("id", deleteId);
+    setDesafios((prev) => prev.filter((d) => d.id !== deleteId));
+    setDeleteId(null);
+    toast.success("Desafío eliminado");
   };
   const [mensajeoAlguien, setMensajeoAlguien] = useState<number | undefined>(undefined);
   const [mensajeoQuien, setMensajeoQuien] = useState("");
@@ -430,6 +454,37 @@ export default function SeguimientoPage() {
               <p className="text-[11px] text-muted-foreground">{discipulo.etapas?.nombre || `Nivel ${discipulo.etapa_id}`}{reuniones.length > 0 && ` · ${reuniones.length} reuniones`}</p>
             </div>
           </div>
+
+          {/* DESAFÍOS CRUD */}
+          <Card>
+            <CardHeader className="p-3 pb-2">
+              <CardTitle className="text-sm flex items-center gap-2"><ClipboardCheck className="h-4 w-4" /> Desafíos</CardTitle>
+            </CardHeader>
+            <CardContent className="p-3 space-y-2">
+              <div className="flex gap-2">
+                <Input placeholder="Nuevo desafío..." className="h-9 text-sm" value={nuevoDesafio} onChange={(e) => setNuevoDesafio(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleAgregarDesafio(); }}
+                />
+                <Button size="sm" variant="outline" onClick={handleAgregarDesafio} disabled={!nuevoDesafio.trim()}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              {desafios.length === 0 ? (
+                <p className="text-xs text-muted-foreground py-2">Sin desafíos pendientes</p>
+              ) : (
+                <div className="space-y-1 max-h-48 overflow-y-auto">
+                  {desafios.filter((d) => d.estado !== "completado" && d.estado !== "no_realizado").map((d) => (
+                    <div key={d.id} className="flex items-center justify-between gap-2 py-1.5 px-2 rounded-lg bg-muted/30 text-sm">
+                      <span className="truncate">{d.descripcion}</span>
+                      <button type="button" onClick={() => setDeleteId(d.id)} className="shrink-0 text-muted-foreground hover:text-destructive transition-colors">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* WIZARD */}
           {!saved ? (
@@ -740,6 +795,20 @@ export default function SeguimientoPage() {
           )}
         </>
       ) : null}
+
+      {/* DELETE CONFIRMATION */}
+      <Dialog open={!!deleteId} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Eliminar desafío</DialogTitle>
+            <DialogDescription>¿Estás seguro de eliminar este desafío? Esta acción no se puede deshacer.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setDeleteId(null)}>Cancelar</Button>
+            <Button variant="destructive" size="sm" onClick={handleEliminarDesafio}>Eliminar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
