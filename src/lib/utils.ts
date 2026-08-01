@@ -20,3 +20,8 @@ export function calcularEdad(fecha_nacimiento: string): number {
   if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) edad--;
   return edad;
 }
+
+export function generarAvatarUrl(nombre: string, apellido: string): string {
+  const seed = encodeURIComponent(`${nombre} ${apellido}`.trim());
+  return `https://api.dicebear.com/9.x/initials/svg?seed=${seed}`;
+}

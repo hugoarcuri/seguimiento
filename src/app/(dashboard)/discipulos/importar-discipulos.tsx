@@ -14,6 +14,7 @@ import { Loader2, Upload, FileText, AlertTriangle, CheckCircle2 } from "lucide-r
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import * as XLSX from "xlsx";
+import { generarAvatarUrl } from "@/lib/utils";
 import type { Etapa } from "@/types/database";
 
 interface FilaImportacion {
@@ -204,6 +205,7 @@ export function ImportarDiscipulos({ etapas }: { etapas: Etapa[] }) {
         lider_id: user.id,
         apellido: fila.apellido,
         nombre: fila.nombre,
+        avatar_url: generarAvatarUrl(fila.nombre, fila.apellido),
         telefono: fila.telefono || null,
         email: fila.email || null,
         sexo: fila.sexo || null,

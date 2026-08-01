@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { ResultadoEvaluacion } from "./resultado-evaluacion";
 import { PersonaOracionForm } from "./persona-oracion-form";
+import { HistorialSemanal } from "./historial-semanal";
 
 interface AreaMeta {
   label: string;
@@ -83,6 +84,20 @@ const desafiosPredefinidos = [
 
 const ministerios = ["Club Bíblico", "Escuela Dominical", "JH", "Enfoque", "Alabanza"];
 
+const fmtLocal = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+const inicioSemana = (d: Date) => {
+  const copy = new Date(d);
+  const day = (copy.getDay() + 6) % 7;
+  copy.setDate(copy.getDate() - day);
+  copy.setHours(0, 0, 0, 0);
+  return copy;
+};
+
+const esSemanaDe = (fecha: string, ref: Date) =>
+  fmtLocal(inicioSemana(new Date(fecha + "T12:00:00"))) === fmtLocal(inicioSemana(ref));
+
 interface SupabaseUser {
   id: string;
   email?: string;
@@ -126,6 +141,7 @@ interface SupabaseReunion {
   observaciones_generales?: string;
   compromisos?: string;
   proxima_reunion?: string;
+  evaluaciones?: SupabaseEvaluacion[];
 }
 
 interface SupabaseDesafio {
@@ -225,6 +241,7 @@ export default function SeguimientoPage() {
   const [proximaReunion, setProximaReunion] = useState("");
 
   const discipulo = discipulos.find((d) => d.id === selectedId);
+  const semanaActualReunion = reuniones.find((r) => esSemanaDe(r.fecha, new Date()));
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user));
@@ -251,6 +268,8 @@ export default function SeguimientoPage() {
     setStep(1);
     setValores({});
     setEvalObs({});
+    setReuniones([]);
+    setEvaluaciones([]);
     setMinisterioSeleccionado("");
     setMinisterioCustom("");
     setPasajeLeido("");
@@ -268,15 +287,30 @@ export default function SeguimientoPage() {
     setDesafioPersonalizado("");
     setProximaReunion("");
     Promise.all([
-      supabase.from("reuniones").select("*").eq("discipulo_id", selectedId).order("fecha", { ascending: false }),
+      supabase.from("reuniones").select("*, evaluaciones(*)").eq("discipulo_id", selectedId).order("fecha", { ascending: false }),
       supabase.from("desafios").select("*").eq("discipulo_id", selectedId).order("fecha_asignado", { ascending: false }),
       supabase.from("alertas").select("*").eq("discipulo_id", selectedId).eq("activa", true).order("created_at", { ascending: false }),
       supabase.from("personas_oracion").select("*").eq("discipulo_id", selectedId).eq("activo", true),
     ]).then(([rRes, dRes, aRes, pRes]) => {
-      setReuniones(rRes.data || []);
+      const reunionesData = (rRes.data || []) as SupabaseReunion[];
+      setReuniones(reunionesData);
+      setEvaluaciones(reunionesData.flatMap((r) => (r.evaluaciones || []).map((e) => ({ ...e }))));
       setDesafios((dRes.data || []) as SupabaseDesafio[]);
       setAlertas(aRes.data || []);
       if (pRes.data?.length) setPersonasOracion(pRes.data.map((p: { nombre: string; apellido: string; estado: string }) => ({ nombre: p.nombre, apellido: p.apellido, estado: p.estado })));
+      const semanaActual = reunionesData.find((r) => esSemanaDe(r.fecha, new Date()));
+      if (semanaActual) {
+        const vals: Record<number, number> = {};
+        const obs: Record<number, string> = {};
+        (semanaActual.evaluaciones || []).forEach((e) => {
+          if (e.valor !== null && e.valor !== undefined) vals[e.indicador_id] = e.valor;
+          if (e.observaciones) obs[e.indicador_id] = e.observaciones;
+        });
+        setValores(vals);
+        setEvalObs(obs);
+        if (semanaActual.compromisos) setCompromisos(semanaActual.compromisos.split("\n"));
+        if (semanaActual.proxima_reunion) setProximaReunion(semanaActual.proxima_reunion);
+      }
     }).catch(console.error);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
@@ -305,17 +339,46 @@ export default function SeguimientoPage() {
     }
     const obsFinal = [obsGenerales, ...extras].filter(Boolean).join("\n\n");
 
-    const { data: reunion } = await supabase.from("reuniones").insert({
-      discipulo_id: selectedId, lider_id: user.id, fecha: today,
-      observaciones_generales: obsFinal || null,
-      compromisos: compromisos.length > 0 || desafioPersonalizado ? [...compromisos, ...(desafioPersonalizado ? [desafioPersonalizado] : [])].join("\n") : null,
-      proxima_reunion: proximaReunion || null,
-    }).select().single();
-    if (!reunion) { toast.error("Error al guardar"); setSaving(false); return; }
+    const compromisosText = compromisos.length > 0 || desafioPersonalizado ? [...compromisos, ...(desafioPersonalizado ? [desafioPersonalizado] : [])].join("\n") : null;
+
+    const hoy = new Date();
+    const ws = inicioSemana(hoy);
+    const we = new Date(ws);
+    we.setDate(ws.getDate() + 7);
+    const { data: reunionExistente } = await supabase
+      .from("reuniones")
+      .select("id")
+      .eq("discipulo_id", selectedId)
+      .gte("fecha", fmtLocal(ws))
+      .lt("fecha", fmtLocal(we))
+      .maybeSingle();
+
+    let reunionId: string;
+    if (reunionExistente) {
+      const { error: upErr } = await supabase
+        .from("reuniones")
+        .update({
+          observaciones_generales: obsFinal || null,
+          compromisos: compromisosText,
+          proxima_reunion: proximaReunion || null,
+        })
+        .eq("id", reunionExistente.id);
+      if (upErr) { toast.error("Error al actualizar la evaluación de la semana"); setSaving(false); return; }
+      reunionId = reunionExistente.id;
+    } else {
+      const { data: reunion } = await supabase.from("reuniones").insert({
+        discipulo_id: selectedId, lider_id: user.id, fecha: today,
+        observaciones_generales: obsFinal || null,
+        compromisos: compromisosText,
+        proxima_reunion: proximaReunion || null,
+      }).select().single();
+      if (!reunion) { toast.error("Error al guardar"); setSaving(false); return; }
+      reunionId = reunion.id;
+    }
 
     const inserts = indicadores.map((ind) => {
       if (valores[ind.id] === undefined) return null;
-      return { reunion_id: reunion.id, indicador_id: ind.id, valor: valores[ind.id], no_evaluado: false, observaciones: evalObs[ind.id] || null };
+      return { reunion_id: reunionId, indicador_id: ind.id, valor: valores[ind.id], no_evaluado: false, observaciones: evalObs[ind.id] || null };
     }).filter(Boolean);
 
     if (inserts.length > 0) {
@@ -324,10 +387,13 @@ export default function SeguimientoPage() {
       }
     }
 
+    if (reunionExistente) {
+      await supabase.from("desafios").delete().eq("reunion_id", reunionId);
+    }
     const desafiosACrear = [...compromisos];
     if (desafioPersonalizado.trim()) desafiosACrear.push(desafioPersonalizado.trim());
     for (const desc of desafiosACrear) {
-      await supabase.from("desafios").insert({ discipulo_id: selectedId, lider_id: user.id, descripcion: desc });
+      await supabase.from("desafios").insert({ discipulo_id: selectedId, lider_id: user.id, reunion_id: reunionId, descripcion: desc });
     }
 
     if (personasOracion.length > 0) {
@@ -339,11 +405,14 @@ export default function SeguimientoPage() {
 
     setSaved(true);
     setSaving(false);
-    toast.success("Evaluación guardada");
+    toast.success(reunionExistente ? "Evaluación de la semana actualizada" : "Evaluación guardada");
 
-    supabase.from("reuniones").select("*").eq("discipulo_id", selectedId).order("fecha", { ascending: false }).then((r) => setReuniones(r.data || []));
+    supabase.from("reuniones").select("*, evaluaciones(*)").eq("discipulo_id", selectedId).order("fecha", { ascending: false }).then((r) => {
+      const reunionesData = (r.data || []) as SupabaseReunion[];
+      setReuniones(reunionesData);
+      setEvaluaciones(reunionesData.flatMap((rr) => (rr.evaluaciones || []).map((e) => ({ ...e }))));
+    });
     supabase.from("desafios").select("*").eq("discipulo_id", selectedId).order("fecha_asignado", { ascending: false }).then((d) => setDesafios((d.data || []) as SupabaseDesafio[]));
-    supabase.from("evaluaciones").select("*").in("reunion_id", [reunion.id]).then((res) => setEvaluaciones((prev) => [...prev, ...(res.data || [])]));
   };
 
   const avgByArea = (areaId: number) => {
@@ -401,24 +470,6 @@ export default function SeguimientoPage() {
     })).sort((a, b) => a.mes.localeCompare(b.mes)).slice(-6);
   };
 
-  const weeklyDetalle = () => {
-    const byDate: Record<string, Record<number, number>> = {};
-    const allEvs = saved ? allEvalData : evaluaciones;
-    allEvs.forEach((ev) => {
-      if (ev.valor === null) return;
-      const ind = indicadores.find((i) => i.id === ev.indicador_id);
-      if (!ind || (ind.area_id !== 1 && ind.area_id !== 2)) return;
-      const fecha = ev.reunion_id ? reuniones.find((r) => r.id === ev.reunion_id)?.fecha : format(new Date(), "yyyy-MM-dd");
-      if (!fecha) return;
-      if (!byDate[fecha]) byDate[fecha] = {};
-      byDate[fecha][ev.indicador_id] = (ev.valor / 5) * 100;
-    });
-    const indicadoresDev = indicadores.filter((i) => i.area_id === 1 || i.area_id === 2);
-    return Object.entries(byDate).sort((a, b) => a[0].localeCompare(b[0])).slice(-8).map(([fecha, vals]) => ({
-      fecha, ...Object.fromEntries(indicadoresDev.map((ind) => [ind.nombre, vals[ind.id] ?? null])),
-    }));
-  };
-
   if (loading) return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" /></div>;
 
   return (
@@ -452,6 +503,11 @@ export default function SeguimientoPage() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{discipulo.nombre} {discipulo.apellido}</p>
               <p className="text-[11px] text-muted-foreground">{discipulo.etapas?.nombre || `Nivel ${discipulo.etapa_id}`}{reuniones.length > 0 && ` · ${reuniones.length} reuniones`}</p>
+              {semanaActualReunion && (
+                <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                  Evaluación de esta semana guardada · se actualizará al guardar
+                </p>
+              )}
             </div>
           </div>
 
@@ -485,6 +541,14 @@ export default function SeguimientoPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* HISTORIAL SEMANAL */}
+          <HistorialSemanal
+            reuniones={reuniones}
+            indicadores={indicadores}
+            areas={areas}
+            opcionesIndicador={opcionesIndicador}
+          />
 
           {/* WIZARD */}
           {!saved ? (
@@ -782,7 +846,6 @@ export default function SeguimientoPage() {
                 radarData={radarData}
                 evolutionData={evolutionData()}
                 monthlyData={monthlyData()}
-                weeklyDetalle={weeklyDetalle()}
                 fortalezas={fortalezas}
                 debilidades={debilidades}
                 alertas={alertas}

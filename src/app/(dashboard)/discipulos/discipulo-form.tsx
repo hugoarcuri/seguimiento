@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { discipuloSchema, type DiscipuloInput } from "@/lib/validations/discipulo";
+import { generarAvatarUrl } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -101,6 +102,7 @@ export function DiscipuloForm({
     const payload = {
       ...data,
       lider_id: user.id,
+      avatar_url: data.avatar_url || (pendingFile ? undefined : generarAvatarUrl(data.nombre, data.apellido)),
       email: data.email || null,
       telefono: data.telefono || null,
       direccion: data.direccion || null,

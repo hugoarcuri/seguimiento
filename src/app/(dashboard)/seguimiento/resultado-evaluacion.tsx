@@ -27,7 +27,6 @@ interface ResultadoEvaluacionProps {
   radarData: { area: string; valor: number }[];
   evolutionData: { fecha: string; [key: string]: unknown }[];
   monthlyData: { mes: string; [key: string]: unknown }[];
-  weeklyDetalle: { fecha: string; [key: string]: unknown }[];
   fortalezas: { id: number; nombre: string; valor: number }[];
   debilidades: { id: number; nombre: string; valor: number }[];
   alertas: SupabaseAlerta[];
@@ -42,7 +41,6 @@ export function ResultadoEvaluacion({
   radarData,
   evolutionData: evoData,
   monthlyData: mData,
-  weeklyDetalle: wData,
   fortalezas,
   debilidades,
   alertas,
@@ -127,35 +125,6 @@ export function ResultadoEvaluacion({
                       const v = row[String(a.id)] as number | undefined;
                       return <td key={a.id} className="text-center py-1.5 px-1">
                         <span className={cn("inline-block w-6 h-6 rounded-full text-[10px] font-bold leading-6", v !== undefined && v >= 70 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : v !== undefined && v >= 40 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400" : v !== undefined ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400" : "")}>{v ?? "-"}</span>
-                      </td>;
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </CardContent>
-        </Card>
-      )}
-
-      {wData.length > 0 && (
-        <Card>
-          <CardHeader className="p-3 pb-0"><CardTitle className="text-sm">Detalle Semanal — Vida Devocional</CardTitle></CardHeader>
-          <CardContent className="p-3 overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead><tr className="border-b text-muted-foreground">
-                <th className="text-left py-1 pr-2">Semana</th>
-                {indicadores.filter((i) => i.area_id === 1 || i.area_id === 2).map((ind) => <th key={ind.id} className="text-center py-1 px-1 min-w-[70px]">{ind.nombre}</th>)}
-              </tr></thead>
-              <tbody>
-                {wData.slice(-8).map((row) => (
-                  <tr key={row.fecha as string} className="border-b last:border-0">
-                    <td className="py-1.5 pr-2 font-medium whitespace-nowrap">{format(parseISO(row.fecha as string), "dd/MM")}</td>
-                    {indicadores.filter((i) => i.area_id === 1 || i.area_id === 2).map((ind) => {
-                      const v = row[ind.nombre] as number | null | undefined;
-                      return <td key={ind.id} className="text-center py-1.5 px-1">
-                        {v !== null && v !== undefined ? (
-                          <span className={cn("inline-block w-6 h-6 rounded-full text-[10px] font-bold leading-6", v >= 80 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : v >= 50 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400" : "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400")}>{v}</span>
-                        ) : <span className="text-muted-foreground">-</span>}
                       </td>;
                     })}
                   </tr>
