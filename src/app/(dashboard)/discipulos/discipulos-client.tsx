@@ -179,7 +179,7 @@ export function DiscipulosClient({ discipulos, etapas }: DiscipulosClientProps) 
 
       {/* RIGHT PANEL */}
       <div className="flex-1 min-w-0 overflow-y-auto">
-        {selectedId && detailData ? (
+        {selectedId && detailData?.discipulo.id === selectedId ? (
           <DiscipuloDetailClient
             key={selectedId}
             discipulo={detailData.discipulo}

@@ -27,6 +27,8 @@ function DiscipuloVerInner() {
       setLoading(false);
       return;
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLoading(true);
     const supabase = createClient();
     Promise.all([
       supabase.from("discipulos").select("*").eq("id", id).single(),
@@ -51,7 +53,7 @@ function DiscipuloVerInner() {
 
   if (loading) return <div className="flex items-center justify-center min-h-[50vh]"><p className="text-muted-foreground">Cargando...</p></div>;
   if (!data) return <div className="flex items-center justify-center min-h-[50vh]"><p className="text-muted-foreground">Discípulo no encontrado</p></div>;
-  return <DiscipuloDetailClient {...data} />;
+  return <DiscipuloDetailClient key={data.discipulo.id} {...data} />;
 }
 
 export function DiscipuloVerWrapper() {
