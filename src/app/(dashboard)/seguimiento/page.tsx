@@ -27,7 +27,6 @@ interface AreaMeta {
 
 const areasMeta: Record<number, AreaMeta> = {
   1: { label: "Vida Devocional", icon: Book, color: "hsl(var(--chart-1))" },
-  2: { label: "Relación con Dios", icon: Heart, color: "hsl(var(--chart-2))" },
   3: { label: "Carácter Cristiano", icon: Sparkles, color: "hsl(var(--chart-3))" },
   4: { label: "Comunión", icon: Users, color: "hsl(var(--chart-4))" },
   5: { label: "Servicio", icon: Hand, color: "hsl(var(--chart-5))" },
@@ -51,10 +50,6 @@ const opcionesIndicador: Record<string, { type: "escala" | "si_no"; labels: stri
   "Lectura bíblica": { type: "escala", labels: ["Nunca", "1-2 días", "3-4 días", "5-6 días", "Todos los días"] },
   "Tiempo devocional": { type: "escala", labels: ["Muy malo", "Malo", "Regular", "Bueno", "Excelente"] },
   "Memorización bíblica": { type: "escala", labels: ["No memoriza", "1 versículo", "2-3 versículos", "4-5 versículos", "6+ versículos"] },
-  "Seguridad de salvación": { type: "escala", labels: ["No seguro", "Poco seguro", "Algo seguro", "Seguro", "Muy seguro"] },
-  "Confesión de pecados": { type: "escala", labels: ["No confiesa", "Rara vez", "A veces", "Frecuentemente", "Siempre"] },
-  Gratitud: { type: "escala", labels: ["Quejoso", "Poco agradecido", "A veces", "Agradecido", "Muy agradecido"] },
-  Adoración: { type: "escala", labels: ["No adora", "Rara vez", "A veces", "Frecuentemente", "Siempre"] },
   "Asistencia al culto": { type: "escala", labels: ["Nunca", "1 vez/mes", "2 veces/mes", "3 veces/mes", "Siempre"] },
   "Asistencia al grupo pequeño": { type: "escala", labels: ["Nunca", "Casi nunca", "A veces", "Frecuentemente", "Siempre"] },
   "Sujeción pastoral": { type: "escala", labels: ["No acepta", "Se resiste", "A veces", "Acepta", "Ejemplar"] },
@@ -247,7 +242,7 @@ export default function SeguimientoPage() {
     supabase.auth.getUser().then(({ data }) => setUser(data.user));
     Promise.all([
       supabase.from("discipulos").select("*, etapas:etapa_id(*)").order("apellido"),
-      supabase.from("areas").select("*").order("orden"),
+      supabase.from("areas").select("*").eq("activo", true).order("orden"),
       supabase.from("indicadores").select("*").eq("activo", true).order("orden"),
       supabase.from("indicador_nivel").select("*"),
     ]).then(([dRes, aRes, iRes, oRes]) => {
