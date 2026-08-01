@@ -622,17 +622,20 @@ export default function SeguimientoPage() {
           {!saved ? (
             <>
               {/* STEP INDICATOR */}
-              <div className="flex items-center gap-1 overflow-x-auto pb-1">
-                {paresEvaluacion.map((title, i) => (
-                  <button key={i} type="button" onClick={() => setPar(i + 1)}
-                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium whitespace-nowrap transition-colors ${
-                      par === i + 1 ? "bg-primary text-primary-foreground shadow-sm" : par > i + 1 ? "bg-muted text-muted-foreground" : "bg-muted/50 text-muted-foreground/60"
-                    }`}
-                  >
-                    {par > i + 1 ? <CheckCircle2 className="h-3 w-3" /> : null}
-                    {title}
-                  </button>
-                ))}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1 overflow-x-auto pb-1">
+                  {paresEvaluacion.map((title, i) => (
+                    <button key={i} type="button" onClick={() => setPar(i + 1)}
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium whitespace-nowrap transition-colors ${
+                        par === i + 1 ? "bg-primary text-primary-foreground shadow-sm" : par > i + 1 ? "bg-muted text-muted-foreground" : "bg-muted/50 text-muted-foreground/60"
+                      }`}
+                    >
+                      {par > i + 1 ? <CheckCircle2 className="h-3 w-3" /> : null}
+                      {title}
+                    </button>
+                  ))}
+                </div>
+                <span className="text-xs text-muted-foreground whitespace-nowrap">Paso {par} de 3</span>
               </div>
 
               {/* PAR 1: VIDA DEVOCIONAL + COMUNIÓN */}
