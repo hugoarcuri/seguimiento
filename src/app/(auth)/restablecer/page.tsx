@@ -22,15 +22,26 @@ export default function RestablecerPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const hash = window.location.hash;
-    if (!hash || !hash.includes("access_token")) {
-      setError("Link inválido o expirado");
-      return;
-    }
-    const params = new URLSearchParams(hash.replace("#", "?"));
+    const params = new URLSearchParams(window.location.hash.replace(/^#/, "?"));
     const token = params.get("access_token");
-    if (!token) { setError("Link inválido o expirado"); return; }
-    setValido(true);
+    const refreshToken = params.get("refresh_token");
+    const supabase = createClient();
+    if (!token) {
+      const t = setTimeout(() => setError("Link inválido o expirado"), 0);
+      return () => clearTimeout(t);
+    }
+    // El flujo de recovery de Supabase requiere establecer la sesión
+    // antes de poder llamar a updateUser().
+    supabase.auth.setSession({
+      access_token: token,
+      refresh_token: refreshToken || "",
+    }).then(({ error }) => {
+      if (error) {
+        setError("Link inválido o expirado");
+        return;
+      }
+      setValido(true);
+    });
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {

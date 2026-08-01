@@ -23,12 +23,10 @@ function DiscipuloVerInner() {
 
   useEffect(() => {
     if (!id) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setLoading(false);
-      return;
+      const t = setTimeout(() => setLoading(false), 0);
+      return () => clearTimeout(t);
     }
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLoading(true);
+    let cancelado = false;
     const supabase = createClient();
     Promise.all([
       supabase.from("discipulos").select("*").eq("id", id).single(),
@@ -38,6 +36,7 @@ function DiscipuloVerInner() {
       supabase.from("tareas").select("*").eq("discipulo_id", id).order("created_at", { ascending: false }),
       supabase.from("timeline").select("*").eq("discipulo_id", id).order("created_at", { ascending: false }),
     ]).then(([discipuloRes, etapasRes, encuentrosRes, oracionesRes, tareasRes, timelineRes]) => {
+      if (cancelado) return;
       if (!discipuloRes.data) { setLoading(false); return; }
       setData({
         discipulo: discipuloRes.data,
@@ -49,6 +48,7 @@ function DiscipuloVerInner() {
       });
       setLoading(false);
     }).catch(console.error);
+    return () => { cancelado = true; };
   }, [id]);
 
   if (loading) return <div className="flex items-center justify-center min-h-[50vh]"><p className="text-muted-foreground">Cargando...</p></div>;

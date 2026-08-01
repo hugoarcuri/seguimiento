@@ -2,16 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -20,7 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import Image from "next/image";
 import { Search, UserPlus, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Discipulo, Etapa, Encuentro, Oracion, Tarea, Timeline } from "@/types/database";
@@ -42,10 +34,10 @@ function getAvatarColor(id: string): string {
 interface DiscipulosClientProps {
   discipulos: Discipulo[];
   etapas: Etapa[];
+  onCambio?: () => void;
 }
 
-export function DiscipulosClient({ discipulos, etapas }: DiscipulosClientProps) {
-  const router = useRouter();
+export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosClientProps) {
   const [search, setSearch] = useState("");
   const [etapaFilter, setEtapaFilter] = useState<number | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<string | null>(null);
@@ -69,8 +61,8 @@ export function DiscipulosClient({ discipulos, etapas }: DiscipulosClientProps) 
   });
 
   useEffect(() => {
-    if (!selectedId) { setDetailData(null); return; }
-    setLoadingDetail(true);
+    if (!selectedId) return;
+    let cancelado = false;
     const supabase = createClient();
     Promise.all([
       supabase.from("discipulos").select("*").eq("id", selectedId).single(),
@@ -79,6 +71,7 @@ export function DiscipulosClient({ discipulos, etapas }: DiscipulosClientProps) 
       supabase.from("tareas").select("*").eq("discipulo_id", selectedId).order("created_at", { ascending: false }),
       supabase.from("timeline").select("*").eq("discipulo_id", selectedId).order("created_at", { ascending: false }),
     ]).then(([dRes, eRes, oRes, tRes, tlRes]) => {
+      if (cancelado) return;
       if (!dRes.data) { setLoadingDetail(false); return; }
       setDetailData({
         discipulo: dRes.data,
@@ -88,7 +81,8 @@ export function DiscipulosClient({ discipulos, etapas }: DiscipulosClientProps) 
         timeline: tlRes.data || [],
       });
       setLoadingDetail(false);
-    }).catch(() => setLoadingDetail(false));
+    }).catch(() => { if (!cancelado) setLoadingDetail(false); });
+    return () => { cancelado = true; };
   }, [selectedId]);
 
   const handleDelete = async (id: string) => {
@@ -102,7 +96,7 @@ export function DiscipulosClient({ discipulos, etapas }: DiscipulosClientProps) 
       toast.success("Discípulo eliminado");
       setDeleteDialog(null);
       if (selectedId === id) { setSelectedId(null); }
-      router.refresh();
+      onCambio?.();
     }
   };
 
@@ -123,7 +117,7 @@ export function DiscipulosClient({ discipulos, etapas }: DiscipulosClientProps) 
               <UserPlus className="h-3.5 w-3.5" />
               Nuevo
             </Link>
-            <ImportarDiscipulos etapas={etapas} />
+            <ImportarDiscipulos etapas={etapas} onImportado={onCambio} />
           </div>
         </div>
 
@@ -151,7 +145,7 @@ export function DiscipulosClient({ discipulos, etapas }: DiscipulosClientProps) 
               <button
                 key={d.id}
                 type="button"
-                onClick={() => setSelectedId(d.id)}
+                onClick={() => { setLoadingDetail(true); setSelectedId(d.id); }}
                 className={cn(
                   "w-full flex items-center gap-3 p-2 rounded-lg text-left transition-colors group",
                   selectedId === d.id ? "bg-primary/10" : "hover:bg-muted/50"

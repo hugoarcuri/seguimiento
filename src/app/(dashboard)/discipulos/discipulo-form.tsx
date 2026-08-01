@@ -50,7 +50,6 @@ export function DiscipuloForm({
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<DiscipuloInput>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(discipuloSchema),
     defaultValues: initialData || {
       etapa_id: 1,

@@ -7,9 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Upload, FileText, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -51,7 +50,7 @@ const FORMATO_EJEMPLO_TEXTO = `apellido\tnombre\ttelefono\temail\tetapa\testado
 García\tJuan\t1123456789\tjuan@gmail.com\t1\tactivo
 Pérez\tMaría\t1198765432\tmaria@gmail.com\t2\tactivo`;
 
-export function ImportarDiscipulos({ etapas }: { etapas: Etapa[] }) {
+export function ImportarDiscipulos({ etapas, onImportado }: { etapas: Etapa[]; onImportado?: () => void }) {
   const router = useRouter();
   const fileInput = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
@@ -198,8 +197,23 @@ export function ImportarDiscipulos({ etapas }: { etapas: Etapa[] }) {
     let err = 0;
     const errores: string[] = [];
 
+    // Evita duplicados por email (sin constraint en la DB)
+    const { data: existentes } = await supabase.from("discipulos").select("email");
+    const emailsExistentes = new Set<string>();
+    (existentes || []).forEach((d) => { if (d.email) emailsExistentes.add(String(d.email).toLowerCase()); });
+
     for (const fila of filas) {
       if (!fila._valida) { err++; continue; }
+
+      if (fila.email) {
+        const emailNormalizado = fila.email.toLowerCase();
+        if (emailsExistentes.has(emailNormalizado)) {
+          err++;
+          errores.push(`${fila.apellido}, ${fila.nombre}: email ya registrado (${fila.email})`);
+          continue;
+        }
+        emailsExistentes.add(emailNormalizado);
+      }
 
       const { error } = await supabase.from("discipulos").insert({
         lider_id: user.id,
@@ -231,6 +245,7 @@ export function ImportarDiscipulos({ etapas }: { etapas: Etapa[] }) {
     if (ok > 0) {
       toast.success(`${ok} discípulos importados`);
       router.refresh();
+      onImportado?.();
     }
     if (err > 0) {
       toast.error(`${err} discípulos no pudieron importarse`);
