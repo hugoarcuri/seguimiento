@@ -2,152 +2,27 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, CheckCircle2, Book, Heart, Users, Target, Hand, GraduationCap, Crown, User as UserIcon, ChevronLeft, ChevronRight, ClipboardCheck, Plus, Trash2 } from "lucide-react";
+import { ClipboardCheck, Loader2, CheckCircle2, ChevronLeft, ChevronRight, Plus, Trash2, User as UserIcon } from "lucide-react";
 import { format } from "date-fns";
-import Link from "next/link";
 import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { ResultadoEvaluacion } from "./resultado-evaluacion";
-import { PersonaOracionForm } from "./persona-oracion-form";
 import { HistorialSemanal } from "./historial-semanal";
-
-interface AreaMeta {
-  label: string;
-  icon: typeof Book;
-  color: string;
-}
-
-const areasMeta: Record<number, AreaMeta> = {
-  1: { label: "Vida Devocional", icon: Book, color: "hsl(var(--chart-1))" },
-  4: { label: "Comunión", icon: Users, color: "hsl(var(--chart-4))" },
-  5: { label: "Servicio", icon: Hand, color: "hsl(var(--chart-5))" },
-  6: { label: "Evangelismo", icon: Target, color: "hsl(var(--chart-6))" },
-  7: { label: "Discipulado", icon: GraduationCap, color: "hsl(var(--chart-7))" },
-  8: { label: "Liderazgo", icon: Crown, color: "hsl(var(--chart-8))" },
-};
-
-const opcionesIndicador: Record<string, { type: "escala" | "si_no"; labels: string[] }> = {
-  Oración: { type: "escala", labels: ["Nunca", "1-2 veces", "3-4 veces", "5-6 veces", "Todos los días"] },
-  "Lectura bíblica": { type: "escala", labels: ["Nunca", "1-2 días", "3-4 días", "5-6 días", "Todos los días"] },
-  "Memorización bíblica": { type: "escala", labels: ["No memoriza", "1 versículo", "2-3 versículos", "4-5 versículos", "6+ versículos"] },
-  "Asistencia al culto": { type: "escala", labels: ["Nunca", "1 vez/mes", "2 veces/mes", "3 veces/mes", "Siempre"] },
-  "Asistencia al grupo pequeño": { type: "escala", labels: ["Nunca", "Casi nunca", "A veces", "Frecuentemente", "Siempre"] },
-  "Relación con la autoridad": { type: "escala", labels: ["No acepta", "Se resiste", "A veces", "Acepta", "Ejemplar"] },
-  "Integración con la iglesia": { type: "escala", labels: ["No integrado", "Poco", "A veces", "Integrado", "Muy integrado"] },
-  "Participa en un ministerio": { type: "si_no", labels: ["No", "Sí"] },
-  "Sirvió esta semana": { type: "si_no", labels: ["No", "Sí"] },
-  "Comparte el evangelio": { type: "si_no", labels: ["No", "Sí"] },
-  "Comparte su testimonio": { type: "si_no", labels: ["No", "Sí"] },
-  "Invita personas": { type: "si_no", labels: ["No", "Sí"] },
-  "Ora por inconversos": { type: "si_no", labels: ["No", "Sí"] },
-  "Seguimiento de nuevos": { type: "si_no", labels: ["No", "Sí"] },
-  "Recibe discipulado": { type: "si_no", labels: ["No", "Sí"] },
-  "Discipula a otros": { type: "si_no", labels: ["No", "Sí"] },
-  "Acompaña nuevos": { type: "si_no", labels: ["No", "Sí"] },
-};
-
-const defaultOpts = ["1", "2", "3", "4", "5"];
-
-const desafiosPredefinidos = [
-  "Orar diariamente",
-  "Leer Juan capítulos 1 al 5",
-  "Participar del grupo pequeño",
-  "Servir el próximo domingo",
-  "Evangelizar a un amigo",
-  "Memorizar Efesios 2:8-9",
-];
-
-const ministerios = ["Club Bíblico", "Escuela Dominical", "JH", "Enfoque", "Alabanza"];
-
-const paresEvaluacion = ["Vida Devocional y Comunión", "Servicio y Evangelismo", "Observaciones y Desafíos"];
-
-const fmtLocal = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-
-const ESCALA_MAX = 5;
-const MES_ESCALA = 20;
-
-const pctPromedio = (promedio: number) => Math.round((promedio / ESCALA_MAX) * 100);
-
-const inicioSemana = (d: Date) => {
-  const copy = new Date(d);
-  const day = (copy.getDay() + 6) % 7;
-  copy.setDate(copy.getDate() - day);
-  copy.setHours(0, 0, 0, 0);
-  return copy;
-};
-
-const esSemanaDe = (fecha: string, ref: Date) =>
-  fmtLocal(inicioSemana(new Date(fecha + "T12:00:00"))) === fmtLocal(inicioSemana(ref));
-
-interface SupabaseUser {
-  id: string;
-  email?: string;
-  rol?: string;
-}
-
-interface SupabaseDiscipulo {
-  id: string;
-  nombre: string;
-  apellido: string;
-  etapa_id: number;
-  etapas?: { nombre: string };
-}
-
-interface SupabaseArea {
-  id: number;
-  nombre: string;
-  orden: number;
-}
-
-interface SupabaseIndicador {
-  id: number;
-  area_id: number;
-  nombre: string;
-  orden: number;
-}
-
-interface SupabaseEvaluacion {
-  id?: string;
-  reunion_id: string;
-  indicador_id: number;
-  valor: number | null;
-  no_evaluado?: boolean;
-  observaciones?: string | null;
-}
-
-interface SupabaseReunion {
-  id: string;
-  discipulo_id: string;
-  fecha: string;
-  observaciones_generales?: string;
-  compromisos?: string;
-  proxima_reunion?: string;
-  evaluaciones?: SupabaseEvaluacion[];
-}
-
-interface SupabaseDesafio {
-  id: string;
-  discipulo_id: string;
-  descripcion: string;
-  estado: string;
-  fecha_asignado?: string;
-}
-
-interface SupabaseAlerta {
-  id: string;
-  discipulo_id: string;
-  mensaje: string;
-  activa: boolean;
-}
+import { PasoVidaDevocional, PasoServicioEvangelismo, PasoObservaciones } from "./paso-evaluacion";
+import { useEvaluacionWizard } from "./use-evaluacion-wizard";
+import {
+  areasMeta, opcionesIndicador, paresEvaluacion,
+  fmtLocal, inicioSemana, esSemanaDe, MES_ESCALA, pctPromedio,
+} from "./data";
+import type {
+  SupabaseUser, SupabaseDiscipulo, SupabaseArea, SupabaseIndicador,
+  SupabaseEvaluacion, SupabaseReunion, SupabaseDesafio, SupabaseAlerta,
+} from "./data";
 
 export default function SeguimientoPage() {
   const supabase = useMemo(() => createClient(), []);
@@ -158,41 +33,6 @@ export default function SeguimientoPage() {
   const [objetivosNivel, setObjetivosNivel] = useState<Record<string, string>>({});
   const [selectedId, setSelectedId] = useState<string>("");
 
-  const resetForm = () => {
-    setSaved(false);
-    setPar(1);
-    setValores({});
-    setEvalObs({});
-    setReuniones([]);
-    setEvaluaciones([]);
-    setDesafios([]);
-    setAlertas([]);
-    setMinisterioSeleccionado("");
-    setMinisterioCustom("");
-    setPasajeLeido("");
-    setMaterialLeido("");
-    setMotivosOracion("");
-    setPersonasOracion([]);
-    setMensajeoAlguien(undefined);
-    setMensajeoQuien("");
-    setVisitoAlguien(undefined);
-    setVisitoQuien("");
-    setActoServicio(undefined);
-    setActoServicioDesc("");
-    setObsGenerales("");
-    setCompromisos([]);
-    setDesafioPersonalizado("");
-    setProximaReunion("");
-    setDeleteId(null);
-    setNuevoDesafio("");
-  };
-
-  const handleSelectDiscipulo = (id: string) => {
-    if (id === selectedId) return;
-    resetForm();
-    setSelectedId(id);
-    localStorage.setItem("ultimoDiscipuloId", id);
-  };
   const [reuniones, setReuniones] = useState<SupabaseReunion[]>([]);
   const [evaluaciones, setEvaluaciones] = useState<SupabaseEvaluacion[]>([]);
   const [desafios, setDesafios] = useState<SupabaseDesafio[]>([]);
@@ -201,8 +41,8 @@ export default function SeguimientoPage() {
   const [alertas, setAlertas] = useState<SupabaseAlerta[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [par, setPar] = useState(1);
+
+  const w = useEvaluacionWizard();
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -213,60 +53,6 @@ export default function SeguimientoPage() {
       }
     }
   }, []);
-  const [valores, setValores] = useState<Record<number, number>>({});
-  const [evalObs, setEvalObs] = useState<Record<number, string>>({});
-  const [ministerioSeleccionado, setMinisterioSeleccionado] = useState("");
-  const [ministerioCustom, setMinisterioCustom] = useState("");
-  const [pasajeLeido, setPasajeLeido] = useState("");
-  const [materialLeido, setMaterialLeido] = useState("");
-  const [motivosOracion, setMotivosOracion] = useState("");
-  const [personasOracion, setPersonasOracion] = useState<{ nombre: string; apellido: string; estado: string }[]>([]);
-  const [editPersonaIdx, setEditPersonaIdx] = useState(-1);
-  const [editPersonaVal, setEditPersonaVal] = useState({ nombre: "", apellido: "", estado: "Oración" });
-  const [guardandoPersonas, setGuardandoPersonas] = useState(false);
-  const handleGuardarPersonasOracion = async () => {
-    if (!user || !selectedId) { toast.error("Seleccioná un discípulo primero"); return; }
-    setGuardandoPersonas(true);
-    const { error: delErr } = await supabase.from("personas_oracion").delete().eq("discipulo_id", selectedId);
-    if (delErr) { toast.error("Error al guardar personas"); setGuardandoPersonas(false); return; }
-    for (const p of personasOracion) {
-      const { error: insErr } = await supabase.from("personas_oracion").insert({ discipulo_id: selectedId, nombre: p.nombre, apellido: p.apellido, estado: p.estado });
-      if (insErr) { toast.error("Error al guardar personas"); setGuardandoPersonas(false); return; }
-    }
-    setGuardandoPersonas(false);
-    toast.success("Personas guardadas");
-  };
-  const handleAgregarDesafio = async () => {
-    if (!user || !selectedId || !nuevoDesafio.trim()) return;
-    const { data, error } = await supabase.from("desafios").insert({
-      discipulo_id: selectedId, lider_id: user.id, descripcion: nuevoDesafio.trim(),
-    }).select().single();
-    if (error) { toast.error("Error al agregar desafío"); return; }
-    setDesafios((prev) => [data as SupabaseDesafio, ...prev]);
-    setNuevoDesafio("");
-    toast.success("Desafío agregado");
-  };
-  const handleEliminarDesafio = async () => {
-    if (!deleteId) return;
-    const { error } = await supabase.from("desafios").delete().eq("id", deleteId);
-    if (error) { toast.error("Error al eliminar desafío"); return; }
-    setDesafios((prev) => prev.filter((d) => d.id !== deleteId));
-    setDeleteId(null);
-    toast.success("Desafío eliminado");
-  };
-  const [mensajeoAlguien, setMensajeoAlguien] = useState<number | undefined>(undefined);
-  const [mensajeoQuien, setMensajeoQuien] = useState("");
-  const [visitoAlguien, setVisitoAlguien] = useState<number | undefined>(undefined);
-  const [visitoQuien, setVisitoQuien] = useState("");
-  const [actoServicio, setActoServicio] = useState<number | undefined>(undefined);
-  const [actoServicioDesc, setActoServicioDesc] = useState("");
-  const [obsGenerales, setObsGenerales] = useState("");
-  const [compromisos, setCompromisos] = useState<string[]>([]);
-  const [desafioPersonalizado, setDesafioPersonalizado] = useState("");
-  const [proximaReunion, setProximaReunion] = useState("");
-
-  const discipulo = discipulos.find((d) => d.id === selectedId);
-  const semanaActualReunion = reuniones.find((r) => esSemanaDe(r.fecha, new Date()));
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user));
@@ -301,7 +87,7 @@ export default function SeguimientoPage() {
       setEvaluaciones(reunionesData.flatMap((r) => (r.evaluaciones || []).map((e) => ({ ...e }))));
       setDesafios((dRes.data || []) as SupabaseDesafio[]);
       setAlertas(aRes.data || []);
-      if (pRes.data?.length) setPersonasOracion(pRes.data.map((p: { nombre: string; apellido: string; estado: string }) => ({ nombre: p.nombre, apellido: p.apellido, estado: p.estado })));
+      if (pRes.data?.length) w.setPersonasOracion(pRes.data.map((p: { nombre: string; apellido: string; estado: string }) => ({ nombre: p.nombre, apellido: p.apellido, estado: p.estado })));
       const semanaActual = reunionesData.find((r) => esSemanaDe(r.fecha, new Date()));
       if (semanaActual) {
         const vals: Record<number, number> = {};
@@ -310,122 +96,87 @@ export default function SeguimientoPage() {
           if (e.valor !== null && e.valor !== undefined) vals[e.indicador_id] = e.valor;
           if (e.observaciones) obs[e.indicador_id] = e.observaciones;
         });
-        setValores(vals);
-        setEvalObs(obs);
-        if (semanaActual.compromisos) setCompromisos(semanaActual.compromisos.split("\n"));
-        if (semanaActual.proxima_reunion) setProximaReunion(semanaActual.proxima_reunion);
+        w.setValores(vals);
+        w.setEvalObs(obs);
+        if (semanaActual.compromisos) w.setCompromisos(semanaActual.compromisos.split("\n"));
+        if (semanaActual.proxima_reunion) w.setProximaReunion(semanaActual.proxima_reunion);
       }
     }).catch(console.error);
     return () => { cancelado = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId, supabase]);
 
-  const getIndicadoresByArea = (areaId: number) => indicadores.filter((i) => i.area_id === areaId);
-  const stepObjetivo = (indId: number) => objetivosNivel[`${indId}-${discipulo?.etapa_id}`] || "";
+  const handleSelectDiscipulo = (id: string) => {
+    if (id === selectedId) return;
+    resetForm();
+    setSelectedId(id);
+    localStorage.setItem("ultimoDiscipuloId", id);
+  };
 
-  const renderAreaCards = (ids: number[]) =>
-    ids.map((aid) => {
-      const area = areas.find((a) => a.id === aid);
-      if (!area) return null;
-      const items = getIndicadoresByArea(aid);
-      if (items.length === 0) return null;
-      const Icon = areasMeta[aid]?.icon || Book;
-      return (
-        <Card key={aid}>
-          <CardHeader className="p-3 pb-0">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Icon className="h-4 w-4" /> {area.nombre}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-3 space-y-3">
-            {items.map((ind) => {
-              const opts = getOpciones(ind.nombre);
-              const obj = stepObjetivo(ind.id);
-              return (
-                <div key={ind.id}>
-                  <div className="flex items-start justify-between mb-1">
-                    <div>
-                      <p className="text-sm font-medium">{ind.nombre}</p>
-                      {obj && <p className="text-[11px] text-muted-foreground leading-tight">{obj}</p>}
-                    </div>
-                  </div>
-                  {ind.nombre === "Sirvió esta semana" && valores[ind.id] === 1 ? (
-                    <div className="space-y-2">
-                      <div className="flex gap-1">
-                        {opts.labels.map((label, v) => (
-                          <button key={v} type="button" onClick={() => setValores((prev) => ({ ...prev, [ind.id]: v }))}
-                            className={`flex-1 h-8 rounded-lg text-xs font-medium transition-all ${
-                              (valores[ind.id] ?? -1) === v ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
-                            }`}
-                          >{label}</button>
-                        ))}
-                      </div>
-                      {(valores[ind.id] ?? -1) === 1 && (
-                        <div className="space-y-2">
-                          <Select value={ministerioSeleccionado} onValueChange={(v) => setMinisterioSeleccionado(v?.toString() ?? "")}>
-                            <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccionar ministerio" /></SelectTrigger>
-                            <SelectContent>
-                              {ministerios.map((m) => <SelectItem key={m} value={m} className="text-xs">{m}</SelectItem>)}
-                              <SelectItem value="Otro" className="text-xs">Otro</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          {ministerioSeleccionado === "Otro" && (
-                            <Input placeholder="¿Cuál?" className="h-8 text-xs" value={ministerioCustom} onChange={(e) => setMinisterioCustom(e.target.value)} />
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ) : opts.type === "si_no" ? (
-                    <div className="flex gap-2">
-                      {opts.labels.map((label, v) => (
-                        <button key={v} type="button" onClick={() => setValores((prev) => ({ ...prev, [ind.id]: v }))}
-                          className={`flex-1 h-9 rounded-lg text-sm font-medium transition-all ${
-                            (valores[ind.id] ?? -1) === v ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
-                          }`}
-                        >{label}</button>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="space-y-1">
-                      <div className="flex gap-1">
-                        {opts.labels.map((label, v) => (
-                          <button key={v} type="button" onClick={() => setValores((prev) => ({ ...prev, [ind.id]: v }))}
-                            className={`flex-1 h-9 rounded-lg text-xs font-medium transition-all ${
-                              (valores[ind.id] ?? -1) === v ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
-                            }`}
-                          >{label}</button>
-                        ))}
-                      </div>
-                      <Input placeholder="Observación..." className="h-7 text-xs" value={evalObs[ind.id] || ""} onChange={(e) => setEvalObs((prev) => ({ ...prev, [ind.id]: e.target.value }))} />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
-      );
-    });
+  const resetForm = () => {
+    w.reset();
+    setReuniones([]);
+    setEvaluaciones([]);
+    setDesafios([]);
+    setAlertas([]);
+    setDeleteId(null);
+    setNuevoDesafio("");
+  };
 
-  const getOpciones = (indNombre: string) => opcionesIndicador[indNombre] || { type: "escala" as const, labels: defaultOpts };
+  const discipulo = discipulos.find((d) => d.id === selectedId);
+  const semanaActualReunion = reuniones.find((r) => esSemanaDe(r.fecha, new Date()));
+
+  const handleGuardarPersonasOracion = async () => {
+    if (!user || !selectedId) { toast.error("Seleccioná un discípulo primero"); return; }
+    w.setGuardandoPersonas(true);
+    const { error: delErr } = await supabase.from("personas_oracion").delete().eq("discipulo_id", selectedId);
+    if (delErr) { toast.error("Error al guardar personas"); w.setGuardandoPersonas(false); return; }
+    for (const p of w.personasOracion) {
+      const { error: insErr } = await supabase.from("personas_oracion").insert({ discipulo_id: selectedId, nombre: p.nombre, apellido: p.apellido, estado: p.estado });
+      if (insErr) { toast.error("Error al guardar personas"); w.setGuardandoPersonas(false); return; }
+    }
+    w.setGuardandoPersonas(false);
+    toast.success("Personas guardadas");
+  };
+
+  const handleAgregarDesafio = async () => {
+    if (!user || !selectedId || !nuevoDesafio.trim()) return;
+    const { data, error } = await supabase.from("desafios").insert({
+      discipulo_id: selectedId, lider_id: user.id, descripcion: nuevoDesafio.trim(),
+    }).select().single();
+    if (error) { toast.error("Error al agregar desafío"); return; }
+    setDesafios((prev) => [data as SupabaseDesafio, ...prev]);
+    setNuevoDesafio("");
+    toast.success("Desafío agregado");
+  };
+
+  const handleEliminarDesafio = async () => {
+    if (!deleteId) return;
+    const { error } = await supabase.from("desafios").delete().eq("id", deleteId);
+    if (error) { toast.error("Error al eliminar desafío"); return; }
+    setDesafios((prev) => prev.filter((d) => d.id !== deleteId));
+    setDeleteId(null);
+    toast.success("Desafío eliminado");
+  };
 
   const handleSave = async () => {
     setSaving(true);
     if (!user) { toast.error("Debés iniciar sesión"); setSaving(false); return; }
     const today = format(new Date(), "yyyy-MM-dd");
     const extras: string[] = [];
-    if (pasajeLeido) extras.push(`Pasaje leído: ${pasajeLeido}`);
-    if (materialLeido) extras.push(`Material leído: ${materialLeido}`);
-    if (motivosOracion) extras.push(`Motivos de oración: ${motivosOracion}`);
-    if (mensajeoAlguien !== undefined) extras.push(`Contactó a alguien: ${mensajeoAlguien === 1 ? `Sí — ${mensajeoQuien || "(no especificó)"}` : "No"}`);
-    if (visitoAlguien !== undefined) extras.push(`Visitó a alguien: ${visitoAlguien === 1 ? `Sí — ${visitoQuien || "(no especificó)"}` : "No"}`);
-    if (actoServicio !== undefined) extras.push(`Acto de servicio: ${actoServicio === 1 ? `Sí — ${actoServicioDesc || "(no especificó)"}` : "No"}`);
-    if (ministerioSeleccionado) extras.push(`Ministerio: ${ministerioSeleccionado}${ministerioCustom ? ` (${ministerioCustom})` : ""}`);
-    if (personasOracion.length > 0) {
-      extras.push(`Personas por las que ora: ${personasOracion.map((p) => `${p.nombre} ${p.apellido} (${p.estado})`).join(", ")}`);
+    if (w.pasajeLeido) extras.push(`Pasaje leído: ${w.pasajeLeido}`);
+    if (w.materialLeido) extras.push(`Material leído: ${w.materialLeido}`);
+    if (w.motivosOracion) extras.push(`Motivos de oración: ${w.motivosOracion}`);
+    if (w.mensajeoAlguien !== undefined) extras.push(`Contactó a alguien: ${w.mensajeoAlguien === 1 ? `Sí — ${w.mensajeoQuien || "(no especificó)"}` : "No"}`);
+    if (w.visitoAlguien !== undefined) extras.push(`Visitó a alguien: ${w.visitoAlguien === 1 ? `Sí — ${w.visitoQuien || "(no especificó)"}` : "No"}`);
+    if (w.actoServicio !== undefined) extras.push(`Acto de servicio: ${w.actoServicio === 1 ? `Sí — ${w.actoServicioDesc || "(no especificó)"}` : "No"}`);
+    if (w.ministerioSeleccionado) extras.push(`Ministerio: ${w.ministerioSeleccionado}${w.ministerioCustom ? ` (${w.ministerioCustom})` : ""}`);
+    if (w.personasOracion.length > 0) {
+      extras.push(`Personas por las que ora: ${w.personasOracion.map((p) => `${p.nombre} ${p.apellido} (${p.estado})`).join(", ")}`);
     }
-    const obsFinal = [obsGenerales, ...extras].filter(Boolean).join("\n\n");
+    const obsFinal = [w.obsGenerales, ...extras].filter(Boolean).join("\n\n");
 
-    const compromisosText = compromisos.length > 0 || desafioPersonalizado ? [...compromisos, ...(desafioPersonalizado ? [desafioPersonalizado] : [])].join("\n") : null;
+    const compromisosText = w.compromisos.length > 0 || w.desafioPersonalizado ? [...w.compromisos, ...(w.desafioPersonalizado ? [w.desafioPersonalizado] : [])].join("\n") : null;
 
     const hoy = new Date();
     const ws = inicioSemana(hoy);
@@ -446,7 +197,7 @@ export default function SeguimientoPage() {
         .update({
           observaciones_generales: obsFinal || null,
           compromisos: compromisosText,
-          proxima_reunion: proximaReunion || null,
+          proxima_reunion: w.proximaReunion || null,
         })
         .eq("id", reunionExistente.id);
       if (upErr) { toast.error("Error al actualizar la evaluación de la semana"); setSaving(false); return; }
@@ -456,15 +207,15 @@ export default function SeguimientoPage() {
         discipulo_id: selectedId, lider_id: user.id, fecha: today,
         observaciones_generales: obsFinal || null,
         compromisos: compromisosText,
-        proxima_reunion: proximaReunion || null,
+        proxima_reunion: w.proximaReunion || null,
       }).select().single();
       if (insErr || !reunion) { toast.error("Error al guardar"); setSaving(false); return; }
       reunionId = reunion.id;
     }
 
     const inserts = indicadores.map((ind) => {
-      if (valores[ind.id] === undefined) return null;
-      return { reunion_id: reunionId, indicador_id: ind.id, valor: valores[ind.id], no_evaluado: false, observaciones: evalObs[ind.id] || null };
+      if (w.valores[ind.id] === undefined) return null;
+      return { reunion_id: reunionId, indicador_id: ind.id, valor: w.valores[ind.id], no_evaluado: false, observaciones: w.evalObs[ind.id] || null };
     }).filter(Boolean);
 
     if (inserts.length > 0) {
@@ -478,8 +229,8 @@ export default function SeguimientoPage() {
       const { error } = await supabase.from("desafios").delete().eq("reunion_id", reunionId);
       if (error) { toast.error("Error al guardar los desafíos"); setSaving(false); return; }
     }
-    const desafiosACrear = [...compromisos];
-    if (desafioPersonalizado.trim()) desafiosACrear.push(desafioPersonalizado.trim());
+    const desafiosACrear = [...w.compromisos];
+    if (w.desafioPersonalizado.trim()) desafiosACrear.push(w.desafioPersonalizado.trim());
     for (const desc of desafiosACrear) {
       const { error } = await supabase.from("desafios").insert({ discipulo_id: selectedId, lider_id: user.id, reunion_id: reunionId, descripcion: desc });
       if (error) { toast.error("Error al guardar los desafíos"); setSaving(false); return; }
@@ -487,12 +238,12 @@ export default function SeguimientoPage() {
 
     const { error: delPersonasErr } = await supabase.from("personas_oracion").delete().eq("discipulo_id", selectedId);
     if (delPersonasErr) { toast.error("Error al guardar las personas"); setSaving(false); return; }
-    for (const p of personasOracion) {
+    for (const p of w.personasOracion) {
       const { error: insPersonaErr } = await supabase.from("personas_oracion").insert({ discipulo_id: selectedId, nombre: p.nombre, apellido: p.apellido, estado: p.estado });
       if (insPersonaErr) { toast.error("Error al guardar las personas"); setSaving(false); return; }
     }
 
-    setSaved(true);
+    w.setSaved(true);
     setSaving(false);
     toast.success(reunionExistente ? "Evaluación de la semana actualizada" : "Evaluación guardada");
 
@@ -507,7 +258,7 @@ export default function SeguimientoPage() {
   const avgByArea = (areaId: number) => {
     const items = indicadores.filter((i) => i.area_id === areaId);
     if (items.length === 0) return 0;
-    const vals = items.map((i) => valores[i.id] ?? -1).filter((v) => v >= 0);
+    const vals = items.map((i) => w.valores[i.id] ?? -1).filter((v) => v >= 0);
     if (vals.length === 0) {
       const evs = evaluaciones.filter((ev) => items.some((i) => i.id === ev.indicador_id) && ev.valor !== null);
       if (evs.length === 0) return 0;
@@ -516,7 +267,7 @@ export default function SeguimientoPage() {
     return pctPromedio(vals.reduce((a, b) => a + b, 0) / vals.length);
   };
 
-  const allEvalData = [...evaluaciones, ...(saved ? indicadores.map((i) => ({ indicador_id: i.id, valor: valores[i.id], reunion_id: undefined as string | undefined })).filter((x) => x.valor !== undefined) : [])];
+  const allEvalData = [...evaluaciones, ...(w.saved ? indicadores.map((i) => ({ indicador_id: i.id, valor: w.valores[i.id], reunion_id: undefined as string | undefined })).filter((x) => x.valor !== undefined) : [])];
   const radarData = areas.map((a) => ({ area: a.nombre, valor: avgByArea(a.id) }));
   const areasConValor = (arr: Array<{ id: number; nombre: string; valor: number }>) => arr.filter((a) => a.valor > 0);
   const fortalezas = areasConValor(areas.map((a) => ({ id: a.id, nombre: a.nombre, valor: avgByArea(a.id) }))).sort((a, b) => b.valor - a.valor).slice(0, 3);
@@ -524,7 +275,7 @@ export default function SeguimientoPage() {
 
   const evolutionData = () => {
     const byDate: Record<string, Record<number, number[]>> = {};
-    const allEvs = saved ? allEvalData : evaluaciones;
+    const allEvs = w.saved ? allEvalData : evaluaciones;
     allEvs.forEach((ev) => {
       if (ev.valor === null) return;
       const ind = indicadores.find((i) => i.id === ev.indicador_id);
@@ -542,7 +293,7 @@ export default function SeguimientoPage() {
 
   const monthlyData = () => {
     const byMonth: Record<string, Record<number, number[]>> = {};
-    const allEvs = saved ? allEvalData : evaluaciones;
+    const allEvs = w.saved ? allEvalData : evaluaciones;
     allEvs.forEach((ev) => {
       if (ev.valor === null) return;
       const ind = indicadores.find((i) => i.id === ev.indicador_id);
@@ -642,211 +393,42 @@ export default function SeguimientoPage() {
           />
 
           {/* WIZARD */}
-          {!saved ? (
+          {!w.saved ? (
             <>
               {/* STEP INDICATOR */}
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-1 overflow-x-auto pb-1">
                   {paresEvaluacion.map((title, i) => (
-                    <button key={i} type="button" onClick={() => setPar(i + 1)}
+                    <button key={i} type="button" onClick={() => w.setPar(i + 1)}
                       className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium whitespace-nowrap transition-colors ${
-                        par === i + 1 ? "bg-primary text-primary-foreground shadow-sm" : par > i + 1 ? "bg-muted text-muted-foreground" : "bg-muted/50 text-muted-foreground/60"
+                        w.par === i + 1 ? "bg-primary text-primary-foreground shadow-sm" : w.par > i + 1 ? "bg-muted text-muted-foreground" : "bg-muted/50 text-muted-foreground/60"
                       }`}
                     >
-                      {par > i + 1 ? <CheckCircle2 className="h-3 w-3" /> : null}
+                      {w.par > i + 1 ? <CheckCircle2 className="h-3 w-3" /> : null}
                       {title}
                     </button>
                   ))}
                 </div>
-                <span className="text-xs text-muted-foreground whitespace-nowrap">Paso {par} de 3</span>
+                <span className="text-xs text-muted-foreground whitespace-nowrap">Paso {w.par} de 3</span>
               </div>
 
-              {/* PAR 1: VIDA DEVOCIONAL + COMUNIÓN */}
-              {par === 1 && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
-                <div className="space-y-3">
-                  {renderAreaCards([1])}
-                  <Card>
-                    <CardHeader className="p-3 pb-0">
-                      <CardTitle className="text-sm">Lectura y oración de la semana</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-3 space-y-3">
-                      <div className="space-y-1">
-                        <Label className="text-xs">Pasaje bíblico, libro o capítulo que leyó esta semana</Label>
-                        <Input placeholder="Ej: Juan 1-5, Salmos 23..." className="h-9 text-sm" value={pasajeLeido} onChange={(e) => setPasajeLeido(e.target.value)} />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Libro cristiano u otro material leído</Label>
-                        <Input placeholder="Título del libro o material..." className="h-9 text-sm" value={materialLeido} onChange={(e) => setMaterialLeido(e.target.value)} />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">¿Cuáles fueron sus motivos de oración en la semana?</Label>
-                        <Textarea rows={2} className="text-sm" value={motivosOracion} onChange={(e) => setMotivosOracion(e.target.value)} placeholder="Familia, trabajo, salud, etc." />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-                <div className="space-y-3">
-                  {renderAreaCards([4])}
-                  <Card>
-                    <CardHeader className="p-3 pb-0">
-                      <CardTitle className="text-sm">Contacto y servicio semanal</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-3 space-y-3">
-                      <div className="space-y-1">
-                        <Label className="text-xs">¿Envió mensaje o llamó a alguien esta semana?</Label>
-                        <div className="flex gap-2 mt-1">
-                          {["No", "Sí"].map((label, v) => (
-                            <button key={v} type="button" onClick={() => { setMensajeoAlguien(v); if (v === 0) setMensajeoQuien(""); }}
-                              className={`flex-1 h-9 rounded-lg text-sm font-medium transition-all ${
-                                (mensajeoAlguien ?? -1) === v ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
-                              }`}
-                            >{label}</button>
-                          ))}
-                        </div>
-                        {mensajeoAlguien === 1 && (
-                          <Input placeholder="¿A quién?" className="h-9 text-sm mt-1" value={mensajeoQuien} onChange={(e) => setMensajeoQuien(e.target.value)} />
-                        )}
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">¿Visitó a alguien en la semana?</Label>
-                        <div className="flex gap-2 mt-1">
-                          {["No", "Sí"].map((label, v) => (
-                            <button key={v} type="button" onClick={() => { setVisitoAlguien(v); if (v === 0) setVisitoQuien(""); }}
-                              className={`flex-1 h-9 rounded-lg text-sm font-medium transition-all ${
-                                (visitoAlguien ?? -1) === v ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
-                              }`}
-                            >{label}</button>
-                          ))}
-                        </div>
-                        {visitoAlguien === 1 && (
-                          <Input placeholder="¿A quién visitó?" className="h-9 text-sm mt-1" value={visitoQuien} onChange={(e) => setVisitoQuien(e.target.value)} />
-                        )}
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">¿Realizó algún acto de servicio?</Label>
-                        <div className="flex gap-2 mt-1">
-                          {["No", "Sí"].map((label, v) => (
-                            <button key={v} type="button" onClick={() => { setActoServicio(v); if (v === 0) setActoServicioDesc(""); }}
-                              className={`flex-1 h-9 rounded-lg text-sm font-medium transition-all ${
-                                (actoServicio ?? -1) === v ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
-                              }`}
-                            >{label}</button>
-                          ))}
-                        </div>
-                        {actoServicio === 1 && (
-                          <Input placeholder="¿Qué hizo?" className="h-9 text-sm mt-1" value={actoServicioDesc} onChange={(e) => setActoServicioDesc(e.target.value)} />
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
+              {w.par === 1 && (
+                <PasoVidaDevocional w={w} areas={areas} indicadores={indicadores} objetivosNivel={objetivosNivel} etapaId={discipulo?.etapa_id} />
               )}
-
-              {/* PAR 2: SERVICIO + EVANGELISMO */}
-              {par === 2 && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
-                <div className="space-y-3">
-                  {renderAreaCards([5, 7])}
-                </div>
-                <div className="space-y-3">
-                  {renderAreaCards([6, 8])}
-                  <Card>
-                    <CardHeader className="p-3 pb-0">
-                      <CardTitle className="text-sm">Acompañamiento evangelístico</CardTitle>
-                      <CardDescription className="text-xs">Gestioná el proceso completo de evangelismo (oración → servicio → evangelismo)</CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-3">
-                      <Link href="/evangelismo" className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
-                        <Heart className="h-4 w-4" /> Ir a Acompañamiento Evangelístico →
-                      </Link>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="p-3 pb-0">
-                      <CardTitle className="text-sm">Personas por las que ora</CardTitle>
-                      <CardDescription className="text-xs">Registrá las personas por las que el discípulo está orando</CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-3 space-y-3">
-                      {personasOracion.map((p, i) => (
-                        editPersonaIdx === i ? (
-                          <div key={i} className="flex items-center gap-2 text-sm bg-blue-50 dark:bg-blue-950/30 rounded-lg p-2">
-                            <Input className="h-7 text-xs flex-1" value={editPersonaVal.nombre} onChange={(e) => setEditPersonaVal((v) => ({ ...v, nombre: e.target.value }))} placeholder="Nombre" />
-                            <Input className="h-7 text-xs flex-1" value={editPersonaVal.apellido} onChange={(e) => setEditPersonaVal((v) => ({ ...v, apellido: e.target.value }))} placeholder="Apellido" />
-                            <select className="h-7 text-xs rounded-md border border-input bg-transparent px-1" value={editPersonaVal.estado} onChange={(e) => setEditPersonaVal((v) => ({ ...v, estado: e.target.value }))}>
-                              <option>Oración</option><option>Oración y servicio</option><option>Oración y predicación</option>
-                            </select>
-                            <button type="button" onClick={() => { setPersonasOracion((prev) => prev.map((x, j) => j === i ? editPersonaVal : x)); setEditPersonaIdx(-1); }} className="text-green-600 hover:text-green-700 text-xs font-medium">OK</button>
-                            <button type="button" onClick={() => setEditPersonaIdx(-1)} className="text-muted-foreground hover:text-foreground text-xs">X</button>
-                          </div>
-                        ) : (
-                          <div key={i} className="flex items-center gap-2 text-sm bg-muted/30 rounded-lg p-2">
-                            <span className="flex-1">{p.nombre} {p.apellido}</span>
-                            <span className="text-xs text-muted-foreground px-2 py-0.5 rounded-full bg-muted">{p.estado}</span>
-                            <button type="button" onClick={() => { setEditPersonaVal({ nombre: p.nombre, apellido: p.apellido, estado: p.estado }); setEditPersonaIdx(i); }} className="text-blue-400 hover:text-blue-600 text-xs font-medium">Editar</button>
-                            <button type="button" onClick={() => setPersonasOracion((prev) => prev.filter((_, j) => j !== i))} className="text-red-400 hover:text-red-600 text-xs font-medium">Quitar</button>
-                          </div>
-                        )
-                      ))}
-                      <PersonaOracionForm onAgregar={(p) => setPersonasOracion((prev) => [...prev, p])} />
-                      <button type="button" onClick={handleGuardarPersonasOracion} disabled={guardandoPersonas}
-                        className="w-full h-9 rounded-lg text-sm font-medium bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                      >{guardandoPersonas ? "Guardando..." : "Guardar personas"}</button>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
+              {w.par === 2 && (
+                <PasoServicioEvangelismo w={w} areas={areas} indicadores={indicadores} objetivosNivel={objetivosNivel} etapaId={discipulo?.etapa_id} onGuardarPersonas={handleGuardarPersonasOracion} />
               )}
-
-              {/* PAR 3: OBSERVACIONES + DESAFÍOS */}
-              {par === 3 && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
-                <Card>
-                  <CardHeader className="p-3 pb-0">
-                    <CardTitle className="text-sm flex items-center gap-2"><Heart className="h-4 w-4" /> Observaciones pastorales</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-3 space-y-3">
-                    <div className="space-y-1">
-                      <Label className="text-xs">¿Cómo percibes el ánimo espiritual del discípulo?</Label>
-                      <Textarea rows={2} className="text-sm" value={obsGenerales} onChange={(e) => setObsGenerales(e.target.value)} placeholder="Escribí tus observaciones..." />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Próxima reunión</Label>
-                      <Input type="date" className="h-9 text-sm" value={proximaReunion} onChange={(e) => setProximaReunion(e.target.value)} />
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="p-3 pb-0">
-                    <CardTitle className="text-sm flex items-center gap-2"><ClipboardCheck className="h-4 w-4" /> Desafíos y compromisos</CardTitle>
-                    <CardDescription className="text-xs">Seleccioná los desafíos para esta semana</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-3 space-y-3">
-                    <div className="space-y-2">
-                      {desafiosPredefinidos.map((d) => (
-                        <label key={d} className="flex items-center gap-2 text-sm cursor-pointer">
-                          <input type="checkbox" className="h-4 w-4" checked={compromisos.includes(d)} onChange={(e) => setCompromisos(e.target.checked ? [...compromisos, d] : compromisos.filter((x) => x !== d))} />
-                          {d}
-                        </label>
-                      ))}
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Otro desafío personalizado</Label>
-                      <Input placeholder="Ej: Leer Santiago completo" className="h-9 text-sm" value={desafioPersonalizado} onChange={(e) => setDesafioPersonalizado(e.target.value)} />
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+              {w.par === 3 && (
+                <PasoObservaciones w={w} />
               )}
 
               {/* NAVIGATION */}
               <div className="flex items-center justify-between gap-3">
-                <Button variant="outline" size="sm" disabled={par === 1} onClick={() => setPar(par - 1)}>
+                <Button variant="outline" size="sm" disabled={w.par === 1} onClick={() => w.setPar(w.par - 1)}>
                   <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
                 </Button>
-                {par < 3 ? (
-                  <Button size="sm" onClick={() => setPar(par + 1)}>
+                {w.par < 3 ? (
+                  <Button size="sm" onClick={() => w.setPar(w.par + 1)}>
                     Siguiente <ChevronRight className="h-4 w-4 ml-1" />
                   </Button>
                 ) : (
@@ -869,7 +451,7 @@ export default function SeguimientoPage() {
               areasMeta={areasMeta}
               indicadores={indicadores}
               saving={saving}
-              onNuevaEvaluacion={() => { setSaved(false); setValores({}); setEvalObs({}); setObsGenerales(""); setCompromisos([]); setDesafioPersonalizado(""); setProximaReunion(""); setPar(1); }}
+              onNuevaEvaluacion={w.reset}
             />
           )}
         </>
