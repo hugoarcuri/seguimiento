@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, CheckCircle2, Book, Heart, Users, Target, Hand, GraduationCap, Crown, User as UserIcon, ChevronLeft, ChevronRight, ClipboardCheck, Plus, Trash2 } from "lucide-react";
+import { Loader2, Book, Heart, Users, Target, Hand, GraduationCap, Crown, User as UserIcon, ClipboardCheck, Plus, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -33,15 +33,6 @@ const areasMeta: Record<number, AreaMeta> = {
   7: { label: "Discipulado", icon: GraduationCap, color: "hsl(var(--chart-7))" },
   8: { label: "Liderazgo", icon: Crown, color: "hsl(var(--chart-8))" },
 };
-
-const wizardSteps = [
-  { id: 1, title: "Vida Devocional", areas: [1], icon: Book },
-  { id: 2, title: "Comunión", areas: [4], icon: Users },
-  { id: 4, title: "Servicio", areas: [5, 7], icon: Hand },
-  { id: 5, title: "Evangelismo", areas: [6, 8], icon: Target },
-  { id: 6, title: "Observaciones", areas: [], icon: Heart },
-  { id: 7, title: "Desafíos", areas: [], icon: ClipboardCheck },
-];
 
 const opcionesIndicador: Record<string, { type: "escala" | "si_no"; labels: string[] }> = {
   Oración: { type: "escala", labels: ["Nunca", "1-2 veces", "3-4 veces", "5-6 veces", "Todos los días"] },
@@ -174,8 +165,6 @@ export default function SeguimientoPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const [step, setStep] = useState(1);
-
   useEffect(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("ultimoDiscipuloId");
@@ -257,7 +246,6 @@ export default function SeguimientoPage() {
     if (!selectedId) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSaved(false);
-    setStep(1);
     setValores({});
     setEvalObs({});
     setReuniones([]);
@@ -308,9 +296,91 @@ export default function SeguimientoPage() {
   }, [selectedId]);
 
   const getIndicadoresByArea = (areaId: number) => indicadores.filter((i) => i.area_id === areaId);
-  const stepAreas = wizardSteps.find((s) => s.id === step)?.areas || [];
-  const stepIndicadores = stepAreas.flatMap((aid) => getIndicadoresByArea(aid));
   const stepObjetivo = (indId: number) => objetivosNivel[`${indId}-${discipulo?.etapa_id}`] || "";
+
+  const renderAreaCards = (ids: number[]) =>
+    ids.map((aid) => {
+      const area = areas.find((a) => a.id === aid);
+      if (!area) return null;
+      const items = getIndicadoresByArea(aid);
+      if (items.length === 0) return null;
+      const Icon = areasMeta[aid]?.icon || Book;
+      return (
+        <Card key={aid}>
+          <CardHeader className="p-3 pb-0">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Icon className="h-4 w-4" /> {area.nombre}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-3 space-y-3">
+            {items.map((ind) => {
+              const opts = getOpciones(ind.nombre);
+              const obj = stepObjetivo(ind.id);
+              return (
+                <div key={ind.id}>
+                  <div className="flex items-start justify-between mb-1">
+                    <div>
+                      <p className="text-sm font-medium">{ind.nombre}</p>
+                      {obj && <p className="text-[11px] text-muted-foreground leading-tight">{obj}</p>}
+                    </div>
+                  </div>
+                  {ind.nombre === "Sirvió esta semana" && valores[ind.id] === 1 ? (
+                    <div className="space-y-2">
+                      <div className="flex gap-1">
+                        {opts.labels.map((label, v) => (
+                          <button key={v} type="button" onClick={() => setValores((prev) => ({ ...prev, [ind.id]: v }))}
+                            className={`flex-1 h-8 rounded-lg text-xs font-medium transition-all ${
+                              (valores[ind.id] ?? -1) === v ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                            }`}
+                          >{label}</button>
+                        ))}
+                      </div>
+                      {(valores[ind.id] ?? -1) === 1 && (
+                        <div className="space-y-2">
+                          <Select value={ministerioSeleccionado} onValueChange={(v) => setMinisterioSeleccionado(v?.toString() ?? "")}>
+                            <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccionar ministerio" /></SelectTrigger>
+                            <SelectContent>
+                              {ministerios.map((m) => <SelectItem key={m} value={m} className="text-xs">{m}</SelectItem>)}
+                              <SelectItem value="Otro" className="text-xs">Otro</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          {ministerioSeleccionado === "Otro" && (
+                            <Input placeholder="¿Cuál?" className="h-8 text-xs" value={ministerioCustom} onChange={(e) => setMinisterioCustom(e.target.value)} />
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ) : opts.type === "si_no" ? (
+                    <div className="flex gap-2">
+                      {opts.labels.map((label, v) => (
+                        <button key={v} type="button" onClick={() => setValores((prev) => ({ ...prev, [ind.id]: v }))}
+                          className={`flex-1 h-9 rounded-lg text-sm font-medium transition-all ${
+                            (valores[ind.id] ?? -1) === v ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                          }`}
+                        >{label}</button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <div className="flex gap-1">
+                        {opts.labels.map((label, v) => (
+                          <button key={v} type="button" onClick={() => setValores((prev) => ({ ...prev, [ind.id]: v }))}
+                            className={`flex-1 h-9 rounded-lg text-xs font-medium transition-all ${
+                              (valores[ind.id] ?? -1) === v ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                            }`}
+                          >{label}</button>
+                        ))}
+                      </div>
+                      <Input placeholder="Observación..." className="h-7 text-xs" value={evalObs[ind.id] || ""} onChange={(e) => setEvalObs((prev) => ({ ...prev, [ind.id]: e.target.value }))} />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      );
+    });
 
   const getOpciones = (indNombre: string) => opcionesIndicador[indNombre] || { type: "escala" as const, labels: defaultOpts };
 
@@ -506,34 +576,34 @@ export default function SeguimientoPage() {
 
             {/* DESAFÍOS CRUD */}
             <Card>
-            <CardHeader className="p-3 pb-2">
-              <CardTitle className="text-sm flex items-center gap-2"><ClipboardCheck className="h-4 w-4" /> Desafíos</CardTitle>
-            </CardHeader>
-            <CardContent className="p-3 space-y-2">
-              <div className="flex gap-2">
-                <Input placeholder="Nuevo desafío..." className="h-9 text-sm" value={nuevoDesafio} onChange={(e) => setNuevoDesafio(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") handleAgregarDesafio(); }}
-                />
-                <Button size="sm" variant="outline" onClick={handleAgregarDesafio} disabled={!nuevoDesafio.trim()}>
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-              {desafios.length === 0 ? (
-                <p className="text-xs text-muted-foreground py-2">Sin desafíos pendientes</p>
-              ) : (
-                <div className="space-y-1 max-h-48 overflow-y-auto">
-                  {desafios.filter((d) => d.estado !== "completado" && d.estado !== "no_realizado").map((d) => (
-                    <div key={d.id} className="flex items-center justify-between gap-2 py-1.5 px-2 rounded-lg bg-muted/30 text-sm">
-                      <span className="truncate">{d.descripcion}</span>
-                      <button type="button" onClick={() => setDeleteId(d.id)} className="shrink-0 text-muted-foreground hover:text-destructive transition-colors">
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  ))}
+              <CardHeader className="p-3 pb-2">
+                <CardTitle className="text-sm flex items-center gap-2"><ClipboardCheck className="h-4 w-4" /> Desafíos</CardTitle>
+              </CardHeader>
+              <CardContent className="p-3 space-y-2">
+                <div className="flex gap-2">
+                  <Input placeholder="Nuevo desafío..." className="h-9 text-sm" value={nuevoDesafio} onChange={(e) => setNuevoDesafio(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") handleAgregarDesafio(); }}
+                  />
+                  <Button size="sm" variant="outline" onClick={handleAgregarDesafio} disabled={!nuevoDesafio.trim()}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+                {desafios.length === 0 ? (
+                  <p className="text-xs text-muted-foreground py-2">Sin desafíos pendientes</p>
+                ) : (
+                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                    {desafios.filter((d) => d.estado !== "completado" && d.estado !== "no_realizado").map((d) => (
+                      <div key={d.id} className="flex items-center justify-between gap-2 py-1.5 px-2 rounded-lg bg-muted/30 text-sm">
+                        <span className="truncate">{d.descripcion}</span>
+                        <button type="button" onClick={() => setDeleteId(d.id)} className="shrink-0 text-muted-foreground hover:text-destructive transition-colors">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
 
           {/* HISTORIAL SEMANAL */}
@@ -546,240 +616,143 @@ export default function SeguimientoPage() {
 
           {/* WIZARD */}
           {!saved ? (
-            <>
-              {/* STEP INDICATOR */}
-              <div className="flex items-center gap-1 overflow-x-auto pb-1">
-                {wizardSteps.map((s) => (
-                  <button key={s.id} type="button" onClick={() => setStep(s.id)}
-                    className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium whitespace-nowrap transition-colors ${
-                      step === s.id ? "bg-primary text-primary-foreground" : step > s.id || (step > s.id) ? "bg-muted text-muted-foreground" : "bg-muted/50 text-muted-foreground/60"
-                    }`}
-                  >
-                    {step > s.id ? <CheckCircle2 className="h-3 w-3" /> : <s.icon className="h-3 w-3" />}
-                    {s.title}
-                  </button>
-                ))}
+            <div className="space-y-4">
+              {/* VIDA DEVOCIONAL + COMUNIÓN */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
+                <div className="space-y-3">
+                  {renderAreaCards([1])}
+                  <Card>
+                    <CardHeader className="p-3 pb-0">
+                      <CardTitle className="text-sm">Lectura y oración de la semana</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-3 space-y-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Pasaje bíblico, libro o capítulo que leyó esta semana</Label>
+                        <Input placeholder="Ej: Juan 1-5, Salmos 23..." className="h-9 text-sm" value={pasajeLeido} onChange={(e) => setPasajeLeido(e.target.value)} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Libro cristiano u otro material leído</Label>
+                        <Input placeholder="Título del libro o material..." className="h-9 text-sm" value={materialLeido} onChange={(e) => setMaterialLeido(e.target.value)} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">¿Cuáles fueron sus motivos de oración en la semana?</Label>
+                        <Textarea rows={2} className="text-sm" value={motivosOracion} onChange={(e) => setMotivosOracion(e.target.value)} placeholder="Familia, trabajo, salud, etc." />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+                <div className="space-y-3">
+                  {renderAreaCards([4])}
+                  <Card>
+                    <CardHeader className="p-3 pb-0">
+                      <CardTitle className="text-sm">Contacto y servicio semanal</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-3 space-y-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">¿Envió mensaje o llamó a alguien esta semana?</Label>
+                        <div className="flex gap-2 mt-1">
+                          {["No", "Sí"].map((label, v) => (
+                            <button key={v} type="button" onClick={() => { setMensajeoAlguien(v); if (v === 0) setMensajeoQuien(""); }}
+                              className={`flex-1 h-9 rounded-lg text-sm font-medium transition-all ${
+                                (mensajeoAlguien ?? -1) === v ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                              }`}
+                            >{label}</button>
+                          ))}
+                        </div>
+                        {mensajeoAlguien === 1 && (
+                          <Input placeholder="¿A quién?" className="h-9 text-sm mt-1" value={mensajeoQuien} onChange={(e) => setMensajeoQuien(e.target.value)} />
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">¿Visitó a alguien en la semana?</Label>
+                        <div className="flex gap-2 mt-1">
+                          {["No", "Sí"].map((label, v) => (
+                            <button key={v} type="button" onClick={() => { setVisitoAlguien(v); if (v === 0) setVisitoQuien(""); }}
+                              className={`flex-1 h-9 rounded-lg text-sm font-medium transition-all ${
+                                (visitoAlguien ?? -1) === v ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                              }`}
+                            >{label}</button>
+                          ))}
+                        </div>
+                        {visitoAlguien === 1 && (
+                          <Input placeholder="¿A quién visitó?" className="h-9 text-sm mt-1" value={visitoQuien} onChange={(e) => setVisitoQuien(e.target.value)} />
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">¿Realizó algún acto de servicio?</Label>
+                        <div className="flex gap-2 mt-1">
+                          {["No", "Sí"].map((label, v) => (
+                            <button key={v} type="button" onClick={() => { setActoServicio(v); if (v === 0) setActoServicioDesc(""); }}
+                              className={`flex-1 h-9 rounded-lg text-sm font-medium transition-all ${
+                                (actoServicio ?? -1) === v ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                              }`}
+                            >{label}</button>
+                          ))}
+                        </div>
+                        {actoServicio === 1 && (
+                          <Input placeholder="¿Qué hizo?" className="h-9 text-sm mt-1" value={actoServicioDesc} onChange={(e) => setActoServicioDesc(e.target.value)} />
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
 
-              {/* STEP CONTENT */}
-              {step < 6 && (
+              {/* SERVICIO + EVANGELISMO */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
                 <div className="space-y-3">
-                  {/* Extra fields for Step 1: Vida Devocional */}
-                  {step === 1 && (
-                    <Card>
-                      <CardHeader className="p-3 pb-0">
-                        <CardTitle className="text-sm">Lectura y oración de la semana</CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-3 space-y-3">
-                        <div className="space-y-1">
-                          <Label className="text-xs">Pasaje bíblico, libro o capítulo que leyó esta semana</Label>
-                          <Input placeholder="Ej: Juan 1-5, Salmos 23..." className="h-9 text-sm" value={pasajeLeido} onChange={(e) => setPasajeLeido(e.target.value)} />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">Libro cristiano u otro material leído</Label>
-                          <Input placeholder="Título del libro o material..." className="h-9 text-sm" value={materialLeido} onChange={(e) => setMaterialLeido(e.target.value)} />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">¿Cuáles fueron sus motivos de oración en la semana?</Label>
-                          <Textarea rows={2} className="text-sm" value={motivosOracion} onChange={(e) => setMotivosOracion(e.target.value)} placeholder="Familia, trabajo, salud, etc." />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {/* Extra fields for Step 5: Evangelismo */}
-                  {step === 5 && (
-                    <>
-                      <Card>
-                        <CardHeader className="p-3 pb-0">
-                          <CardTitle className="text-sm">Acompañamiento evangelístico</CardTitle>
-                          <CardDescription className="text-xs">Gestioná el proceso completo de evangelismo (oración → servicio → evangelismo)</CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-3">
-                          <Link href="/evangelismo" className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
-                            <Heart className="h-4 w-4" /> Ir a Acompañamiento Evangelístico →
-                          </Link>
-                        </CardContent>
-                      </Card>
-                      <Card>
-                        <CardHeader className="p-3 pb-0">
-                          <CardTitle className="text-sm">Personas por las que ora</CardTitle>
-                          <CardDescription className="text-xs">Registrá las personas por las que el discípulo está orando</CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-3 space-y-3">
-                          {personasOracion.map((p, i) => (
-                            editPersonaIdx === i ? (
-                              <div key={i} className="flex items-center gap-2 text-sm bg-blue-50 dark:bg-blue-950/30 rounded-lg p-2">
-                                <Input className="h-7 text-xs flex-1" value={editPersonaVal.nombre} onChange={(e) => setEditPersonaVal((v) => ({ ...v, nombre: e.target.value }))} placeholder="Nombre" />
-                                <Input className="h-7 text-xs flex-1" value={editPersonaVal.apellido} onChange={(e) => setEditPersonaVal((v) => ({ ...v, apellido: e.target.value }))} placeholder="Apellido" />
-                                <select className="h-7 text-xs rounded-md border border-input bg-transparent px-1" value={editPersonaVal.estado} onChange={(e) => setEditPersonaVal((v) => ({ ...v, estado: e.target.value }))}>
-                                  <option>Oración</option><option>Oración y servicio</option><option>Oración y predicación</option>
-                                </select>
-                                <button type="button" onClick={() => { setPersonasOracion((prev) => prev.map((x, j) => j === i ? editPersonaVal : x)); setEditPersonaIdx(-1); }} className="text-green-600 hover:text-green-700 text-xs font-medium">OK</button>
-                                <button type="button" onClick={() => setEditPersonaIdx(-1)} className="text-muted-foreground hover:text-foreground text-xs">X</button>
-                              </div>
-                            ) : (
-                              <div key={i} className="flex items-center gap-2 text-sm bg-muted/30 rounded-lg p-2">
-                                <span className="flex-1">{p.nombre} {p.apellido}</span>
-                                <span className="text-xs text-muted-foreground px-2 py-0.5 rounded-full bg-muted">{p.estado}</span>
-                                <button type="button" onClick={() => { setEditPersonaVal({ nombre: p.nombre, apellido: p.apellido, estado: p.estado }); setEditPersonaIdx(i); }} className="text-blue-400 hover:text-blue-600 text-xs font-medium">Editar</button>
-                                <button type="button" onClick={() => setPersonasOracion((prev) => prev.filter((_, j) => j !== i))} className="text-red-400 hover:text-red-600 text-xs font-medium">Quitar</button>
-                              </div>
-                            )
-                          ))}
-                          <PersonaOracionForm onAgregar={(p) => setPersonasOracion((prev) => [...prev, p])} />
-                          <button type="button" onClick={handleGuardarPersonasOracion} disabled={guardandoPersonas || personasOracion.length === 0}
-                            className="w-full h-9 rounded-lg text-sm font-medium bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                          >{guardandoPersonas ? "Guardando..." : "Guardar personas"}</button>
-                        </CardContent>
-                      </Card>
-                    </>
-                  )}
-
-                  {/* Extra fields for Step 2: Comunión */}
-                  {step === 2 && (
-                    <Card>
-                      <CardHeader className="p-3 pb-0">
-                        <CardTitle className="text-sm">Contacto y servicio semanal</CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-3 space-y-3">
-                        <div className="space-y-1">
-                          <Label className="text-xs">¿Envió mensaje o llamó a alguien esta semana?</Label>
-                          <div className="flex gap-2 mt-1">
-                            {["No", "Sí"].map((label, v) => (
-                              <button key={v} type="button" onClick={() => { setMensajeoAlguien(v); if (v === 0) setMensajeoQuien(""); }}
-                                className={`flex-1 h-9 rounded-lg text-sm font-medium transition-all ${
-                                  (mensajeoAlguien ?? -1) === v ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
-                                }`}
-                              >{label}</button>
-                            ))}
-                          </div>
-                          {mensajeoAlguien === 1 && (
-                            <Input placeholder="¿A quién?" className="h-9 text-sm mt-1" value={mensajeoQuien} onChange={(e) => setMensajeoQuien(e.target.value)} />
-                          )}
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">¿Visitó a alguien en la semana?</Label>
-                          <div className="flex gap-2 mt-1">
-                            {["No", "Sí"].map((label, v) => (
-                              <button key={v} type="button" onClick={() => { setVisitoAlguien(v); if (v === 0) setVisitoQuien(""); }}
-                                className={`flex-1 h-9 rounded-lg text-sm font-medium transition-all ${
-                                  (visitoAlguien ?? -1) === v ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
-                                }`}
-                              >{label}</button>
-                            ))}
-                          </div>
-                          {visitoAlguien === 1 && (
-                            <Input placeholder="¿A quién visitó?" className="h-9 text-sm mt-1" value={visitoQuien} onChange={(e) => setVisitoQuien(e.target.value)} />
-                          )}
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">¿Realizó algún acto de servicio?</Label>
-                          <div className="flex gap-2 mt-1">
-                            {["No", "Sí"].map((label, v) => (
-                              <button key={v} type="button" onClick={() => { setActoServicio(v); if (v === 0) setActoServicioDesc(""); }}
-                                className={`flex-1 h-9 rounded-lg text-sm font-medium transition-all ${
-                                  (actoServicio ?? -1) === v ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
-                                }`}
-                              >{label}</button>
-                            ))}
-                          </div>
-                          {actoServicio === 1 && (
-                            <Input placeholder="¿Qué hizo?" className="h-9 text-sm mt-1" value={actoServicioDesc} onChange={(e) => setActoServicioDesc(e.target.value)} />
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
-                  {stepAreas.map((aid) => {
-                    const area = areas.find((a) => a.id === aid);
-                    if (!area) return null;
-                    const items = getIndicadoresByArea(aid);
-                    if (items.length === 0) return null;
-                    const Icon = areasMeta[aid]?.icon || Book;
-                    return (
-                      <Card key={aid}>
-                        <CardHeader className="p-3 pb-0">
-                          <CardTitle className="text-sm flex items-center gap-2">
-                            <Icon className="h-4 w-4" /> {area.nombre}
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-3 space-y-3">
-                          {items.map((ind) => {
-                            const opts = getOpciones(ind.nombre);
-                            const obj = stepObjetivo(ind.id);
-                            return (
-                              <div key={ind.id}>
-                                <div className="flex items-start justify-between mb-1">
-                                  <div>
-                                    <p className="text-sm font-medium">{ind.nombre}</p>
-                                    {obj && <p className="text-[11px] text-muted-foreground leading-tight">{obj}</p>}
-                                  </div>
-                                </div>
-                                {ind.nombre === "Sirvió esta semana" && valores[ind.id] === 1 ? (
-                                  <div className="space-y-2">
-                                    <div className="flex gap-1">
-                                      {opts.labels.map((label, v) => (
-                                        <button key={v} type="button" onClick={() => setValores((prev) => ({ ...prev, [ind.id]: v }))}
-                                          className={`flex-1 h-8 rounded-lg text-xs font-medium transition-all ${
-                                            (valores[ind.id] ?? -1) === v ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
-                                          }`}
-                                        >{label}</button>
-                                      ))}
-                                    </div>
-                                    {(valores[ind.id] ?? -1) === 1 && (
-                                      <div className="space-y-2">
-                                        <Select value={ministerioSeleccionado} onValueChange={(v) => setMinisterioSeleccionado(v?.toString() ?? "")}>
-                                          <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Seleccionar ministerio" /></SelectTrigger>
-                                          <SelectContent>
-                                            {ministerios.map((m) => <SelectItem key={m} value={m} className="text-xs">{m}</SelectItem>)}
-                                            <SelectItem value="Otro" className="text-xs">Otro</SelectItem>
-                                          </SelectContent>
-                                        </Select>
-                                        {ministerioSeleccionado === "Otro" && (
-                                          <Input placeholder="¿Cuál?" className="h-8 text-xs" value={ministerioCustom} onChange={(e) => setMinisterioCustom(e.target.value)} />
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                ) : opts.type === "si_no" ? (
-                                  <div className="flex gap-2">
-                                    {opts.labels.map((label, v) => (
-                                      <button key={v} type="button" onClick={() => setValores((prev) => ({ ...prev, [ind.id]: v }))}
-                                        className={`flex-1 h-9 rounded-lg text-sm font-medium transition-all ${
-                                          (valores[ind.id] ?? -1) === v ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
-                                        }`}
-                                      >{label}</button>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <div className="space-y-1">
-                                    <div className="flex gap-1">
-                                      {opts.labels.map((label, v) => (
-                                        <button key={v} type="button" onClick={() => setValores((prev) => ({ ...prev, [ind.id]: v }))}
-                                          className={`flex-1 h-9 rounded-lg text-xs font-medium transition-all ${
-                                            (valores[ind.id] ?? -1) === v ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
-                                          }`}
-                                        >{label}</button>
-                                      ))}
-                                    </div>
-                                    <Input placeholder="Observación..." className="h-7 text-xs" value={evalObs[ind.id] || ""} onChange={(e) => setEvalObs((prev) => ({ ...prev, [ind.id]: e.target.value }))} />
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                  </div>
+                  {renderAreaCards([5, 7])}
                 </div>
-              )}
+                <div className="space-y-3">
+                  {renderAreaCards([6, 8])}
+                  <Card>
+                    <CardHeader className="p-3 pb-0">
+                      <CardTitle className="text-sm">Acompañamiento evangelístico</CardTitle>
+                      <CardDescription className="text-xs">Gestioná el proceso completo de evangelismo (oración → servicio → evangelismo)</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-3">
+                      <Link href="/evangelismo" className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
+                        <Heart className="h-4 w-4" /> Ir a Acompañamiento Evangelístico →
+                      </Link>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="p-3 pb-0">
+                      <CardTitle className="text-sm">Personas por las que ora</CardTitle>
+                      <CardDescription className="text-xs">Registrá las personas por las que el discípulo está orando</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-3 space-y-3">
+                      {personasOracion.map((p, i) => (
+                        editPersonaIdx === i ? (
+                          <div key={i} className="flex items-center gap-2 text-sm bg-blue-50 dark:bg-blue-950/30 rounded-lg p-2">
+                            <Input className="h-7 text-xs flex-1" value={editPersonaVal.nombre} onChange={(e) => setEditPersonaVal((v) => ({ ...v, nombre: e.target.value }))} placeholder="Nombre" />
+                            <Input className="h-7 text-xs flex-1" value={editPersonaVal.apellido} onChange={(e) => setEditPersonaVal((v) => ({ ...v, apellido: e.target.value }))} placeholder="Apellido" />
+                            <select className="h-7 text-xs rounded-md border border-input bg-transparent px-1" value={editPersonaVal.estado} onChange={(e) => setEditPersonaVal((v) => ({ ...v, estado: e.target.value }))}>
+                              <option>Oración</option><option>Oración y servicio</option><option>Oración y predicación</option>
+                            </select>
+                            <button type="button" onClick={() => { setPersonasOracion((prev) => prev.map((x, j) => j === i ? editPersonaVal : x)); setEditPersonaIdx(-1); }} className="text-green-600 hover:text-green-700 text-xs font-medium">OK</button>
+                            <button type="button" onClick={() => setEditPersonaIdx(-1)} className="text-muted-foreground hover:text-foreground text-xs">X</button>
+                          </div>
+                        ) : (
+                          <div key={i} className="flex items-center gap-2 text-sm bg-muted/30 rounded-lg p-2">
+                            <span className="flex-1">{p.nombre} {p.apellido}</span>
+                            <span className="text-xs text-muted-foreground px-2 py-0.5 rounded-full bg-muted">{p.estado}</span>
+                            <button type="button" onClick={() => { setEditPersonaVal({ nombre: p.nombre, apellido: p.apellido, estado: p.estado }); setEditPersonaIdx(i); }} className="text-blue-400 hover:text-blue-600 text-xs font-medium">Editar</button>
+                            <button type="button" onClick={() => setPersonasOracion((prev) => prev.filter((_, j) => j !== i))} className="text-red-400 hover:text-red-600 text-xs font-medium">Quitar</button>
+                          </div>
+                        )
+                      ))}
+                      <PersonaOracionForm onAgregar={(p) => setPersonasOracion((prev) => [...prev, p])} />
+                      <button type="button" onClick={handleGuardarPersonasOracion} disabled={guardandoPersonas || personasOracion.length === 0}
+                        className="w-full h-9 rounded-lg text-sm font-medium bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      >{guardandoPersonas ? "Guardando..." : "Guardar personas"}</button>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
 
-              {step === 6 && (
+              {/* OBSERVACIONES + DESAFÍOS */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
                 <Card>
                   <CardHeader className="p-3 pb-0">
                     <CardTitle className="text-sm flex items-center gap-2"><Heart className="h-4 w-4" /> Observaciones pastorales</CardTitle>
@@ -795,9 +768,6 @@ export default function SeguimientoPage() {
                     </div>
                   </CardContent>
                 </Card>
-              )}
-
-              {step === 7 && (
                 <Card>
                   <CardHeader className="p-3 pb-0">
                     <CardTitle className="text-sm flex items-center gap-2"><ClipboardCheck className="h-4 w-4" /> Desafíos y compromisos</CardTitle>
@@ -818,39 +788,30 @@ export default function SeguimientoPage() {
                     </div>
                   </CardContent>
                 </Card>
-              )}
-
-              {/* NAVIGATION */}
-              <div className="flex items-center justify-between gap-3">
-                <Button variant="outline" size="sm" disabled={step === 1} onClick={() => setStep(step - 1)}>
-                  <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
-                </Button>
-                {step < 7 ? (
-                  <Button size="sm" onClick={() => setStep(step + 1)}>
-                    Siguiente <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
-                ) : (
-                  <Button size="sm" onClick={handleSave} disabled={saving}>
-                    {saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-                    Guardar evaluación
-                  </Button>
-                )}
               </div>
-            </>
+
+              {/* SAVE */}
+              <div className="flex justify-end">
+                <Button size="lg" onClick={handleSave} disabled={saving}>
+                  {saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+                  Guardar evaluación
+                </Button>
+              </div>
+            </div>
           ) : (
-              <ResultadoEvaluacion
-                radarData={radarData}
-                evolutionData={evolutionData()}
-                monthlyData={monthlyData()}
-                fortalezas={fortalezas}
-                debilidades={debilidades}
-                alertas={alertas}
-                areas={areas}
-                areasMeta={areasMeta}
-                indicadores={indicadores}
-                saving={saving}
-                onNuevaEvaluacion={() => { setSaved(false); setValores({}); setEvalObs({}); setObsGenerales(""); setCompromisos([]); setDesafioPersonalizado(""); setProximaReunion(""); setStep(1); }}
-              />
+            <ResultadoEvaluacion
+              radarData={radarData}
+              evolutionData={evolutionData()}
+              monthlyData={monthlyData()}
+              fortalezas={fortalezas}
+              debilidades={debilidades}
+              alertas={alertas}
+              areas={areas}
+              areasMeta={areasMeta}
+              indicadores={indicadores}
+              saving={saving}
+              onNuevaEvaluacion={() => { setSaved(false); setValores({}); setEvalObs({}); setObsGenerales(""); setCompromisos([]); setDesafioPersonalizado(""); setProximaReunion(""); }}
+            />
           )}
         </>
       ) : null}
