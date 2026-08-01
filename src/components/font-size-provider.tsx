@@ -2,6 +2,10 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
+const STORAGE_KEY = "app:font-scale:v1";
+const MIN_SCALE = 0.7;
+const MAX_SCALE = 1.5;
+
 interface FontSizeContextType {
   scale: number;
   increase: () => void;
@@ -20,19 +24,33 @@ export function FontSizeProvider({ children }: { children: ReactNode }) {
   const [scale, setScale] = useState(1);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("font-scale");
-      if (stored) setScale(parseFloat(stored));
-    }
+    const id = window.setTimeout(() => {
+      try {
+        const stored = window.localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          const parsed = Number.parseFloat(stored);
+          if (Number.isFinite(parsed)) {
+            setScale(Math.min(MAX_SCALE, Math.max(MIN_SCALE, parsed)));
+          }
+        }
+      } catch {
+        // almacenamiento no disponible (modo incógnito, file://, etc.)
+      }
+    }, 0);
+    return () => window.clearTimeout(id);
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("font-scale", scale.toString());
     document.documentElement.style.fontSize = `${(scale * 100).toFixed(0)}%`;
+    try {
+      window.localStorage.setItem(STORAGE_KEY, scale.toString());
+    } catch {
+      // almacenamiento no disponible (modo incógnito, file://, etc.)
+    }
   }, [scale]);
 
-  const increase = () => setScale((s) => Math.min(1.5, +(s + 0.1).toFixed(1)));
-  const decrease = () => setScale((s) => Math.max(0.7, +(s - 0.1).toFixed(1)));
+  const increase = () => setScale((s) => Math.min(MAX_SCALE, +(s + 0.1).toFixed(1)));
+  const decrease = () => setScale((s) => Math.max(MIN_SCALE, +(s - 0.1).toFixed(1)));
   const reset = () => setScale(1);
 
   return (
