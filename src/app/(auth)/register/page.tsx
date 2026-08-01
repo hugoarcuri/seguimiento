@@ -33,7 +33,7 @@ export default function RegisterPage() {
     setLoading(true);
     const supabase = createClient();
 
-    const { data: authData, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
       options: {
@@ -48,22 +48,6 @@ export default function RegisterPage() {
       toast.error(error.message);
       setLoading(false);
       return;
-    }
-
-    if (authData.user) {
-      const { error: profileError } = await supabase.from("profiles").insert({
-        id: authData.user.id,
-        email: data.email,
-        nombre: data.nombre,
-        apellido: data.apellido,
-        rol: "discipulo",
-      });
-
-      if (profileError) {
-        toast.error("Error al crear perfil");
-        setLoading(false);
-        return;
-      }
     }
 
     toast.success("Registro exitoso. Revisa tu email para confirmar.");
