@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, UserPlus, TrendingUp, CalendarCheck, Church, AlertCircle, Cake } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
+import { ResponsiveContainer, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Bar, PieChart, Pie, Cell, Legend } from "@/components/recharts-dynamic";
 
 const COLORS = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
 import { format, isToday } from "date-fns";
@@ -32,7 +32,6 @@ interface DashboardClientProps {
   totalEncuentros: number;
   totalOraciones: number;
   oracionesRespondidas: number;
-  discipulosPorEtapa: Array<{ nombre: string; cantidad: number }>;
   encuentrosPorMes: Array<{ mes: string; cantidad: number }>;
   proximosEncuentros: Array<{
     id: string;
@@ -65,7 +64,6 @@ export function DashboardClient({
   totalEncuentros,
   totalOraciones,
   oracionesRespondidas,
-  discipulosPorEtapa,
   encuentrosPorMes,
   proximosEncuentros,
   oracionesPendientesList,

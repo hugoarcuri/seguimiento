@@ -21,12 +21,6 @@ interface OracionBasica {
   fecha: string;
 }
 
-interface EtapaBasica {
-  id: number;
-  nombre: string;
-  orden: number;
-}
-
 interface DiscipuloBasico {
   id: string;
   nombre: string;
@@ -49,7 +43,6 @@ interface DashboardData {
   totalEncuentros: number;
   totalOraciones: number;
   oracionesRespondidas: number;
-  discipulosPorEtapa: Array<{ nombre: string; cantidad: number }>;
   encuentrosPorMes: Array<{ mes: string; cantidad: number }>;
   proximosEncuentros: EncuentroBasico[];
   oracionesPendientesList: OracionBasica[];
@@ -78,12 +71,10 @@ export default function DashboardPage() {
         .limit(5),
       supabase.from("encuentros").select("fecha"),
       supabase.from("oraciones").select("estado"),
-      supabase.from("etapas").select("*").order("orden", { ascending: true }),
-    ]).then(([discipulosRes, encuentrosRes, oracionesRes, allEncuentrosRes, allOracionesRes, etapasRes]) => {
+    ]).then(([discipulosRes, encuentrosRes, oracionesRes, allEncuentrosRes, allOracionesRes]) => {
       const discipulos = (discipulosRes.data || []) as Discipulo[];
       const encuentros = (allEncuentrosRes.data || []) as { fecha: string }[];
       const oraciones = (allOracionesRes.data || []) as OracionBasica[];
-      const etapas = (etapasRes.data || []) as EtapaBasica[];
       const hoy = new Date();
 
       const proximosCumples = discipulos.filter((d) => {
@@ -102,11 +93,6 @@ export default function DashboardPage() {
         meses[key] = (meses[key] || 0) + 1;
       });
 
-      const discipulosPorEtapa = etapas.map((etapa) => ({
-        nombre: etapa.nombre,
-        cantidad: discipulos.filter((d) => d.etapa_id === etapa.id).length,
-      }));
-
       setData({
         totalDiscipulos: discipulos.length,
         nuevos: discipulos.filter((d) => d.etapa_id === 1).length,
@@ -121,7 +107,6 @@ export default function DashboardPage() {
         totalEncuentros: encuentros.length,
         totalOraciones: oraciones.length,
         oracionesRespondidas: oraciones.filter((o) => o.estado === "respondida").length,
-        discipulosPorEtapa,
         encuentrosPorMes: Object.entries(meses).map(([mes, cantidad]) => ({ mes, cantidad })),
         proximosEncuentros: (encuentrosRes.data || []) as EncuentroBasico[],
         oracionesPendientesList: (oracionesRes.data || []) as OracionBasica[],

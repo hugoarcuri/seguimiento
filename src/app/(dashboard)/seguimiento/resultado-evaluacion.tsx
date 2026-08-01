@@ -5,20 +5,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, TrendingUp, TrendingDown, AlertTriangle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
-import {
-  ResponsiveContainer,
-  RadarChart,
-  Radar,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-} from "recharts";
+import { ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "@/components/recharts-dynamic";
 interface AreaMeta { label: string; icon: React.ComponentType<{ className?: string }>; color: string }
 interface SupabaseArea { id: number; nombre: string; orden: number }
 interface SupabaseAlerta { id: string; discipulo_id: string; mensaje: string; activa: boolean }

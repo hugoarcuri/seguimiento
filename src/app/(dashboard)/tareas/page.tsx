@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/hooks/useUser";
 import { useForm } from "react-hook-form";
@@ -87,7 +87,7 @@ const materialTipoLabel: Record<string, string> = {
 
 export default function TareasPage() {
   const { user } = useUser();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [tareas, setTareas] = useState<(Tarea & { discipulo?: Discipulo })[]>([]);
   const [discipulos, setDiscipulos] = useState<Discipulo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -108,7 +108,7 @@ export default function TareasPage() {
 
   const isAdmin = user?.rol === "admin";
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     const { data: { user: authUser } } = await supabase.auth.getUser();
     if (!authUser) return;
 
@@ -129,9 +129,9 @@ export default function TareasPage() {
     setMateriales((matRes.data as (Material & { etapas?: { nombre: string } })[]) || []);
     setEtapas(etapasRes.data || []);
     setLoading(false);
-  };
+  }, [supabase]);
 
-  useEffect(() => { fetchData().catch(console.error) }, []);
+  useEffect(() => { fetchData().catch(console.error) }, [fetchData]);
 
   const openCreate = () => {
     setEditingId(null);
