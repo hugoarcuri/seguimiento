@@ -1,8 +1,8 @@
 # Agents
 
-## Always commit after changes
+## Always commit and push after changes
 
-Después de cada cambio en el código, hacer commit automáticamente con un mensaje descriptivo en español.
+Después de cada cambio en el código, hacer commit automáticamente con un mensaje descriptivo en español y hacer `git push` al remoto.
 
 ## Commands
 
