@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, CheckCircle2, Book, Heart, Users, Target, Sparkles, Hand, GraduationCap, Crown, User as UserIcon, ChevronLeft, ChevronRight, ClipboardCheck, Plus, Trash2 } from "lucide-react";
+import { Loader2, CheckCircle2, Book, Heart, Users, Target, Hand, GraduationCap, Crown, User as UserIcon, ChevronLeft, ChevronRight, ClipboardCheck, Plus, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -27,7 +27,6 @@ interface AreaMeta {
 
 const areasMeta: Record<number, AreaMeta> = {
   1: { label: "Vida Devocional", icon: Book, color: "hsl(var(--chart-1))" },
-  3: { label: "Carácter Cristiano", icon: Sparkles, color: "hsl(var(--chart-3))" },
   4: { label: "Comunión", icon: Users, color: "hsl(var(--chart-4))" },
   5: { label: "Servicio", icon: Hand, color: "hsl(var(--chart-5))" },
   6: { label: "Evangelismo", icon: Target, color: "hsl(var(--chart-6))" },
@@ -38,7 +37,6 @@ const areasMeta: Record<number, AreaMeta> = {
 const wizardSteps = [
   { id: 1, title: "Vida Devocional", areas: [1], icon: Book },
   { id: 2, title: "Comunión", areas: [4], icon: Users },
-  { id: 3, title: "Carácter", areas: [3], icon: Sparkles },
   { id: 4, title: "Servicio", areas: [5, 7], icon: Hand },
   { id: 5, title: "Evangelismo", areas: [6, 8], icon: Target },
   { id: 6, title: "Observaciones", areas: [], icon: Heart },
@@ -467,7 +465,7 @@ export default function SeguimientoPage() {
   if (loading) return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" /></div>;
 
   return (
-    <div className="space-y-4 max-w-3xl mx-auto">
+    <div className="space-y-4 max-w-6xl mx-auto">
       {/* HEADER */}
       <div className="flex items-center justify-between">
         <div>
@@ -489,24 +487,25 @@ export default function SeguimientoPage() {
         <Card><CardContent className="py-12 text-center text-muted-foreground text-sm">Seleccioná un discípulo para iniciar la evaluación</CardContent></Card>
       ) : discipulo ? (
         <>
-          {/* DISCIPLE INFO BAR */}
-          <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
-              {discipulo.nombre?.[0]}{discipulo.apellido?.[0]}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+            {/* DISCIPLE INFO BAR */}
+            <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                {discipulo.nombre?.[0]}{discipulo.apellido?.[0]}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{discipulo.nombre} {discipulo.apellido}</p>
+                <p className="text-[11px] text-muted-foreground">{discipulo.etapas?.nombre || `Nivel ${discipulo.etapa_id}`}{reuniones.length > 0 && ` · ${reuniones.length} reuniones`}</p>
+                {semanaActualReunion && (
+                  <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                    Evaluación de esta semana guardada · se actualizará al guardar
+                  </p>
+                )}
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{discipulo.nombre} {discipulo.apellido}</p>
-              <p className="text-[11px] text-muted-foreground">{discipulo.etapas?.nombre || `Nivel ${discipulo.etapa_id}`}{reuniones.length > 0 && ` · ${reuniones.length} reuniones`}</p>
-              {semanaActualReunion && (
-                <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
-                  Evaluación de esta semana guardada · se actualizará al guardar
-                </p>
-              )}
-            </div>
-          </div>
 
-          {/* DESAFÍOS CRUD */}
-          <Card>
+            {/* DESAFÍOS CRUD */}
+            <Card>
             <CardHeader className="p-3 pb-2">
               <CardTitle className="text-sm flex items-center gap-2"><ClipboardCheck className="h-4 w-4" /> Desafíos</CardTitle>
             </CardHeader>
@@ -535,6 +534,7 @@ export default function SeguimientoPage() {
               )}
             </CardContent>
           </Card>
+          </div>
 
           {/* HISTORIAL SEMANAL */}
           <HistorialSemanal
@@ -692,6 +692,7 @@ export default function SeguimientoPage() {
                     </Card>
                   )}
 
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
                   {stepAreas.map((aid) => {
                     const area = areas.find((a) => a.id === aid);
                     if (!area) return null;
@@ -774,6 +775,7 @@ export default function SeguimientoPage() {
                       </Card>
                     );
                   })}
+                  </div>
                 </div>
               )}
 
