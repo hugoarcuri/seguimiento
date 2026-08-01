@@ -4,14 +4,13 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { DiscipuloForm } from "../discipulo-form";
-import type { Etapa, Profile, Discipulo } from "@/types/database";
+import type { Etapa, Discipulo } from "@/types/database";
 
 function EditarDiscipuloContent() {
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
   const router = useRouter();
   const [etapas, setEtapas] = useState<Etapa[]>([]);
-  const [lideres, setLideres] = useState<Pick<Profile, "id" | "nombre" | "apellido">[]>([]);
   const [discipulo, setDiscipulo] = useState<Discipulo | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -25,15 +24,13 @@ function EditarDiscipuloContent() {
     Promise.all([
       supabase.from("discipulos").select("*").eq("id", id).single(),
       supabase.from("etapas").select("*").order("orden", { ascending: true }),
-      supabase.from("profiles").select("id, nombre, apellido").eq("rol", "admin"),
-    ]).then(([discipuloRes, etapasRes, lideresRes]) => {
+    ]).then(([discipuloRes, etapasRes]) => {
       if (!discipuloRes.data) {
         router.push("/discipulos");
         return;
       }
       setDiscipulo(discipuloRes.data);
       setEtapas(etapasRes.data || []);
-      setLideres(lideresRes.data || []);
       setLoading(false);
     }).catch(console.error);
   }, [id, router]);
@@ -51,7 +48,6 @@ function EditarDiscipuloContent() {
       </div>
       <DiscipuloForm
         etapas={etapas}
-        lideres={lideres}
         initialData={{
           ...discipulo,
           fecha_nacimiento: discipulo.fecha_nacimiento?.split("T")[0],

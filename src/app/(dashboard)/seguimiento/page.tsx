@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -71,6 +71,11 @@ const paresEvaluacion = ["Vida Devocional y Comunión", "Servicio y Evangelismo"
 
 const fmtLocal = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+const ESCALA_MAX = 5;
+const MES_ESCALA = 20;
+
+const pctPromedio = (promedio: number) => Math.round((promedio / ESCALA_MAX) * 100);
 
 const inicioSemana = (d: Date) => {
   const copy = new Date(d);
@@ -145,7 +150,7 @@ interface SupabaseAlerta {
 }
 
 export default function SeguimientoPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [discipulos, setDiscipulos] = useState<SupabaseDiscipulo[]>([]);
   const [areas, setAreas] = useState<SupabaseArea[]>([]);
@@ -153,7 +158,38 @@ export default function SeguimientoPage() {
   const [objetivosNivel, setObjetivosNivel] = useState<Record<string, string>>({});
   const [selectedId, setSelectedId] = useState<string>("");
 
+  const resetForm = () => {
+    setSaved(false);
+    setPar(1);
+    setValores({});
+    setEvalObs({});
+    setReuniones([]);
+    setEvaluaciones([]);
+    setDesafios([]);
+    setAlertas([]);
+    setMinisterioSeleccionado("");
+    setMinisterioCustom("");
+    setPasajeLeido("");
+    setMaterialLeido("");
+    setMotivosOracion("");
+    setPersonasOracion([]);
+    setMensajeoAlguien(undefined);
+    setMensajeoQuien("");
+    setVisitoAlguien(undefined);
+    setVisitoQuien("");
+    setActoServicio(undefined);
+    setActoServicioDesc("");
+    setObsGenerales("");
+    setCompromisos([]);
+    setDesafioPersonalizado("");
+    setProximaReunion("");
+    setDeleteId(null);
+    setNuevoDesafio("");
+  };
+
   const handleSelectDiscipulo = (id: string) => {
+    if (id === selectedId) return;
+    resetForm();
     setSelectedId(id);
     localStorage.setItem("ultimoDiscipuloId", id);
   };
@@ -171,7 +207,10 @@ export default function SeguimientoPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("ultimoDiscipuloId");
-      if (stored) setSelectedId(stored);
+      if (stored) {
+        const t = setTimeout(() => setSelectedId(stored), 0);
+        return () => clearTimeout(t);
+      }
     }
   }, []);
   const [valores, setValores] = useState<Record<number, number>>({});
@@ -188,27 +227,29 @@ export default function SeguimientoPage() {
   const handleGuardarPersonasOracion = async () => {
     if (!user || !selectedId) { toast.error("Seleccioná un discípulo primero"); return; }
     setGuardandoPersonas(true);
-    await supabase.from("personas_oracion").delete().eq("discipulo_id", selectedId);
+    const { error: delErr } = await supabase.from("personas_oracion").delete().eq("discipulo_id", selectedId);
+    if (delErr) { toast.error("Error al guardar personas"); setGuardandoPersonas(false); return; }
     for (const p of personasOracion) {
-      await supabase.from("personas_oracion").insert({ discipulo_id: selectedId, nombre: p.nombre, apellido: p.apellido, estado: p.estado });
+      const { error: insErr } = await supabase.from("personas_oracion").insert({ discipulo_id: selectedId, nombre: p.nombre, apellido: p.apellido, estado: p.estado });
+      if (insErr) { toast.error("Error al guardar personas"); setGuardandoPersonas(false); return; }
     }
     setGuardandoPersonas(false);
     toast.success("Personas guardadas");
   };
   const handleAgregarDesafio = async () => {
     if (!user || !selectedId || !nuevoDesafio.trim()) return;
-    const { data } = await supabase.from("desafios").insert({
+    const { data, error } = await supabase.from("desafios").insert({
       discipulo_id: selectedId, lider_id: user.id, descripcion: nuevoDesafio.trim(),
     }).select().single();
-    if (data) {
-      setDesafios((prev) => [data as SupabaseDesafio, ...prev]);
-      setNuevoDesafio("");
-      toast.success("Desafío agregado");
-    }
+    if (error) { toast.error("Error al agregar desafío"); return; }
+    setDesafios((prev) => [data as SupabaseDesafio, ...prev]);
+    setNuevoDesafio("");
+    toast.success("Desafío agregado");
   };
   const handleEliminarDesafio = async () => {
     if (!deleteId) return;
-    await supabase.from("desafios").delete().eq("id", deleteId);
+    const { error } = await supabase.from("desafios").delete().eq("id", deleteId);
+    if (error) { toast.error("Error al eliminar desafío"); return; }
     setDesafios((prev) => prev.filter((d) => d.id !== deleteId));
     setDeleteId(null);
     toast.success("Desafío eliminado");
@@ -243,39 +284,18 @@ export default function SeguimientoPage() {
       setObjetivosNivel(objMap);
       setLoading(false);
     }).catch(console.error);
-  }, []);
+  }, [supabase]);
 
   useEffect(() => {
     if (!selectedId) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSaved(false);
-    setPar(1);
-    setValores({});
-    setEvalObs({});
-    setReuniones([]);
-    setEvaluaciones([]);
-    setMinisterioSeleccionado("");
-    setMinisterioCustom("");
-    setPasajeLeido("");
-    setMaterialLeido("");
-    setMotivosOracion("");
-    setPersonasOracion([]);
-    setMensajeoAlguien(undefined);
-    setMensajeoQuien("");
-    setVisitoAlguien(undefined);
-    setVisitoQuien("");
-    setActoServicio(undefined);
-    setActoServicioDesc("");
-    setObsGenerales("");
-    setCompromisos([]);
-    setDesafioPersonalizado("");
-    setProximaReunion("");
+    let cancelado = false;
     Promise.all([
       supabase.from("reuniones").select("*, evaluaciones(*)").eq("discipulo_id", selectedId).order("fecha", { ascending: false }),
       supabase.from("desafios").select("*").eq("discipulo_id", selectedId).order("fecha_asignado", { ascending: false }),
       supabase.from("alertas").select("*").eq("discipulo_id", selectedId).eq("activa", true).order("created_at", { ascending: false }),
       supabase.from("personas_oracion").select("*").eq("discipulo_id", selectedId).eq("activo", true),
     ]).then(([rRes, dRes, aRes, pRes]) => {
+      if (cancelado) return;
       const reunionesData = (rRes.data || []) as SupabaseReunion[];
       setReuniones(reunionesData);
       setEvaluaciones(reunionesData.flatMap((r) => (r.evaluaciones || []).map((e) => ({ ...e }))));
@@ -296,8 +316,8 @@ export default function SeguimientoPage() {
         if (semanaActual.proxima_reunion) setProximaReunion(semanaActual.proxima_reunion);
       }
     }).catch(console.error);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId]);
+    return () => { cancelado = true; };
+  }, [selectedId, supabase]);
 
   const getIndicadoresByArea = (areaId: number) => indicadores.filter((i) => i.area_id === areaId);
   const stepObjetivo = (indId: number) => objetivosNivel[`${indId}-${discipulo?.etapa_id}`] || "";
@@ -432,13 +452,13 @@ export default function SeguimientoPage() {
       if (upErr) { toast.error("Error al actualizar la evaluación de la semana"); setSaving(false); return; }
       reunionId = reunionExistente.id;
     } else {
-      const { data: reunion } = await supabase.from("reuniones").insert({
+      const { data: reunion, error: insErr } = await supabase.from("reuniones").insert({
         discipulo_id: selectedId, lider_id: user.id, fecha: today,
         observaciones_generales: obsFinal || null,
         compromisos: compromisosText,
         proxima_reunion: proximaReunion || null,
       }).select().single();
-      if (!reunion) { toast.error("Error al guardar"); setSaving(false); return; }
+      if (insErr || !reunion) { toast.error("Error al guardar"); setSaving(false); return; }
       reunionId = reunion.id;
     }
 
@@ -449,36 +469,39 @@ export default function SeguimientoPage() {
 
     if (inserts.length > 0) {
       for (const ins of inserts) {
-        await supabase.from("evaluaciones").upsert(ins as Record<string, unknown>, { onConflict: "reunion_id, indicador_id" });
+        const { error } = await supabase.from("evaluaciones").upsert(ins as Record<string, unknown>, { onConflict: "reunion_id, indicador_id" });
+        if (error) { toast.error("Error al guardar las evaluaciones"); setSaving(false); return; }
       }
     }
 
     if (reunionExistente) {
-      await supabase.from("desafios").delete().eq("reunion_id", reunionId);
+      const { error } = await supabase.from("desafios").delete().eq("reunion_id", reunionId);
+      if (error) { toast.error("Error al guardar los desafíos"); setSaving(false); return; }
     }
     const desafiosACrear = [...compromisos];
     if (desafioPersonalizado.trim()) desafiosACrear.push(desafioPersonalizado.trim());
     for (const desc of desafiosACrear) {
-      await supabase.from("desafios").insert({ discipulo_id: selectedId, lider_id: user.id, reunion_id: reunionId, descripcion: desc });
+      const { error } = await supabase.from("desafios").insert({ discipulo_id: selectedId, lider_id: user.id, reunion_id: reunionId, descripcion: desc });
+      if (error) { toast.error("Error al guardar los desafíos"); setSaving(false); return; }
     }
 
-    if (personasOracion.length > 0) {
-      await supabase.from("personas_oracion").delete().eq("discipulo_id", selectedId);
-      for (const p of personasOracion) {
-        await supabase.from("personas_oracion").insert({ discipulo_id: selectedId, nombre: p.nombre, apellido: p.apellido, estado: p.estado });
-      }
+    const { error: delPersonasErr } = await supabase.from("personas_oracion").delete().eq("discipulo_id", selectedId);
+    if (delPersonasErr) { toast.error("Error al guardar las personas"); setSaving(false); return; }
+    for (const p of personasOracion) {
+      const { error: insPersonaErr } = await supabase.from("personas_oracion").insert({ discipulo_id: selectedId, nombre: p.nombre, apellido: p.apellido, estado: p.estado });
+      if (insPersonaErr) { toast.error("Error al guardar las personas"); setSaving(false); return; }
     }
 
     setSaved(true);
     setSaving(false);
     toast.success(reunionExistente ? "Evaluación de la semana actualizada" : "Evaluación guardada");
 
-    supabase.from("reuniones").select("*, evaluaciones(*)").eq("discipulo_id", selectedId).order("fecha", { ascending: false }).then((r) => {
+    void supabase.from("reuniones").select("*, evaluaciones(*)").eq("discipulo_id", selectedId).order("fecha", { ascending: false }).then((r) => {
       const reunionesData = (r.data || []) as SupabaseReunion[];
       setReuniones(reunionesData);
       setEvaluaciones(reunionesData.flatMap((rr) => (rr.evaluaciones || []).map((e) => ({ ...e }))));
     });
-    supabase.from("desafios").select("*").eq("discipulo_id", selectedId).order("fecha_asignado", { ascending: false }).then((d) => setDesafios((d.data || []) as SupabaseDesafio[]));
+    void supabase.from("desafios").select("*").eq("discipulo_id", selectedId).order("fecha_asignado", { ascending: false }).then((d) => setDesafios((d.data || []) as SupabaseDesafio[]));
   };
 
   const avgByArea = (areaId: number) => {
@@ -488,9 +511,9 @@ export default function SeguimientoPage() {
     if (vals.length === 0) {
       const evs = evaluaciones.filter((ev) => items.some((i) => i.id === ev.indicador_id) && ev.valor !== null);
       if (evs.length === 0) return 0;
-      return Math.round((evs.reduce((s, ev) => s + (ev.valor ?? 0), 0) / evs.length / 5) * 100);
+      return pctPromedio(evs.reduce((s, ev) => s + (ev.valor ?? 0), 0) / evs.length);
     }
-    return Math.round((vals.reduce((a, b) => a + b, 0) / vals.length / 5) * 100);
+    return pctPromedio(vals.reduce((a, b) => a + b, 0) / vals.length);
   };
 
   const allEvalData = [...evaluaciones, ...(saved ? indicadores.map((i) => ({ indicador_id: i.id, valor: valores[i.id], reunion_id: undefined as string | undefined })).filter((x) => x.valor !== undefined) : [])];
@@ -532,7 +555,7 @@ export default function SeguimientoPage() {
       byMonth[mes][ind.area_id].push(ev.valor);
     });
     return Object.entries(byMonth).map(([mes, areas]) => ({
-      mes, ...Object.fromEntries(Object.entries(areas).map(([aid, vals]) => [aid, Math.round((vals as number[]).reduce((a, b) => a + b, 0) / (vals as number[]).length * 20)])),
+      mes, ...Object.fromEntries(Object.entries(areas).map(([aid, vals]) => [aid, Math.round((vals as number[]).reduce((a, b) => a + b, 0) / (vals as number[]).length * MES_ESCALA)])),
     })).sort((a, b) => a.mes.localeCompare(b.mes)).slice(-6);
   };
 
@@ -767,7 +790,7 @@ export default function SeguimientoPage() {
                         )
                       ))}
                       <PersonaOracionForm onAgregar={(p) => setPersonasOracion((prev) => [...prev, p])} />
-                      <button type="button" onClick={handleGuardarPersonasOracion} disabled={guardandoPersonas || personasOracion.length === 0}
+                      <button type="button" onClick={handleGuardarPersonasOracion} disabled={guardandoPersonas}
                         className="w-full h-9 rounded-lg text-sm font-medium bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                       >{guardandoPersonas ? "Guardando..." : "Guardar personas"}</button>
                     </CardContent>

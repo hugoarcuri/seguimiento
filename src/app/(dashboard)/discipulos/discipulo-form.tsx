@@ -23,11 +23,10 @@ import {
 import { Loader2, User, Calendar, Phone, Mail, MapPin, Church, Target, Activity, FileText, Camera } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useRef } from "react";
-import type { Etapa, Profile } from "@/types/database";
+import type { Etapa } from "@/types/database";
 
 interface DiscipuloFormProps {
   etapas: Etapa[];
-  lideres: Pick<Profile, "id" | "nombre" | "apellido">[];
   initialData?: DiscipuloInput & { id?: string };
   isEditing?: boolean;
 }
@@ -36,7 +35,6 @@ const inputClass = "h-9";
 
 export function DiscipuloForm({
   etapas,
-  lideres,
   initialData,
   isEditing,
 }: DiscipuloFormProps) {
@@ -53,14 +51,14 @@ export function DiscipuloForm({
     formState: { errors, isSubmitting },
   } = useForm<DiscipuloInput>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(discipuloSchema) as any,
+    resolver: zodResolver(discipuloSchema),
     defaultValues: initialData || {
       etapa_id: 1,
       estado: "activo",
     },
   });
 
-  const uploadAvatar = async (file: File, discipuloId: string) => {
+  const uploadAvatar = async (file: File, discipuloId: string): Promise<string | null> => {
     setSubiendoAvatar(true);
     const supabase = createClient();
     const ext = file.name.split(".").pop();
@@ -68,11 +66,11 @@ export function DiscipuloForm({
     const { error: uploadError } = await supabase.storage
       .from("discipulo-avatars")
       .upload(path, file, { upsert: true });
-    if (uploadError) { toast.error("Error al subir foto"); setSubiendoAvatar(false); return; }
+    if (uploadError) { toast.error("Error al subir foto"); setSubiendoAvatar(false); return null; }
     const { data: urlData } = supabase.storage.from("discipulo-avatars").getPublicUrl(path);
     setValue("avatar_url", urlData.publicUrl);
     setSubiendoAvatar(false);
-    toast.success("Foto actualizada");
+    return urlData.publicUrl;
   };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,9 +80,6 @@ export function DiscipuloForm({
     reader.onload = () => setAvatarPreview(reader.result as string);
     reader.readAsDataURL(file);
     setPendingFile(file);
-    if (isEditing && initialData?.id) {
-      uploadAvatar(file, initialData.id);
-    }
   };
 
   const onSubmit = async (data: DiscipuloInput) => {
@@ -101,8 +96,7 @@ export function DiscipuloForm({
 
     const payload = {
       ...data,
-      lider_id: user.id,
-      avatar_url: data.avatar_url || (pendingFile ? undefined : generarAvatarUrl(data.nombre, data.apellido)),
+      avatar_url: data.avatar_url || generarAvatarUrl(data.nombre, data.apellido),
       email: data.email || null,
       telefono: data.telefono || null,
       direccion: data.direccion || null,
@@ -115,6 +109,12 @@ export function DiscipuloForm({
     };
 
     if (isEditing && initialData?.id) {
+      if (pendingFile) {
+        const avatarUrl = await uploadAvatar(pendingFile, initialData.id);
+        if (!avatarUrl) return;
+        payload.avatar_url = avatarUrl;
+      }
+
       const { error } = await supabase
         .from("discipulos")
         .update(payload)
@@ -130,7 +130,7 @@ export function DiscipuloForm({
     } else {
       const { data: newDiscipulo, error } = await supabase
         .from("discipulos")
-        .insert(payload)
+        .insert({ ...payload, lider_id: user.id })
         .select("id")
         .single();
 
@@ -138,7 +138,13 @@ export function DiscipuloForm({
         toast.error("Error al crear discípulo");
       } else {
         if (pendingFile) {
-          await uploadAvatar(pendingFile, newDiscipulo.id);
+          const avatarUrl = await uploadAvatar(pendingFile, newDiscipulo.id);
+          if (avatarUrl) {
+            await supabase
+              .from("discipulos")
+              .update({ avatar_url: avatarUrl })
+              .eq("id", newDiscipulo.id);
+          }
         }
         toast.success("Discípulo creado exitosamente");
         router.push("/discipulos");
