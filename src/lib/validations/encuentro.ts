@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const encuentroSchema = z.object({
-  discipulo_id: z.string().uuid("Seleccione un discípulo"),
+  discipulo_id: z.string().uuid("Seleccioná un discípulo"),
   fecha: z.string().min(1, "La fecha es requerida"),
   hora: z.string().optional().nullable(),
   lugar: z.string().optional().nullable(),

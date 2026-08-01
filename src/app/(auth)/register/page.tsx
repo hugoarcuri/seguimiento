@@ -121,7 +121,7 @@ export default function RegisterPage() {
               Crear cuenta
             </Button>
             <p className="text-sm text-muted-foreground">
-              ¿Ya tienes cuenta?{" "}
+              ¿Ya tenés cuenta?{" "}
               <Link href="/login" className="text-primary hover:underline">Iniciar sesión</Link>
             </p>
           </CardFooter>
