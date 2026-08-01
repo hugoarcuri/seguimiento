@@ -51,7 +51,7 @@ const opcionesIndicador: Record<string, { type: "escala" | "si_no"; labels: stri
   "Memorización bíblica": { type: "escala", labels: ["No memoriza", "1 versículo", "2-3 versículos", "4-5 versículos", "6+ versículos"] },
   "Asistencia al culto": { type: "escala", labels: ["Nunca", "1 vez/mes", "2 veces/mes", "3 veces/mes", "Siempre"] },
   "Asistencia al grupo pequeño": { type: "escala", labels: ["Nunca", "Casi nunca", "A veces", "Frecuentemente", "Siempre"] },
-  "Sujeción pastoral": { type: "escala", labels: ["No acepta", "Se resiste", "A veces", "Acepta", "Ejemplar"] },
+  "Relación con la autoridad": { type: "escala", labels: ["No acepta", "Se resiste", "A veces", "Acepta", "Ejemplar"] },
   "Integración con la iglesia": { type: "escala", labels: ["No integrado", "Poco", "A veces", "Integrado", "Muy integrado"] },
   "Participa en un ministerio": { type: "si_no", labels: ["No", "Sí"] },
   "Sirvió esta semana": { type: "si_no", labels: ["No", "Sí"] },
