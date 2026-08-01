@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Book, Heart, Users, Target, Hand, GraduationCap, Crown, User as UserIcon, ClipboardCheck, Plus, Trash2 } from "lucide-react";
+import { Loader2, CheckCircle2, Book, Heart, Users, Target, Hand, GraduationCap, Crown, User as UserIcon, ChevronLeft, ChevronRight, ClipboardCheck, Plus, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -66,6 +66,8 @@ const desafiosPredefinidos = [
 ];
 
 const ministerios = ["Club Bíblico", "Escuela Dominical", "JH", "Enfoque", "Alabanza"];
+
+const paresEvaluacion = ["Vida Devocional y Comunión", "Servicio y Evangelismo", "Observaciones y Desafíos"];
 
 const fmtLocal = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -164,6 +166,7 @@ export default function SeguimientoPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [par, setPar] = useState(1);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -246,6 +249,7 @@ export default function SeguimientoPage() {
     if (!selectedId) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSaved(false);
+    setPar(1);
     setValores({});
     setEvalObs({});
     setReuniones([]);
@@ -616,8 +620,23 @@ export default function SeguimientoPage() {
 
           {/* WIZARD */}
           {!saved ? (
-            <div className="space-y-4">
-              {/* VIDA DEVOCIONAL + COMUNIÓN */}
+            <>
+              {/* STEP INDICATOR */}
+              <div className="flex items-center gap-1 overflow-x-auto pb-1">
+                {paresEvaluacion.map((title, i) => (
+                  <button key={i} type="button" onClick={() => setPar(i + 1)}
+                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium whitespace-nowrap transition-colors ${
+                      par === i + 1 ? "bg-primary text-primary-foreground shadow-sm" : par > i + 1 ? "bg-muted text-muted-foreground" : "bg-muted/50 text-muted-foreground/60"
+                    }`}
+                  >
+                    {par > i + 1 ? <CheckCircle2 className="h-3 w-3" /> : null}
+                    {title}
+                  </button>
+                ))}
+              </div>
+
+              {/* PAR 1: VIDA DEVOCIONAL + COMUNIÓN */}
+              {par === 1 && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
                 <div className="space-y-3">
                   {renderAreaCards([1])}
@@ -697,8 +716,10 @@ export default function SeguimientoPage() {
                   </Card>
                 </div>
               </div>
+              )}
 
-              {/* SERVICIO + EVANGELISMO */}
+              {/* PAR 2: SERVICIO + EVANGELISMO */}
+              {par === 2 && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
                 <div className="space-y-3">
                   {renderAreaCards([5, 7])}
@@ -750,8 +771,10 @@ export default function SeguimientoPage() {
                   </Card>
                 </div>
               </div>
+              )}
 
-              {/* OBSERVACIONES + DESAFÍOS */}
+              {/* PAR 3: OBSERVACIONES + DESAFÍOS */}
+              {par === 3 && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
                 <Card>
                   <CardHeader className="p-3 pb-0">
@@ -789,15 +812,25 @@ export default function SeguimientoPage() {
                   </CardContent>
                 </Card>
               </div>
+              )}
 
-              {/* SAVE */}
-              <div className="flex justify-end">
-                <Button size="lg" onClick={handleSave} disabled={saving}>
-                  {saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-                  Guardar evaluación
+              {/* NAVIGATION */}
+              <div className="flex items-center justify-between gap-3">
+                <Button variant="outline" size="sm" disabled={par === 1} onClick={() => setPar(par - 1)}>
+                  <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
                 </Button>
+                {par < 3 ? (
+                  <Button size="sm" onClick={() => setPar(par + 1)}>
+                    Siguiente <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                ) : (
+                  <Button size="sm" onClick={handleSave} disabled={saving}>
+                    {saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+                    Guardar evaluación
+                  </Button>
+                )}
               </div>
-            </div>
+            </>
           ) : (
             <ResultadoEvaluacion
               radarData={radarData}
@@ -810,7 +843,7 @@ export default function SeguimientoPage() {
               areasMeta={areasMeta}
               indicadores={indicadores}
               saving={saving}
-              onNuevaEvaluacion={() => { setSaved(false); setValores({}); setEvalObs({}); setObsGenerales(""); setCompromisos([]); setDesafioPersonalizado(""); setProximaReunion(""); }}
+              onNuevaEvaluacion={() => { setSaved(false); setValores({}); setEvalObs({}); setObsGenerales(""); setCompromisos([]); setDesafioPersonalizado(""); setProximaReunion(""); setPar(1); }}
             />
           )}
         </>
