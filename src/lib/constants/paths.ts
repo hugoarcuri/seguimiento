@@ -1,5 +1,11 @@
 export const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "/seguimiento";
 
+/** Dominio de producción (GitHub Pages sin dominio propio). */
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://hugoarcuri.github.io";
+
+/** URL absoluta de la app (dominio + basePath). */
+export const APP_URL = `${SITE_URL}${BASE_PATH}`;
+
 /**
  * Detecta si una ruta del menú está activa.
  * El pathname de Next incluye el basePath y, con trailingSlash: true,
