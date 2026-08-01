@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
+import { BASE_PATH } from "@/lib/constants/paths";
 
 export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
@@ -50,7 +51,7 @@ export default function RegisterPage() {
       return;
     }
 
-    toast.success("Registro exitoso. Revisa tu email para confirmar.");
+    toast.success("Registro exitoso. Revisá tu email para confirmar.");
     router.push("/login");
   };
 
@@ -59,7 +60,7 @@ export default function RegisterPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-2">
           <div className="flex justify-center mb-2">
-            <Image src="/seguimiento/logo.png" alt="JH" width={48} height={48} className="rounded" />
+            <Image src={`${BASE_PATH}/logo.png`} alt="JH" width={48} height={48} className="rounded" />
           </div>
           <CardTitle className="text-2xl font-bold">Crear Cuenta</CardTitle>
           <CardDescription>Regístrate en el sistema de discipulado</CardDescription>

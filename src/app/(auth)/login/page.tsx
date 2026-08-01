@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
+import { BASE_PATH } from "@/lib/constants/paths";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
@@ -56,7 +57,7 @@ export default function LoginPage() {
     setEnviando(true);
     const supabase = createClient();
     const { error } = await supabase.auth.resetPasswordForEmail(recuperarEmail.trim(), {
-      redirectTo: `${window.location.origin}/seguimiento/restablecer`,
+      redirectTo: `${window.location.origin}${BASE_PATH}/restablecer`,
     });
     setEnviando(false);
     if (error) { toast.error(error.message); return; }
@@ -69,7 +70,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-2">
           <div className="flex justify-center mb-2">
-            <Image src="/seguimiento/logo.png" alt="JH" width={48} height={48} className="rounded" />
+            <Image src={`${BASE_PATH}/logo.png`} alt="JH" width={48} height={48} className="rounded" />
           </div>
           <CardTitle className="text-2xl font-bold">Discipulado</CardTitle>
           <CardDescription>{modoRecuperar ? "Restablecé tu contraseña" : "Inicia sesión para continuar"}</CardDescription>
@@ -115,7 +116,7 @@ export default function LoginPage() {
                 Iniciar sesión
               </Button>
               <p className="text-sm text-muted-foreground">
-                ¿No tienes cuenta?{" "}
+                ¿No tenés cuenta?{" "}
                 <Link href="/register" className="text-primary hover:underline">Registrarse</Link>
               </p>
             </CardFooter>

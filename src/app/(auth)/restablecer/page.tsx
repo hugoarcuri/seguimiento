@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
+import { BASE_PATH } from "@/lib/constants/paths";
 
 export default function RestablecerPage() {
   const [password, setPassword] = useState("");
@@ -62,7 +63,7 @@ export default function RestablecerPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-2">
           <div className="flex justify-center mb-2">
-            <Image src="/seguimiento/logo.png" alt="JH" width={48} height={48} className="rounded" />
+            <Image src={`${BASE_PATH}/logo.png`} alt="JH" width={48} height={48} className="rounded" />
           </div>
           <CardTitle className="text-2xl font-bold">Restablecer contraseña</CardTitle>
           <CardDescription>Ingresá tu nueva contraseña</CardDescription>

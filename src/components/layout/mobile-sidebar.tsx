@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 import { adminMenuItems, discipuloMenuItems } from "@/lib/constants/navigation";
+import { isPathActive, BASE_PATH } from "@/lib/constants/paths";
 
 export function MobileSidebar() {
   const [open, setOpen] = useState(false);
@@ -32,13 +33,13 @@ export function MobileSidebar() {
       <SheetContent side="left" className="w-64 p-0">
         <div className="p-6 border-b">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <Image src="/seguimiento/logo.png" alt="Logo" width={32} height={32} className="rounded" />
+            <Image src={`${BASE_PATH}/logo.png`} alt="Logo" width={32} height={32} className="rounded" />
             <span className="font-semibold text-lg">Discipulado</span>
           </Link>
         </div>
         <nav className="space-y-1 p-3">
           {menuItems.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+            const isActive = isPathActive(pathname, item.href);
             return (
               <Link
                 key={item.href}

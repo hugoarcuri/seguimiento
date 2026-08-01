@@ -5,9 +5,21 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import type { Profile } from "@/types/database";
 
+// Cache a nivel módulo: Sidebar, Navbar y MobileSidebar comparten
+// un único fetch del perfil en vez de hacer 3 por cada montaje.
+let cachedProfile: Profile | null = null;
+
+async function fetchProfile(id: string): Promise<Profile | null> {
+  if (cachedProfile) return cachedProfile;
+  const supabase = createClient();
+  const { data } = await supabase.from("profiles").select("*").eq("id", id).single();
+  cachedProfile = data || null;
+  return cachedProfile;
+}
+
 export function useUser() {
-  const [user, setUser] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<Profile | null>(cachedProfile);
+  const [loading, setLoading] = useState(cachedProfile === null);
   const router = useRouter();
 
   useEffect(() => {
@@ -22,14 +34,12 @@ export function useUser() {
       if (!mounted) return;
 
       if (authUser) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", authUser.id)
-          .single();
-
+        const profile = await fetchProfile(authUser.id);
         if (!mounted) return;
         setUser(profile);
+      } else {
+        cachedProfile = null;
+        setUser(null);
       }
       if (mounted) setLoading(false);
     };
@@ -38,18 +48,16 @@ export function useUser() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
       if (session?.user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", session.user.id)
-          .single();
-
-        if (!mounted) return;
-        setUser(profile);
+        cachedProfile = null;
+        fetchProfile(session.user.id).then((profile) => {
+          if (!mounted) return;
+          setUser(profile);
+        });
       } else {
+        cachedProfile = null;
         setUser(null);
       }
       if (mounted) setLoading(false);
@@ -61,6 +69,7 @@ export function useUser() {
   const logout = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
+    cachedProfile = null;
     setUser(null);
     router.push("/login");
   };

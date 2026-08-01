@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/useUser";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { adminMenuItems, discipuloMenuItems } from "@/lib/constants/navigation";
+import { isPathActive, BASE_PATH } from "@/lib/constants/paths";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -20,14 +21,14 @@ export function Sidebar() {
     <aside className="hidden lg:flex flex-col w-64 border-r bg-card">
       <div className="p-6 border-b">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <Image src="/seguimiento/logo.png" alt="Logo" width={32} height={32} className="rounded" />
+          <Image src={`${BASE_PATH}/logo.png`} alt="Logo" width={32} height={32} className="rounded" />
           <span className="font-semibold text-lg">Discipulado</span>
         </Link>
       </div>
       <ScrollArea className="flex-1 py-4">
         <nav className="space-y-1 px-3">
           {menuItems.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+            const isActive = isPathActive(pathname, item.href);
             return (
               <Link
                 key={item.href}
