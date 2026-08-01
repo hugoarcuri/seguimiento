@@ -27,14 +27,12 @@ export default function EvangelismoPage() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"lista" | "kanban">("lista");
   const [search, setSearch] = useState("");
-  const [filterEstado, setFilterEstado] = useState<string>("");
 
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [nuevaPersona, setNuevaPersona] = useState({ discipulo_id: "", nombre: "", apellido: "", telefono: "", edad: "", observaciones: "" });
   const [selectedPersona, setSelectedPersona] = useState<PersonaData | null>(null);
 
   const [dragItem, setDragItem] = useState<PersonaData | null>(null);
-  const [recienAgregadoId, setRecienAgregadoId] = useState<string | null>(null);
   const [showConfirmAvanzar, setShowConfirmAvanzar] = useState<{ persona: PersonaData; nuevoEstado: string } | null>(null);
   const [estadoDropdownOpen, setEstadoDropdownOpen] = useState<string | null>(null);
   const [showEditDialog, setShowEditDialog] = useState<PersonaData | null>(null);
@@ -55,7 +53,6 @@ export default function EvangelismoPage() {
   }, [supabase]);
 
   const filteredPersonas = personas.filter((p) => {
-    if (filterEstado && p.estado !== filterEstado) return false;
     if (search) {
       const q = search.toLowerCase();
       if (!`${p.nombre} ${p.apellido}`.toLowerCase().includes(q)) return false;
@@ -265,7 +262,6 @@ export default function EvangelismoPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-medium truncate">{p.nombre} {p.apellido}</p>
-                      {recienAgregadoId === p.id && <Badge className="text-[10px] px-1.5 bg-emerald-500 text-white border-0 animate-pulse">✓ Guardado</Badge>}
                       {(() => { const d = discipulos.find((x) => x.id === p.discipulo_id); if (!d) return null; const c = getDiscipuloColor(d.id); return <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ color: c.fg, backgroundColor: c.bg }}>contacto de {d.nombre}</span>; })()}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">

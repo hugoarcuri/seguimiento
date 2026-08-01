@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { encuentroSchema, type EncuentroInput } from "@/lib/validations/encuentro";
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -136,26 +135,29 @@ export function EncuentrosClient({
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
                 <Label>Discípulo *</Label>
-                  <Select
-                    value={form.watch("discipulo_id") || undefined}
-                    onValueChange={(value) => form.setValue("discipulo_id", value?.toString() ?? "")}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar discípulo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {discipulos.map((d) => (
-                        <SelectItem key={d.id} value={d.id}>
-                          {d.apellido}, {d.nombre}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {form.formState.errors.discipulo_id && (
-                    <p className="text-sm text-destructive">
-                      {form.formState.errors.discipulo_id.message}
-                    </p>
+                <Controller
+                  control={form.control}
+                  name="discipulo_id"
+                  render={({ field }) => (
+                    <Select value={field.value || undefined} onValueChange={(value) => field.onChange(value?.toString() ?? "")}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar discípulo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {discipulos.map((d) => (
+                          <SelectItem key={d.id} value={d.id}>
+                            {d.apellido}, {d.nombre}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   )}
+                />
+                {form.formState.errors.discipulo_id && (
+                  <p className="text-sm text-destructive">
+                    {form.formState.errors.discipulo_id.message}
+                  </p>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">

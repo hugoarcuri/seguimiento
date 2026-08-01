@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/hooks/useUser";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { tareaSchema, type TareaInput } from "@/lib/validations/tarea";
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Loader2, Pencil, Trash2, CheckCircle2, RotateCcw, Clock, AlertTriangle, CalendarIcon, BookOpen, FileText, Film, Headphones, Link2, StickyNote } from "lucide-react";
+import { Plus, Loader2, Pencil, Trash2, CheckCircle2, RotateCcw, Clock, AlertTriangle, BookOpen, FileText, Film, Headphones, Link2, StickyNote } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -51,18 +51,6 @@ const tipoLabels: Record<string, string> = {
   memorizacion: "Memorización",
   preguntas: "Preguntas",
   practica: "Práctica",
-};
-
-const parseDate = (s: string) => {
-  const [d, m, y] = s.split("/");
-  if (!d || !m || !y) return null;
-  return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
-};
-
-const formatDate = (iso: string | null | undefined) => {
-  if (!iso) return "";
-  const [y, m, d] = iso.split("T")[0].split("-");
-  return `${d}/${m}/${y}`;
 };
 
 interface EstadoConfig {
@@ -131,7 +119,17 @@ export default function TareasPage() {
     setLoading(false);
   }, [supabase]);
 
-  useEffect(() => { fetchData().catch(console.error) }, [fetchData]);
+  useEffect(() => {
+    (async () => {
+      try {
+        await fetchData();
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [fetchData]);
 
   const openCreate = () => {
     setEditingId(null);
@@ -146,7 +144,7 @@ export default function TareasPage() {
       titulo: tarea.titulo,
       descripcion: tarea.descripcion || "",
       tipo: tarea.tipo,
-      fecha_limite: formatDate(tarea.fecha_limite),
+      fecha_limite: tarea.fecha_limite || "",
     });
     setDialogOpen(true);
   };
@@ -156,8 +154,7 @@ export default function TareasPage() {
     const { data: { user: authUser } } = await supabase.auth.getUser();
     if (!authUser) { toast.error("Debés iniciar sesión"); setSubmitting(false); return }
 
-    const fechaLimite = data.fecha_limite ? parseDate(data.fecha_limite) : null;
-    const payload = { ...data, lider_id: authUser.id, descripcion: data.descripcion || null, fecha_limite: fechaLimite };
+    const payload = { ...data, lider_id: authUser.id, descripcion: data.descripcion || null, fecha_limite: data.fecha_limite || null };
 
     if (editingId) {
       const { error } = await supabase.from("tareas").update(payload).eq("id", editingId);
@@ -419,14 +416,20 @@ export default function TareasPage() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label>Discípulo</Label>
-              <Select value={form.watch("discipulo_id") || undefined} onValueChange={(v) => form.setValue("discipulo_id", v?.toString() ?? "")}>
-                <SelectTrigger><SelectValue placeholder="Seleccionar discípulo" /></SelectTrigger>
-                <SelectContent>
-                  {discipulos.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>{d.apellido}, {d.nombre}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Controller
+                control={form.control}
+                name="discipulo_id"
+                render={({ field }) => (
+                  <Select value={field.value || undefined} onValueChange={(v) => field.onChange(v?.toString() ?? "")}>
+                    <SelectTrigger><SelectValue placeholder="Seleccionar discípulo" /></SelectTrigger>
+                    <SelectContent>
+                      {discipulos.map((d) => (
+                        <SelectItem key={d.id} value={d.id}>{d.apellido}, {d.nombre}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
               {form.formState.errors.discipulo_id && <p className="text-sm text-destructive">{form.formState.errors.discipulo_id.message}</p>}
             </div>
             <div className="space-y-2">
@@ -441,21 +444,24 @@ export default function TareasPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Tipo</Label>
-                 <Select onValueChange={(v) => form.setValue("tipo", (v?.toString() ?? "") as "lectura" | "memorizacion" | "preguntas" | "practica")} value={form.watch("tipo")}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(tipoLabels).map(([k, v]) => (
-                      <SelectItem key={k} value={k}>{v}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Controller
+                  control={form.control}
+                  name="tipo"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={(v) => field.onChange((v?.toString() ?? "lectura") as TareaInput["tipo"])}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(tipoLabels).map(([k, v]) => (
+                          <SelectItem key={k} value={k}>{v}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="fecha_limite">Fecha Límite</Label>
-                <div className="relative">
-                  <Input id="fecha_limite" placeholder="DD/MM/AAAA" className="pl-8" {...form.register("fecha_limite")} />
-                  <CalendarIcon className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                </div>
+                <Input id="fecha_limite" type="date" {...form.register("fecha_limite")} />
               </div>
             </div>
             <DialogFooter>
