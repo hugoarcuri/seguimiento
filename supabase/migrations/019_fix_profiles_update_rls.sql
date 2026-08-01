@@ -8,6 +8,7 @@ returns text
 language sql
 security definer
 stable
+set search_path = public
 as $$
   select rol from public.profiles where id = auth.uid();
 $$;
