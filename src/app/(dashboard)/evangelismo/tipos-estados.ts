@@ -19,7 +19,6 @@ export interface PersonaData {
   fecha_creacion?: string;
   discipulo_id?: string;
   creado_por?: string;
-  es_oracion?: boolean;
 }
 
 export interface EventoData {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, UserPlus, Users, CheckCircle2, AlertTriangle, Clock, ArrowRight, Search, LayoutGrid, List, GripVertical } from "lucide-react";
+import { Loader2, UserPlus, Users, CheckCircle2, AlertTriangle, Clock, ArrowRight, Search, LayoutGrid, List, GripVertical, Pencil, Trash2 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -19,7 +19,7 @@ import type { PersonaData, EventoData } from "./tipos-estados";
 import { ObservacionInput } from "./observacion-input";
 
 export default function EvangelismoPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [user, setUser] = useState<{ id: string } | null>(null);
   const [discipulos, setDiscipulos] = useState<Array<{ id: string; nombre: string; apellido: string }>>([]);
   const [personas, setPersonas] = useState<PersonaData[]>([]);
@@ -52,8 +52,7 @@ export default function EvangelismoPage() {
       setEventos((eRes.data || []) as EventoData[]);
       setLoading(false);
     }).catch(console.error);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [supabase]);
 
   const filteredPersonas = personas.filter((p) => {
     if (filterEstado && p.estado !== filterEstado) return false;
@@ -104,18 +103,6 @@ export default function EvangelismoPage() {
     const p = personas.find((x) => x.id === personaId);
     if (!p) return;
 
-    // If it's a prayer contact (es_oracion), move to acompanamiento_evangelistico
-    if (p.es_oracion) {
-      const { data, error } = await supabase.from("acompanamiento_evangelistico").insert({
-        nombre: p.nombre, apellido: p.apellido, discipulo_id: p.discipulo_id || null, creado_por: user?.id, estado: nuevoEstado,
-      }).select().single();
-      if (error) { toast.error("Error: " + error.message); return; }
-      await supabase.from("personas_oracion").delete().eq("id", p.id);
-      setPersonas((prev) => prev.filter((x) => x.id !== p.id).concat(data));
-      toast.success(`Avanzó a ${estadosMeta[nuevoEstado]?.label}`);
-      return;
-    }
-
     const dias = diasEnEstado(p);
     if (dias < 30) {
       setShowConfirmAvanzar({ persona: p, nuevoEstado });
@@ -127,18 +114,23 @@ export default function EvangelismoPage() {
 
   const ejecutarCambioEstado = async (p: PersonaData, nuevoEstado: string) => {
     const labelNuevo = estadosMeta[nuevoEstado]?.label || nuevoEstado;
-    await supabase.from("acompanamiento_evangelistico").update({ estado: nuevoEstado, fecha_inicio_estado: format(new Date(), "yyyy-MM-dd") }).eq("id", p.id);
-    await supabase.from("eventos_evangelismo").insert({
+    const { error: updateErr } = await supabase.from("acompanamiento_evangelistico")
+      .update({ estado: nuevoEstado, fecha_inicio_estado: format(new Date(), "yyyy-MM-dd") })
+      .eq("id", p.id);
+    if (updateErr) { toast.error("Error al cambiar el estado"); return; }
+    const { error: insertErr } = await supabase.from("eventos_evangelismo").insert({
       persona_id: p.id, tipo: "cambio_estado",
       descripcion: `Cambio a ${labelNuevo}.`,
     });
+    if (insertErr) { toast.error("Error al registrar el cambio"); return; }
 
     setPersonas((prev) => prev.map((x) => x.id === p.id ? { ...x, estado: nuevoEstado, fecha_inicio_estado: format(new Date(), "yyyy-MM-dd") } : x));
     toast.success(`Avanzó a ${labelNuevo}`);
   };
 
   const handleRegistrarEvento = async (personaId: string, tipo: string, descripcion: string) => {
-    await supabase.from("eventos_evangelismo").insert({ persona_id: personaId, tipo, descripcion, fecha: format(new Date(), "yyyy-MM-dd") });
+    const { error } = await supabase.from("eventos_evangelismo").insert({ persona_id: personaId, tipo, descripcion, fecha: format(new Date(), "yyyy-MM-dd") });
+    if (error) { toast.error("Error al registrar el evento"); return; }
     const { data } = await supabase.from("eventos_evangelismo").select("*").order("fecha", { ascending: false });
     if (data) setEventos(data);
     toast.success("Evento registrado");
@@ -154,11 +146,12 @@ export default function EvangelismoPage() {
 
   const handleEditarPersona = async () => {
     if (!showEditDialog || !editPersonaForm.nombre.trim() || !editPersonaForm.apellido.trim()) return;
-    await supabase.from("acompanamiento_evangelistico").update({
+    const { error } = await supabase.from("acompanamiento_evangelistico").update({
       nombre: editPersonaForm.nombre.trim(), apellido: editPersonaForm.apellido.trim(),
       telefono: editPersonaForm.telefono || null, edad: editPersonaForm.edad ? parseInt(editPersonaForm.edad) : null,
       observaciones: editPersonaForm.observaciones || null, estado: editPersonaForm.estado,
     }).eq("id", showEditDialog.id);
+    if (error) { toast.error("Error al actualizar la persona"); return; }
     setPersonas((prev) => prev.map((x) => x.id === showEditDialog.id ? { ...x, ...editPersonaForm, edad: editPersonaForm.edad ? parseInt(editPersonaForm.edad) : undefined } : x));
     setShowEditDialog(null);
     toast.success("Persona actualizada");
@@ -172,12 +165,8 @@ export default function EvangelismoPage() {
 
   const ejecutarEliminarPersona = async () => {
     if (!showConfirmEliminar) return;
-    const p = personas.find((x) => x.id === showConfirmEliminar);
-    if (p?.es_oracion) {
-      await supabase.from("personas_oracion").delete().eq("id", showConfirmEliminar);
-    } else {
-      await supabase.from("acompanamiento_evangelistico").delete().eq("id", showConfirmEliminar);
-    }
+    const { error } = await supabase.from("acompanamiento_evangelistico").delete().eq("id", showConfirmEliminar);
+    if (error) { toast.error("Error al eliminar la persona"); return; }
     setPersonas((prev) => prev.filter((x) => x.id !== showConfirmEliminar));
     setSelectedPersona(null);
     setShowConfirmEliminar(null);
@@ -243,8 +232,6 @@ export default function EvangelismoPage() {
           </CardContent>
         </Card>
       )}
-
-      {/* FILTROS + VIEW TOGGLE */}
 
       {/* FILTROS + VIEW TOGGLE */}
       <div className="flex items-center gap-2">
@@ -315,8 +302,8 @@ export default function EvangelismoPage() {
                       )}
                     </div>
                     <span className="flex items-center gap-0.5 border-l border-muted pl-1.5 ml-0.5">
-                      <button type="button" onClick={(e) => { e.stopPropagation(); setEditPersonaForm({ nombre: p.nombre, apellido: p.apellido, telefono: p.telefono || "", edad: p.edad?.toString() || "", observaciones: p.observaciones || "", estado: p.estado }); setShowEditDialog(p); }} className="text-blue-400 hover:text-blue-600 text-xs p-1">✏️</button>
-                      <button type="button" onClick={(e) => { e.stopPropagation(); handleEliminarPersona(p.id); }} className="text-red-400 hover:text-red-600 text-xs p-1">🗑</button>
+                      <button type="button" aria-label={`Editar ${p.nombre} ${p.apellido}`} onClick={(e) => { e.stopPropagation(); setEditPersonaForm({ nombre: p.nombre, apellido: p.apellido, telefono: p.telefono || "", edad: p.edad?.toString() || "", observaciones: p.observaciones || "", estado: p.estado }); setShowEditDialog(p); }} className="text-blue-400 hover:text-blue-600 text-xs p-1"><Pencil className="h-3.5 w-3.5" /></button>
+                      <button type="button" aria-label={`Eliminar ${p.nombre} ${p.apellido}`} onClick={(e) => { e.stopPropagation(); handleEliminarPersona(p.id); }} className="text-red-400 hover:text-red-600 text-xs p-1"><Trash2 className="h-3.5 w-3.5" /></button>
                     </span>
                   </div>
                 </CardContent>
@@ -356,8 +343,8 @@ export default function EvangelismoPage() {
                           <p className="text-xs font-medium truncate flex-1">{p.nombre} {p.apellido}</p>
                           {(() => { const d = discipulos.find((x) => x.id === p.discipulo_id); if (!d) return null; const c = getDiscipuloColor(d.id); return <span className="text-[9px] px-1 py-0.5 rounded-full hidden sm:inline font-medium" style={{ color: c.fg, backgroundColor: c.bg }}>{d.nombre}</span>; })()}
                           <Badge variant="outline" className="text-[10px] px-1">{dias}/30d</Badge>
-                          <button type="button" onClick={(e) => { e.stopPropagation(); setEditPersonaForm({ nombre: p.nombre, apellido: p.apellido, telefono: p.telefono || "", edad: p.edad?.toString() || "", observaciones: p.observaciones || "", estado: p.estado }); setShowEditDialog(p); }} className="text-blue-400 hover:text-blue-600 text-[10px] p-0.5">✏️</button>
-                          <button type="button" onClick={(e) => { e.stopPropagation(); handleEliminarPersona(p.id); }} className="text-red-400 hover:text-red-600 text-[10px] p-0.5">🗑</button>
+                          <button type="button" aria-label={`Editar ${p.nombre} ${p.apellido}`} onClick={(e) => { e.stopPropagation(); setEditPersonaForm({ nombre: p.nombre, apellido: p.apellido, telefono: p.telefono || "", edad: p.edad?.toString() || "", observaciones: p.observaciones || "", estado: p.estado }); setShowEditDialog(p); }} className="text-blue-400 hover:text-blue-600 text-[10px] p-0.5"><Pencil className="h-3 w-3" /></button>
+                          <button type="button" aria-label={`Eliminar ${p.nombre} ${p.apellido}`} onClick={(e) => { e.stopPropagation(); handleEliminarPersona(p.id); }} className="text-red-400 hover:text-red-600 text-[10px] p-0.5"><Trash2 className="h-3 w-3" /></button>
                         </div>
                         <div className="mt-1.5 h-1 bg-muted rounded-full overflow-hidden">
                           <div className={cn("h-full rounded-full", prog >= 100 ? "bg-emerald-500" : "bg-blue-500")} style={{ width: `${prog}%` }} />
@@ -428,7 +415,6 @@ export default function EvangelismoPage() {
             const dias = diasEnEstado(p);
             const prog = progresoEstado(p);
             const evts = getEventos(p.id);
-            const evtFilter = (personaId: string) => eventos.filter((e) => e.persona_id === personaId).sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
 
             return (
               <>
@@ -530,9 +516,9 @@ export default function EvangelismoPage() {
                   <div>
                     <p className="text-xs font-medium text-muted-foreground mb-2">Historial</p>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {evtFilter(p.id).length === 0 ? (
+                      {evts.length === 0 ? (
                         <p className="text-xs text-muted-foreground">Sin eventos</p>
-                      ) : evtFilter(p.id).map((ev) => (
+                      ) : evts.map((ev) => (
                         <div key={ev.id} className="border-l-2 border-muted pl-3 py-0.5">
                           <p className="text-xs">{ev.descripcion}</p>
                           <p className="text-[10px] text-muted-foreground">{format(new Date(ev.fecha), "dd/MM/yyyy")}</p>
@@ -552,7 +538,9 @@ export default function EvangelismoPage() {
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>¿Avanzar de etapa?</DialogTitle></DialogHeader>
           {showConfirmAvanzar && (
-            <p className="text-sm text-muted-foreground">Solo lleva{showConfirmAvanzar.persona ? `n ${diasEnEstado(showConfirmAvanzar.persona)} días` : " menos de 30 días"} en {estadosMeta[showConfirmAvanzar.persona?.estado]?.label}. ¿Desea avanzar igual?</p>
+            <p className="text-sm text-muted-foreground">
+              Solo lleva {diasEnEstado(showConfirmAvanzar.persona)} días en {estadosMeta[showConfirmAvanzar.persona.estado]?.label || "el estado actual"}. ¿Desea avanzar igual?
+            </p>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowConfirmAvanzar(null)}>Cancelar</Button>

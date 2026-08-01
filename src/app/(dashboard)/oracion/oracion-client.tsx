@@ -70,6 +70,11 @@ export function OracionClient({ oraciones, setOraciones, discipulos }: OracionCl
     } = await supabase.auth.getUser();
 
     if (!user) return;
+    if (!discipuloId) {
+      toast.error("Seleccioná un discípulo");
+      setSubmitting(false);
+      return;
+    }
 
     const { data, error } = await supabase.from("oraciones").insert({
       discipulo_id: discipuloId,
@@ -107,10 +112,14 @@ export function OracionClient({ oraciones, setOraciones, discipulos }: OracionCl
   const handleResponder = async () => {
     if (!responderId || !respuestaTexto.trim()) return;
     const supabase = createClient();
-    await supabase
+    const { error } = await supabase
       .from("oraciones")
       .update({ estado: "respondida", respuesta: respuestaTexto.trim() })
       .eq("id", responderId);
+    if (error) {
+      toast.error("Error al guardar la respuesta");
+      return;
+    }
     toast.success("Respuesta registrada");
     setResponderId(null);
     setRespuestaTexto("");
@@ -142,7 +151,7 @@ export function OracionClient({ oraciones, setOraciones, discipulos }: OracionCl
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label>Discípulo *</Label>
-                 <Select onValueChange={(v) => setDiscipuloId(v?.toString() ?? "")} required>
+                 <Select onValueChange={(v) => setDiscipuloId(v?.toString() ?? "")}>
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar discípulo" />
                   </SelectTrigger>
