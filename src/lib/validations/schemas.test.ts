@@ -1,0 +1,105 @@
+import { describe, expect, it } from "vitest";
+import { loginSchema, registerSchema } from "./auth";
+import { discipuloSchema } from "./discipulo";
+import { encuentroSchema } from "./encuentro";
+import { oracionSchema } from "./oracion";
+import { tareaSchema } from "./tarea";
+
+describe("auth", () => {
+  it("acepta credenciales válidas", () => {
+    expect(loginSchema.parse({ email: "a@b.com", password: "123456" })).toBeTruthy();
+  });
+
+  it("rechaza un email inválido", () => {
+    const res = loginSchema.safeParse({ email: "no-email", password: "123456" });
+    expect(res.success).toBe(false);
+  });
+
+  it("rechaza una contraseña corta", () => {
+    const res = loginSchema.safeParse({ email: "a@b.com", password: "123" });
+    expect(res.success).toBe(false);
+  });
+
+  it("registro valida que las contraseñas coincidan", () => {
+    const base = { email: "a@b.com", password: "123456", confirmPassword: "654321", nombre: "Ana", apellido: "López" };
+    expect(registerSchema.safeParse(base).success).toBe(false);
+    expect(registerSchema.safeParse({ ...base, confirmPassword: "123456" }).success).toBe(true);
+  });
+});
+
+describe("discipuloSchema", () => {
+  it("requiere nombre, apellido, etapa y estado", () => {
+    const res = discipuloSchema.safeParse({});
+    expect(res.success).toBe(false);
+  });
+
+  it("acepta un discípulo completo", () => {
+    const res = discipuloSchema.safeParse({
+      nombre: "Juan",
+      apellido: "Pérez",
+      etapa_id: 1,
+      estado: "activo",
+    });
+    expect(res.success).toBe(true);
+  });
+
+  it("acepta email vacío como sin email", () => {
+    const res = discipuloSchema.safeParse({
+      nombre: "Juan",
+      apellido: "Pérez",
+      etapa_id: 2,
+      estado: "pausado",
+      email: "",
+    });
+    expect(res.success).toBe(true);
+  });
+
+  it("rechaza un email mal formado", () => {
+    const res = discipuloSchema.safeParse({
+      nombre: "Juan",
+      apellido: "Pérez",
+      etapa_id: 2,
+      estado: "pausado",
+      email: "malo",
+    });
+    expect(res.success).toBe(false);
+  });
+
+  it("rechaza estados fuera del enum", () => {
+    const res = discipuloSchema.safeParse({
+      nombre: "Juan",
+      apellido: "Pérez",
+      etapa_id: 2,
+      estado: "fantasma",
+    });
+    expect(res.success).toBe(false);
+  });
+});
+
+describe("tareaSchema", () => {
+  it("valida tipo y título", () => {
+    expect(tareaSchema.safeParse({ discipulo_id: "00000000-0000-0000-0000-000000000000", titulo: "Leer Mateo", tipo: "lectura" }).success).toBe(true);
+    expect(tareaSchema.safeParse({ discipulo_id: "00000000-0000-0000-0000-000000000000", titulo: "", tipo: "lectura" }).success).toBe(false);
+    expect(tareaSchema.safeParse({ discipulo_id: "00000000-0000-0000-0000-000000000000", titulo: "X", tipo: "otro" }).success).toBe(false);
+  });
+});
+
+describe("encuentroSchema", () => {
+  it("requiere fecha y tema", () => {
+    const base = { discipulo_id: "00000000-0000-0000-0000-000000000000" };
+    expect(encuentroSchema.safeParse({ ...base, fecha: "", tema_tratado: "X" }).success).toBe(false);
+    expect(encuentroSchema.safeParse({ ...base, fecha: "2026-08-01", tema_tratado: "X" }).success).toBe(true);
+  });
+});
+
+describe("oracionSchema", () => {
+  it("define estado por defecto pendiente", () => {
+    const parsed = oracionSchema.parse({ discipulo_id: "00000000-0000-0000-0000-000000000000", pedido: "Salud" });
+    expect(parsed.estado).toBe("pendiente");
+  });
+
+  it("rechaza un pedido vacío", () => {
+    const res = oracionSchema.safeParse({ discipulo_id: "00000000-0000-0000-0000-000000000000", pedido: "" });
+    expect(res.success).toBe(false);
+  });
+});

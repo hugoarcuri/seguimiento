@@ -14,7 +14,8 @@ export const estadoColors: Record<string, string> = {
 
 export function calcularEdad(fecha_nacimiento: string): number {
   const hoy = new Date();
-  const nac = new Date(fecha_nacimiento);
+  const [anio, mes, dia] = fecha_nacimiento.split("-").map(Number);
+  const nac = new Date(anio, mes - 1, dia);
   let edad = hoy.getFullYear() - nac.getFullYear();
   const m = hoy.getMonth() - nac.getMonth();
   if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) edad--;
