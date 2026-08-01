@@ -43,6 +43,6 @@ where id <> (select keep_id from id_map where old_id = id);
 
 -- 6. Red de seguridad: una reunión por discípulo por semana ISO
 create unique index if not exists reuniones_discipulo_semana_unique
-  on reuniones (discipulo_id, date_trunc('week', fecha));
+  on reuniones (discipulo_id, date_trunc('week', fecha::timestamp));
 
 drop table id_map;

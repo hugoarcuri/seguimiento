@@ -36,7 +36,7 @@ const areasMeta: Record<number, AreaMeta> = {
 };
 
 const wizardSteps = [
-  { id: 1, title: "Vida Devocional", areas: [1, 2], icon: Book },
+  { id: 1, title: "Vida Devocional", areas: [1], icon: Book },
   { id: 2, title: "Comunión", areas: [4], icon: Users },
   { id: 3, title: "Carácter", areas: [3], icon: Sparkles },
   { id: 4, title: "Servicio", areas: [5, 7], icon: Hand },
@@ -48,7 +48,6 @@ const wizardSteps = [
 const opcionesIndicador: Record<string, { type: "escala" | "si_no"; labels: string[] }> = {
   Oración: { type: "escala", labels: ["Nunca", "1-2 veces", "3-4 veces", "5-6 veces", "Todos los días"] },
   "Lectura bíblica": { type: "escala", labels: ["Nunca", "1-2 días", "3-4 días", "5-6 días", "Todos los días"] },
-  "Tiempo devocional": { type: "escala", labels: ["Muy malo", "Malo", "Regular", "Bueno", "Excelente"] },
   "Memorización bíblica": { type: "escala", labels: ["No memoriza", "1 versículo", "2-3 versículos", "4-5 versículos", "6+ versículos"] },
   "Asistencia al culto": { type: "escala", labels: ["Nunca", "1 vez/mes", "2 veces/mes", "3 veces/mes", "Siempre"] },
   "Asistencia al grupo pequeño": { type: "escala", labels: ["Nunca", "Casi nunca", "A veces", "Frecuentemente", "Siempre"] },
