@@ -13,12 +13,25 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Search, UserPlus, Loader2, Trash2 } from "lucide-react";
+import { Search, UserPlus, Loader2, Trash2, Cake } from "lucide-react";
 import { toast } from "sonner";
 import type { Discipulo, Etapa, Agenda, Oracion, Tarea, Timeline } from "@/types/database";
 import { ImportarDiscipulos } from "./importar-discipulos";
 import { DiscipuloDetailClient } from "./discipulo-detail-client";
 import { cn } from "@/lib/utils";
+
+const DIAS_CUMPLEANOS = 7;
+
+function diasHastaCumple(fecha?: string): number | null {
+  if (!fecha) return null;
+  const [, mes, dia] = fecha.split("-").map(Number);
+  if (!mes || !dia) return null;
+  const hoy = new Date();
+  const hoyInicio = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()).getTime();
+  let cumple = new Date(hoy.getFullYear(), mes - 1, dia).getTime();
+  if (cumple < hoyInicio) cumple = new Date(hoy.getFullYear() + 1, mes - 1, dia).getTime();
+  return Math.round((cumple - hoyInicio) / 86_400_000);
+}
 
 const avatarColors = [
   "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500", "bg-purple-500",
@@ -141,7 +154,9 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
           {filtered.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">No se encontraron discípulos</p>
           ) : (
-            filtered.map((d) => (
+            filtered.map((d) => {
+              const diasCumple = diasHastaCumple(d.fecha_nacimiento);
+              return (
               <button
                 key={d.id}
                 type="button"
@@ -161,12 +176,19 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium truncate">{d.apellido}, {d.nombre}</p>
                   <p className="text-[11px] text-muted-foreground truncate">{etapas.find((e) => e.id === d.etapa_id)?.nombre || "Sin etapa"}</p>
+                  {diasCumple !== null && diasCumple <= DIAS_CUMPLEANOS && (
+                    <p className="text-[11px] font-medium text-amber-600 dark:text-amber-400 truncate flex items-center gap-1">
+                      <Cake className="h-3 w-3 shrink-0" />
+                      {diasCumple === 0 ? "¡Hoy cumple años!" : `Cumple en ${diasCumple} día${diasCumple === 1 ? "" : "s"}`}
+                    </p>
+                  )}
                 </div>
                 <button type="button" onClick={(e) => { e.stopPropagation(); setDeleteDialog(d.id); }} className="shrink-0 text-muted-foreground/50 hover:text-destructive transition-colors opacity-0 group-hover:opacity-100">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </button>
-            ))
+              );
+            })
           )}
         </div>
       </div>

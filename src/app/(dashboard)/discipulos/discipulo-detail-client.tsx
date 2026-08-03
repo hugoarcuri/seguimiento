@@ -192,6 +192,8 @@ export function DiscipuloDetailClient({
                   <span>{discipulo.ministerio || "—"}</span>
                   <span className="text-muted-foreground">Dones</span>
                   <span>{discipulo.dones || "—"}</span>
+                  <span className="text-muted-foreground">¿Con quién vive?</span>
+                  <span>{discipulo.convive_con || "—"}</span>
                 </div>
               </CardContent>
             </Card>

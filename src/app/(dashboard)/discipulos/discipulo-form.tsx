@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { discipuloSchema, type DiscipuloInput } from "@/lib/validations/discipulo";
-import { generarAvatarUrl } from "@/lib/utils";
+import { generarAvatarUrl, calcularEdad } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,6 +34,17 @@ const sexoOptions: Array<{ value: "M" | "F"; label: string }> = [
   { value: "M", label: "Masculino" },
   { value: "F", label: "Femenino" },
 ];
+
+function EtapaLabel({ etapa }: { etapa: Etapa }) {
+  return (
+    <div className="flex flex-col gap-0.5 min-w-0">
+      <span className="truncate">{etapa.id}. {etapa.nombre}</span>
+      {etapa.descripcion && (
+        <span className="truncate text-[11px] text-muted-foreground leading-snug">{etapa.descripcion}</span>
+      )}
+    </div>
+  );
+}
 
 function ChipGroup<T extends string>({
   options,
@@ -93,6 +104,8 @@ export function DiscipuloForm({
   });
 
   const sexo = watch("sexo") as "M" | "F" | null | undefined;
+  const fechaNacimiento = watch("fecha_nacimiento") as string | undefined;
+  const edad = fechaNacimiento ? calcularEdad(fechaNacimiento) : null;
 
   const uploadAvatar = async (file: File, discipuloId: string): Promise<string | null> => {
     setSubiendoAvatar(true);
@@ -141,7 +154,9 @@ export function DiscipuloForm({
       fecha_bautismo: data.fecha_bautismo || null,
       ministerio: data.ministerio || null,
       dones: data.dones || null,
-      observaciones: data.observaciones || null,    };
+      observaciones: data.observaciones || null,
+      convive_con: data.convive_con || null,
+    };
 
     if (isEditing && initialData?.id) {
       if (pendingFile) {
@@ -245,6 +260,7 @@ export function DiscipuloForm({
           <div className="space-y-1">
             <Label htmlFor="fecha_nacimiento" className={inputLabelClass}>Nacimiento</Label>
             <Input id="fecha_nacimiento" type="date" className={inputClass} {...register("fecha_nacimiento")} />
+            {edad !== null && <p className="text-xs text-muted-foreground">Edad: {edad} años</p>}
           </div>
           <div className="space-y-1">
             <Label htmlFor="telefono" className={inputLabelClass}>Teléfono</Label>
@@ -260,15 +276,16 @@ export function DiscipuloForm({
           </div>
           <div className="space-y-1">
             <Label className={inputLabelClass}>Etapa</Label>
-            <Select onValueChange={(v) => setValue("etapa_id", parseInt(v?.toString() ?? "1"))} defaultValue={String(initialData?.etapa_id || 1)}>
+            <Select
+              onValueChange={(v) => setValue("etapa_id", parseInt(v?.toString() ?? "1"))}
+              defaultValue={String(initialData?.etapa_id || 1)}
+              items={etapas.map((e) => ({ value: String(e.id), label: <EtapaLabel etapa={e} /> }))}
+            >
               <SelectTrigger className={inputClass}><SelectValue /></SelectTrigger>
               <SelectContent className="min-w-[15rem]">
                 {etapas.map((etapa) => (
                   <SelectItem key={etapa.id} value={String(etapa.id)}>
-                    <div className="flex flex-col gap-0.5">
-                      <span>{etapa.nombre}</span>
-                      {etapa.descripcion && <span className="whitespace-normal text-[11px] text-muted-foreground leading-snug line-clamp-2">{etapa.descripcion}</span>}
-                    </div>
+                    <EtapaLabel etapa={etapa} />
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -289,6 +306,10 @@ export function DiscipuloForm({
           <div className="space-y-1">
             <Label htmlFor="fecha_bautismo" className={inputLabelClass}>Bautismo</Label>
             <Input id="fecha_bautismo" type="date" className={inputClass} {...register("fecha_bautismo")} />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="convive_con" className={inputLabelClass}>¿Con quién vive?</Label>
+            <Input id="convive_con" className={inputClass} {...register("convive_con")} placeholder="Ej.: con sus padres, solo/a..." />
           </div>
           <div className="space-y-1 lg:col-span-2">
             <Label htmlFor="observaciones" className={inputLabelClass}>Observaciones</Label>

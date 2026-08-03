@@ -16,6 +16,7 @@ export const discipuloSchema = z.object({
   dones: z.string().optional().nullable(),
   avatar_url: z.string().optional().nullable(),
   observaciones: z.string().optional().nullable(),
+  convive_con: z.string().optional().nullable(),
 });
 
 export type DiscipuloInput = z.infer<typeof discipuloSchema>;

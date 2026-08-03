@@ -30,6 +30,7 @@ export interface Discipulo {
   dones?: string;
   avatar_url?: string;
   observaciones?: string;
+  convive_con?: string;
   created_at: string;
   updated_at: string;
 }
