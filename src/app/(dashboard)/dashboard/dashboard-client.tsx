@@ -2,7 +2,9 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, UserPlus, TrendingUp, CalendarCheck, Church, AlertCircle, Cake } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { nombreEtapa } from "../seguimiento/seguimiento-constants";
+import { Users, UserPlus, TrendingUp, CalendarCheck, Church, AlertCircle, Cake, Activity } from "lucide-react";
 import { ResponsiveContainer, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Bar, PieChart, Pie, Cell, Legend } from "@/components/recharts-dynamic";
 
 const COLORS = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
@@ -48,6 +50,16 @@ interface DashboardClientProps {
     fecha: string;
   }>;
   proximosCumples: DiscipuloBasico[];
+  seguimientosActivos: number;
+  promedioProgreso: number;
+  seguimientosPorEtapa: Array<{ nombre: string; cantidad: number }>;
+  seguimientoAtencion: Array<{
+    id: string;
+    etapa: number;
+    progreso: number;
+    estado: string;
+    discipulos?: { nombre: string; apellido: string };
+  }>;
 }
 
 export function DashboardClient({
@@ -68,6 +80,10 @@ export function DashboardClient({
   proximasAgendas,
   oracionesPendientesList,
   proximosCumples,
+  seguimientosActivos,
+  promedioProgreso,
+  seguimientosPorEtapa,
+  seguimientoAtencion,
 }: DashboardClientProps) {
   const chartData = [
     { name: "Nueva Vida", value: nuevos, fill: "hsl(var(--chart-1))" },
@@ -75,6 +91,11 @@ export function DashboardClient({
     { name: "Carácter", value: caracter, fill: "hsl(var(--chart-3))" },
     { name: "Servicio", value: servicio, fill: "hsl(var(--chart-4))" },
   ];
+
+  const madurezChartData = seguimientosPorEtapa.map((e, i) => ({
+    ...e,
+    fill: COLORS[i % COLORS.length],
+  }));
 
   const statsCards = [
     {
@@ -100,6 +121,14 @@ export function DashboardClient({
       icon: TrendingUp,
       color: "text-purple-600",
       bg: "bg-purple-50 dark:bg-purple-950",
+    },
+    {
+      title: "En Seguimiento",
+      value: seguimientosActivos,
+      description: `Progreso promedio ${promedioProgreso}%`,
+      icon: Activity,
+      color: "text-indigo-600",
+      bg: "bg-indigo-50 dark:bg-indigo-950",
     },
     {
       title: "Oración Pendiente",
@@ -142,27 +171,51 @@ export function DashboardClient({
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Discípulos por Etapa</CardTitle>
-            <CardDescription>
-              Distribución actual en el proceso de discipulado
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="name" className="text-xs" />
-                  <YAxis className="text-xs" />
-                  <Tooltip />
-                  <Bar dataKey="value" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Discípulos por Etapa</CardTitle>
+              <CardDescription>
+                Distribución actual en el proceso de discipulado
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="name" className="text-xs" />
+                    <YAxis className="text-xs" />
+                    <Tooltip />
+                    <Bar dataKey="value" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Etapa de Madurez</CardTitle>
+              <CardDescription>
+                Discípulos en seguimiento por etapa de crecimiento espiritual
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={madurezChartData}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="nombre" className="text-xs" />
+                    <YAxis className="text-xs" />
+                    <Tooltip />
+                    <Bar dataKey="cantidad" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         <div className="space-y-4">
           <Card>
@@ -234,6 +287,43 @@ export function DashboardClient({
               </CardContent>
             </Card>
           )}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">
+                  Seguimiento: necesitan atención
+                </CardTitle>
+                <Activity className="h-4 w-4 text-muted-foreground" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              {seguimientoAtencion.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No hay seguimientos activos con progreso bajo
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {seguimientoAtencion.map((s) => (
+                    <div key={s.id} className="border-b pb-2 last:border-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <Link
+                          href={`/seguimiento/ver?id=${s.id}`}
+                          className="text-sm font-medium hover:underline truncate"
+                        >
+                          {s.discipulos ? `${s.discipulos.apellido}, ${s.discipulos.nombre}` : "—"}
+                        </Link>
+                        <span className="text-xs font-medium tabular-nums shrink-0">{s.progreso}%</span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Progress value={s.progreso} className="flex-1" />
+                        <Badge variant="outline" className="shrink-0">{nombreEtapa(s.etapa)}</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">

@@ -123,14 +123,14 @@ export interface SeguimientoEvaluacion {
   id: string;
   seguimiento_id: string;
   fecha: string;
-  vida_devocional?: number | null;
-  oracion?: number | null;
-  lectura_biblica?: number | null;
-  comunion?: number | null;
-  caracter?: number | null;
-  servicio?: number | null;
-  evangelismo?: number | null;
-  discipulado?: number | null;
+  relacion_dios?: string | null;
+  habitos_pecaminosos?: string | null;
+  don_espiritual?: string | null;
+  ministerio?: string | null;
+  relacion_autoridad?: string | null;
+  estudia?: string | null;
+  trabaja?: string | null;
+  convive_con?: string | null;
 }
 
 export interface SeguimientoObjetivo {

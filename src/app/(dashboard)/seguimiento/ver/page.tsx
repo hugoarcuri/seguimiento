@@ -14,18 +14,30 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   ArrowLeft, Loader2, Save, Plus, Trash2, User, CalendarDays, UserCheck, TrendingUp,
+  Phone, Mail, MapPin, Church, Pencil, CalendarPlus,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { calcularEdad, estadoColors } from "@/lib/utils";
 import {
-  ETAPAS, nombreEtapa, AREAS_EVALUACION, NIVELES_EVALUACION, OBJETIVOS_SUGERIDOS, calcularProgreso,
+  ETAPAS, nombreEtapa, CAMPOS_EVALUACION, OPCIONES_RELACION_DIOS, OBJETIVOS_SUGERIDOS, calcularProgreso,
 } from "../seguimiento-constants";
 import type {
   Seguimiento, SeguimientoEvaluacion, SeguimientoObjetivo, SeguimientoObservacion, SeguimientoHistorial,
+  Discipulo, Etapa, Agenda,
 } from "@/types/database";
+
+type EvalDraft = Record<string, string>;
+
+const draftVacio = (): EvalDraft => {
+  const d: EvalDraft = {};
+  CAMPOS_EVALUACION.forEach((c) => { d[c.key] = ""; });
+  return d;
+};
 
 const historialLabel: Record<string, string> = {
   etapa: "Etapa",
@@ -39,40 +51,56 @@ function SeguimientoDetalle({ id }: { id: string }) {
   const [loading, setLoading] = useState(true);
 
   const [seguimiento, setSeguimiento] = useState<(Seguimiento & {
-    discipulos?: { nombre: string; apellido: string };
+    discipulos?: Discipulo;
     discipuladores?: { nombre: string; apellido: string };
   }) | null>(null);
+  const [etapas, setEtapas] = useState<Etapa[]>([]);
   const [evaluacion, setEvaluacion] = useState<SeguimientoEvaluacion | null>(null);
   const [objetivos, setObjetivos] = useState<SeguimientoObjetivo[]>([]);
   const [observaciones, setObservaciones] = useState<(SeguimientoObservacion & { perfiles?: { nombre: string; apellido: string } })[]>([]);
   const [historial, setHistorial] = useState<SeguimientoHistorial[]>([]);
 
-  const [evalDraft, setEvalDraft] = useState<Record<string, number | null>>({});
+  const [evalDraft, setEvalDraft] = useState<EvalDraft>({});
   const [nuevoObjetivo, setNuevoObjetivo] = useState("");
   const [nuevaObservacion, setNuevaObservacion] = useState("");
   const [guardando, setGuardando] = useState(false);
+  const [agendas, setAgendas] = useState<Agenda[]>([]);
+  const [encuentroOpen, setEncuentroOpen] = useState(false);
+  const [encuentroEditing, setEncuentroEditing] = useState<Agenda | null>(null);
+  const [encuentroDelete, setEncuentroDelete] = useState<Agenda | null>(null);
+  const [encuentroDraft, setEncuentroDraft] = useState({ fecha: "", hora: "", lugar: "", tema_tratado: "", material_utilizado: "", compromisos: "", notas: "", proximo_encuentro: "" });
+  const [guardandoEncuentro, setGuardandoEncuentro] = useState(false);
 
   const refresh = useCallback(async () => {
-    const [segRes, evalRes, objRes, obsRes, histRes] = await Promise.all([
+    const [segRes, evalRes, objRes, obsRes, histRes, etapasRes] = await Promise.all([
       supabase
         .from("seguimientos")
-        .select("*, discipulos:discipulo_id(nombre, apellido), discipuladores:discipulador_id(nombre, apellido)")
+        .select("*, discipulos:discipulo_id(*), discipuladores:discipulador_id(nombre, apellido)")
         .eq("id", id)
         .single(),
       supabase.from("seguimiento_evaluaciones").select("*").eq("seguimiento_id", id).maybeSingle(),
       supabase.from("seguimiento_objetivos").select("*").eq("seguimiento_id", id).order("created_at", { ascending: true }),
       supabase.from("seguimiento_observaciones").select("*, perfiles:usuario(nombre, apellido)").eq("seguimiento_id", id).order("fecha", { ascending: false }),
       supabase.from("seguimiento_historial").select("*").eq("seguimiento_id", id).order("fecha", { ascending: false }),
+      supabase.from("etapas").select("*").order("orden", { ascending: true }),
     ]);
     setSeguimiento((segRes.data as typeof seguimiento) || null);
+    setEtapas((etapasRes.data as Etapa[]) || []);
+    const seg = segRes.data as typeof seguimiento;
+    if (seg?.discipulos?.id) {
+      const { data: agendaData } = await supabase.from("agenda").select("*").eq("discipulo_id", seg.discipulos.id).order("fecha", { ascending: false });
+      setAgendas((agendaData as Agenda[]) || []);
+    } else {
+      setAgendas([]);
+    }
     const ev = (evalRes.data as SeguimientoEvaluacion) || null;
     setEvaluacion(ev);
     if (ev) {
-      const draft: Record<string, number | null> = {};
-      AREAS_EVALUACION.forEach((a) => { draft[a.key] = ev[a.key] ?? null; });
+      const draft = draftVacio();
+      CAMPOS_EVALUACION.forEach((c) => { draft[c.key] = ev[c.key] ?? ""; });
       setEvalDraft(draft);
     } else {
-      setEvalDraft({});
+      setEvalDraft(draftVacio());
     }
     setObjetivos((objRes.data as SeguimientoObjetivo[]) || []);
     setObservaciones((obsRes.data as typeof observaciones) || []);
@@ -96,21 +124,21 @@ function SeguimientoDetalle({ id }: { id: string }) {
     await supabase.from("seguimiento_historial").insert({ seguimiento_id: id, tipo, descripcion });
   }, [id, supabase]);
 
-  const persistirProgreso = useCallback(async (ev: SeguimientoEvaluacion | null, obj: SeguimientoObjetivo[]) => {
-    const prog = calcularProgreso(ev, obj);
+  const persistirProgreso = useCallback(async (obj: SeguimientoObjetivo[]) => {
+    const prog = calcularProgreso(obj);
     const { data, error } = await supabase
       .from("seguimientos")
       .update({ progreso: prog, ultima_actualizacion: new Date().toISOString() })
       .eq("id", id)
-      .select("*, discipulos:discipulo_id(nombre, apellido), discipuladores:discipulador_id(nombre, apellido)")
+      .select("*, discipulos:discipulo_id(*), discipuladores:discipulador_id(nombre, apellido)")
       .single();
     if (!error && data) setSeguimiento(data as typeof seguimiento);
   }, [id, supabase]);
 
   const guardarEvaluacion = async () => {
     setGuardando(true);
-    const payload: Record<string, number | null | string> = { seguimiento_id: id, fecha: new Date().toISOString().split("T")[0] };
-    AREAS_EVALUACION.forEach((a) => { payload[a.key] = evalDraft[a.key] ?? null; });
+    const payload: Record<string, string | null> = { seguimiento_id: id, fecha: new Date().toISOString().split("T")[0] };
+    CAMPOS_EVALUACION.forEach((c) => { payload[c.key] = (evalDraft[c.key] || "").trim() || null; });
 
     const { error } = evaluacion
       ? await supabase.from("seguimiento_evaluaciones").update(payload).eq("seguimiento_id", id)
@@ -123,7 +151,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
     ev.seguimiento_id = id;
     setEvaluacion(ev);
     await registrarHistorial("evaluacion", "Evaluación guardada");
-    await persistirProgreso(ev, objetivos);
+    await persistirProgreso(objetivos);
     toast.success("Evaluación guardada");
     setGuardando(false);
   };
@@ -146,7 +174,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
     const nuevos = [...objetivos, data as SeguimientoObjetivo];
     setObjetivos(nuevos);
     setNuevoObjetivo("");
-    await persistirProgreso(evaluacion, nuevos);
+    await persistirProgreso(nuevos);
     toast.success("Objetivo agregado");
   };
 
@@ -163,7 +191,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
     if (completado) {
       await registrarHistorial("objetivo", `Objetivo cumplido: ${obj.descripcion}`);
     }
-    await persistirProgreso(evaluacion, nuevos);
+    await persistirProgreso(nuevos);
     toast.success(completado ? "Objetivo cumplido" : "Objetivo pendiente");
   };
 
@@ -172,7 +200,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
     if (error) { toast.error("Error al eliminar el objetivo"); return; }
     const nuevos = objetivos.filter((o) => o.id !== obj.id);
     setObjetivos(nuevos);
-    await persistirProgreso(evaluacion, nuevos);
+    await persistirProgreso(nuevos);
     toast.success("Objetivo eliminado");
   };
 
@@ -192,6 +220,64 @@ function SeguimientoDetalle({ id }: { id: string }) {
     await registrarHistorial("observacion", "Observación agregada");
     await supabase.from("seguimientos").update({ ultima_actualizacion: new Date().toISOString() }).eq("id", id);
     toast.success("Observación guardada");
+  };
+
+  const abrirEncuentro = (agenda?: Agenda) => {
+    setEncuentroEditing(agenda || null);
+    setEncuentroDraft({
+      fecha: agenda?.fecha?.split("T")[0] || "",
+      hora: agenda?.hora || "",
+      lugar: agenda?.lugar || "",
+      tema_tratado: agenda?.tema_tratado || "",
+      material_utilizado: agenda?.material_utilizado || "",
+      compromisos: agenda?.compromisos || "",
+      notas: agenda?.notas || "",
+      proximo_encuentro: agenda?.proximo_encuentro?.slice(0, 16) || "",
+    });
+    setEncuentroOpen(true);
+  };
+
+  const guardarEncuentro = async () => {
+    const discipuloId = seguimiento?.discipulos?.id;
+    if (!discipuloId) { toast.error("No se encontró el discípulo"); return; }
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { toast.error("Debés iniciar sesión"); return; }
+    if (!encuentroDraft.tema_tratado.trim() || !encuentroDraft.fecha) { toast.error("Completá fecha y tema"); return; }
+
+    setGuardandoEncuentro(true);
+    const payload = {
+      discipulo_id: discipuloId,
+      lider_id: user.id,
+      fecha: encuentroDraft.fecha,
+      hora: encuentroDraft.hora || null,
+      lugar: encuentroDraft.lugar || null,
+      tema_tratado: encuentroDraft.tema_tratado.trim(),
+      material_utilizado: encuentroDraft.material_utilizado || null,
+      compromisos: encuentroDraft.compromisos || null,
+      notas: encuentroDraft.notas || null,
+      proximo_encuentro: encuentroDraft.proximo_encuentro || null,
+    };
+    const { error, data } = encuentroEditing
+      ? await supabase.from("agenda").update(payload).eq("id", encuentroEditing.id).select().single()
+      : await supabase.from("agenda").insert(payload).select().single();
+
+    if (error) { toast.error("Error al guardar el encuentro"); setGuardandoEncuentro(false); return; }
+    setAgendas((prev) => encuentroEditing
+      ? prev.map((e) => e.id === encuentroEditing.id ? (data as Agenda) : e)
+      : [data as Agenda, ...prev]);
+    setEncuentroOpen(false);
+    setEncuentroEditing(null);
+    setGuardandoEncuentro(false);
+    toast.success(encuentroEditing ? "Encuentro actualizado" : "Encuentro registrado");
+  };
+
+  const eliminarEncuentro = async () => {
+    if (!encuentroDelete) return;
+    const { error } = await supabase.from("agenda").delete().eq("id", encuentroDelete.id);
+    if (error) { toast.error("Error al eliminar el encuentro"); setEncuentroDelete(null); return; }
+    setAgendas((prev) => prev.filter((e) => e.id !== encuentroDelete.id));
+    setEncuentroDelete(null);
+    toast.success("Encuentro eliminado");
   };
 
   if (loading) return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -227,14 +313,85 @@ function SeguimientoDetalle({ id }: { id: string }) {
           <TabsTrigger value="resumen">Resumen</TabsTrigger>
           <TabsTrigger value="evaluacion">Evaluación</TabsTrigger>
           <TabsTrigger value="objetivos">Objetivos</TabsTrigger>
-          <TabsTrigger value="observaciones">Observaciones</TabsTrigger>
+          <TabsTrigger value="encuentros">Encuentros</TabsTrigger>
           <TabsTrigger value="historial">Historial</TabsTrigger>
         </TabsList>
 
         <TabsContent value="resumen" className="space-y-4">
+          {seguimiento.discipulos && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Ficha personal del discípulo</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-4">
+                  {seguimiento.discipulos.avatar_url ? (
+                    <img src={seguimiento.discipulos.avatar_url} alt="" className="w-16 h-16 rounded-full object-cover ring-4 ring-background shadow" />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xl ring-4 ring-background shadow">
+                      {seguimiento.discipulos.nombre?.charAt(0)?.toUpperCase()}{seguimiento.discipulos.apellido?.charAt(0)?.toUpperCase()}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-lg font-bold truncate">{nombreDiscipulo}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant="secondary">{etapas.find((e) => e.id === seguimiento.discipulos?.etapa_id)?.nombre || "Sin etapa"}</Badge>
+                      <span className={`h-3 w-3 rounded-full ${estadoColors[seguimiento.discipulos.estado]}`} />
+                      <span className="text-sm capitalize text-muted-foreground">{seguimiento.discipulos.estado}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"><CalendarDays className="h-4 w-4 text-primary" /></div>
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">Edad</p>
+                      <p className="text-sm font-medium truncate">{seguimiento.discipulos.fecha_nacimiento ? `${calcularEdad(seguimiento.discipulos.fecha_nacimiento)} años` : "—"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"><User className="h-4 w-4 text-primary" /></div>
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">Sexo</p>
+                      <p className="text-sm font-medium truncate">{seguimiento.discipulos.sexo === "M" ? "Masculino" : seguimiento.discipulos.sexo === "F" ? "Femenino" : "—"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"><Phone className="h-4 w-4 text-primary" /></div>
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">Teléfono</p>
+                      <p className="text-sm font-medium truncate">{seguimiento.discipulos.telefono || "—"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"><Mail className="h-4 w-4 text-primary" /></div>
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">Email</p>
+                      <p className="text-sm font-medium truncate">{seguimiento.discipulos.email || "—"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"><MapPin className="h-4 w-4 text-primary" /></div>
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">Dirección</p>
+                      <p className="text-sm font-medium truncate">{seguimiento.discipulos.direccion || "—"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"><Church className="h-4 w-4 text-primary" /></div>
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">Ministerio</p>
+                      <p className="text-sm font-medium truncate">{seguimiento.discipulos.ministerio || "—"}</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Resumen</CardTitle>
+              <CardTitle className="text-base">Resumen de seguimiento</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-3">
@@ -286,7 +443,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
                   </div>
                   <Progress value={seguimiento.progreso} />
                   <p className="text-xs text-muted-foreground mt-2">
-                    Calculado automáticamente según la evaluación y los objetivos cumplidos.
+                    Calculado automáticamente según los objetivos cumplidos.
                   </p>
                 </div>
               </div>
@@ -298,36 +455,36 @@ function SeguimientoDetalle({ id }: { id: string }) {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Evaluación</CardTitle>
-              <CardDescription>Evaluá cada área del crecimiento espiritual del discípulo.</CardDescription>
+              <CardDescription>Completá los datos del crecimiento espiritual del discípulo.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {AREAS_EVALUACION.map((area) => (
-                <div key={area.key} className="rounded-lg border p-3">
-                  <p className="text-sm font-medium mb-2">{area.label}</p>
-                  <div className="flex flex-wrap gap-1.5" role="group" aria-label={area.label}>
-                    {NIVELES_EVALUACION.map((nivel) => {
-                      const activo = evalDraft[area.key] === nivel.valor;
-                      return (
-                        <button
-                          key={nivel.valor}
-                          type="button"
-                          onClick={() => setEvalDraft((prev) => ({ ...prev, [area.key]: nivel.valor }))}
-                          aria-pressed={activo}
-                          className={cn(
-                            "flex-1 min-w-[110px] h-9 rounded-lg text-xs font-medium border transition-colors cursor-pointer",
-                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
-                            activo
-                              ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                              : "bg-muted/40 text-muted-foreground border-transparent hover:bg-muted/80 hover:text-foreground"
-                          )}
-                        >
-                          {nivel.nombre}
-                        </button>
-                      );
-                    })}
+              {CAMPOS_EVALUACION.map((campo) => {
+                const esSelect = campo.key === "relacion_dios";
+                return (
+                  <div key={campo.key} className="space-y-2">
+                    <Label htmlFor={`eval-${campo.key}`}>{campo.label}</Label>
+                    {esSelect ? (
+                      <Select value={evalDraft[campo.key] || ""} onValueChange={(v) => setEvalDraft((prev) => ({ ...prev, [campo.key]: v ?? "" }))}>
+                        <SelectTrigger id={`eval-${campo.key}`}>
+                          <SelectValue placeholder={campo.placeholder} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {OPCIONES_RELACION_DIOS.map((op) => (
+                            <SelectItem key={op} value={op}>{op}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        id={`eval-${campo.key}`}
+                        placeholder={campo.placeholder}
+                        value={evalDraft[campo.key] || ""}
+                        onChange={(e) => setEvalDraft((prev) => ({ ...prev, [campo.key]: e.target.value }))}
+                      />
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
               <div className="flex justify-end">
                 <Button onClick={guardarEvaluacion} disabled={guardando}>
                   {guardando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -339,6 +496,50 @@ function SeguimientoDetalle({ id }: { id: string }) {
                 <p className="text-xs text-muted-foreground">
                   Última evaluación: {format(new Date(evaluacion.fecha + "T12:00:00"), "dd/MM/yyyy")}
                 </p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Observaciones</CardTitle>
+              <CardDescription>Notas del discipulador. Cada comentario se agrega sin sobrescribir los anteriores.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="nueva-obs">Nuevo comentario</Label>
+                <Textarea
+                  id="nueva-obs"
+                  rows={3}
+                  value={nuevaObservacion}
+                  onChange={(e) => setNuevaObservacion(e.target.value)}
+                  placeholder="Escribí una observación sobre el crecimiento del discípulo..."
+                />
+              </div>
+              <div className="flex justify-end">
+                <Button onClick={guardarObservacion}>
+                  <Save className="mr-2 h-4 w-4" /> Guardar comentario
+                </Button>
+              </div>
+
+              {observaciones.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">Sin observaciones registradas.</p>
+              ) : (
+                <div className="space-y-3">
+                  {observaciones.map((obs) => (
+                    <Card key={obs.id}>
+                      <CardContent className="py-3">
+                        <p className="text-sm whitespace-pre-wrap">{obs.comentario}</p>
+                        <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                          <Badge variant="outline">
+                            {obs.perfiles ? `${obs.perfiles.apellido}, ${obs.perfiles.nombre}` : "Usuario"}
+                          </Badge>
+                          <span>{format(new Date(obs.fecha), "dd/MM/yyyy HH:mm")}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>
@@ -393,7 +594,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
                       if (error) { toast.error("Error al agregar el objetivo"); return; }
                       const { data } = await supabase.from("seguimiento_objetivos").select("*").eq("seguimiento_id", id);
                       setObjetivos((data as SeguimientoObjetivo[]) || []);
-                      await persistirProgreso(evaluacion, (data as SeguimientoObjetivo[]) || []);
+                      await persistirProgreso((data as SeguimientoObjetivo[]) || []);
                       toast.success("Objetivo agregado");
                     }}
                   >
@@ -417,42 +618,60 @@ function SeguimientoDetalle({ id }: { id: string }) {
           </Card>
         </TabsContent>
 
-        <TabsContent value="observaciones" className="space-y-4">
+        <TabsContent value="encuentros" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Observaciones</CardTitle>
-              <CardDescription>Notas del discipulador. Cada comentario se agrega sin sobrescribir los anteriores.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="nueva-obs">Nuevo comentario</Label>
-                <Textarea
-                  id="nueva-obs"
-                  rows={3}
-                  value={nuevaObservacion}
-                  onChange={(e) => setNuevaObservacion(e.target.value)}
-                  placeholder="Escribí una observación sobre el crecimiento del discípulo..."
-                />
-              </div>
-              <div className="flex justify-end">
-                <Button onClick={guardarObservacion}>
-                  <Save className="mr-2 h-4 w-4" /> Guardar comentario
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <CardTitle className="text-base">Encuentros</CardTitle>
+                  <CardDescription>Citas de discipulado del discípulo. {agendas.length} registros.</CardDescription>
+                </div>
+                <Button size="sm" onClick={() => abrirEncuentro()}>
+                  <CalendarPlus className="mr-1 h-4 w-4" /> Nuevo encuentro
                 </Button>
               </div>
-
-              {observaciones.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">Sin observaciones registradas.</p>
+            </CardHeader>
+            <CardContent>
+              {agendas.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">No hay encuentros registrados para este discípulo.</p>
               ) : (
                 <div className="space-y-3">
-                  {observaciones.map((obs) => (
-                    <Card key={obs.id}>
+                  {agendas.map((agenda) => (
+                    <Card key={agenda.id}>
                       <CardContent className="py-3">
-                        <p className="text-sm whitespace-pre-wrap">{obs.comentario}</p>
-                        <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                          <Badge variant="outline">
-                            {obs.perfiles ? `${obs.perfiles.apellido}, ${obs.perfiles.nombre}` : "Usuario"}
-                          </Badge>
-                          <span>{format(new Date(obs.fecha), "dd/MM/yyyy HH:mm")}</span>
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0 space-y-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="text-sm font-medium">{agenda.tema_tratado}</p>
+                              <Badge variant="outline">{format(new Date(agenda.fecha), "dd/MM/yyyy")}</Badge>
+                              {agenda.hora && <Badge variant="secondary">{agenda.hora}</Badge>}
+                            </div>
+                            {agenda.lugar && (
+                              <p className="text-xs text-muted-foreground"><MapPin className="inline h-3 w-3 mr-1" />{agenda.lugar}</p>
+                            )}
+                            {agenda.material_utilizado && (
+                              <p className="text-xs text-muted-foreground">Material: {agenda.material_utilizado}</p>
+                            )}
+                            {agenda.compromisos && (
+                              <p className="text-xs text-muted-foreground">Compromisos: {agenda.compromisos}</p>
+                            )}
+                            {agenda.notas && (
+                              <p className="text-xs text-muted-foreground">Notas: {agenda.notas}</p>
+                            )}
+                            {agenda.proximo_encuentro && (
+                              <p className="text-xs text-muted-foreground">
+                                Próximo: {format(new Date(agenda.proximo_encuentro), "dd/MM/yyyy HH:mm")}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex shrink-0 gap-1">
+                            <Button variant="ghost" size="icon" title="Editar" onClick={() => abrirEncuentro(agenda)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" title="Eliminar" onClick={() => setEncuentroDelete(agenda)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -490,6 +709,67 @@ function SeguimientoDetalle({ id }: { id: string }) {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={encuentroOpen} onOpenChange={(v) => { setEncuentroOpen(v); if (!v) setEncuentroEditing(null); }}>
+        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{encuentroEditing ? "Editar encuentro" : "Registrar encuentro"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="enc-fecha">Fecha *</Label>
+                <Input id="enc-fecha" type="date" value={encuentroDraft.fecha} onChange={(e) => setEncuentroDraft((p) => ({ ...p, fecha: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="enc-hora">Hora</Label>
+                <Input id="enc-hora" type="time" value={encuentroDraft.hora} onChange={(e) => setEncuentroDraft((p) => ({ ...p, hora: e.target.value }))} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="enc-tema">Tema tratado *</Label>
+              <Input id="enc-tema" value={encuentroDraft.tema_tratado} onChange={(e) => setEncuentroDraft((p) => ({ ...p, tema_tratado: e.target.value }))} placeholder="Tema del encuentro" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="enc-lugar">Lugar</Label>
+              <Input id="enc-lugar" value={encuentroDraft.lugar} onChange={(e) => setEncuentroDraft((p) => ({ ...p, lugar: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="enc-material">Material utilizado</Label>
+              <Textarea id="enc-material" rows={2} value={encuentroDraft.material_utilizado} onChange={(e) => setEncuentroDraft((p) => ({ ...p, material_utilizado: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="enc-compromisos">Compromisos</Label>
+              <Textarea id="enc-compromisos" rows={2} value={encuentroDraft.compromisos} onChange={(e) => setEncuentroDraft((p) => ({ ...p, compromisos: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="enc-notas">Notas</Label>
+              <Textarea id="enc-notas" rows={2} value={encuentroDraft.notas} onChange={(e) => setEncuentroDraft((p) => ({ ...p, notas: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="enc-proximo">Próximo encuentro</Label>
+              <Input id="enc-proximo" type="datetime-local" value={encuentroDraft.proximo_encuentro} onChange={(e) => setEncuentroDraft((p) => ({ ...p, proximo_encuentro: e.target.value }))} />
+            </div>
+            <Button className="w-full" onClick={guardarEncuentro} disabled={guardandoEncuentro}>
+              {guardandoEncuentro && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {encuentroEditing ? "Guardar cambios" : "Registrar encuentro"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={encuentroDelete !== null} onOpenChange={() => setEncuentroDelete(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Eliminar encuentro</DialogTitle>
+            <DialogDescription>¿Estás seguro de eliminar este encuentro? Esta acción no se puede deshacer.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEncuentroDelete(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={eliminarEncuentro}>Eliminar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

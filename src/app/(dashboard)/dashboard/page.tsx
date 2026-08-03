@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { DashboardClient } from "./dashboard-client";
+import { ETAPAS } from "../seguimiento/seguimiento-constants";
 import type { Discipulo } from "@/types/database";
 
 interface AgendaBasico {
@@ -29,6 +30,14 @@ interface DiscipuloBasico {
   etapa_id: number;
 }
 
+interface SeguimientoBasico {
+  id: string;
+  etapa: number;
+  progreso: number;
+  estado: string;
+  discipulos?: { nombre: string; apellido: string };
+}
+
 interface DashboardData {
   totalDiscipulos: number;
   nuevos: number;
@@ -47,6 +56,10 @@ interface DashboardData {
   proximasAgendas: AgendaBasico[];
   oracionesPendientesList: OracionBasica[];
   proximosCumples: DiscipuloBasico[];
+  seguimientosActivos: number;
+  promedioProgreso: number;
+  seguimientosPorEtapa: Array<{ nombre: string; cantidad: number }>;
+  seguimientoAtencion: SeguimientoBasico[];
 }
 
 export default function DashboardPage() {
@@ -71,11 +84,20 @@ export default function DashboardPage() {
         .limit(5),
       supabase.from("agenda").select("fecha"),
       supabase.from("oraciones").select("estado"),
-    ]).then(([discipulosRes, agendasRes, oracionesRes, allAgendasRes, allOracionesRes]) => {
+      supabase
+        .from("seguimientos")
+        .select("id, etapa, progreso, estado, discipulos:discipulo_id(nombre, apellido)"),
+    ]).then(([discipulosRes, agendasRes, oracionesRes, allAgendasRes, allOracionesRes, seguimientosRes]) => {
       const discipulos = (discipulosRes.data || []) as Discipulo[];
       const agendas = (allAgendasRes.data || []) as { fecha: string }[];
       const oraciones = (allOracionesRes.data || []) as OracionBasica[];
+      const seguimientos = (seguimientosRes.data || []) as unknown as SeguimientoBasico[];
       const hoy = new Date();
+
+      const seguimientosActivos = seguimientos.filter((s) => s.estado === "activo");
+      const promedioProgreso = seguimientosActivos.length
+        ? Math.round(seguimientosActivos.reduce((acc, s) => acc + s.progreso, 0) / seguimientosActivos.length)
+        : 0;
 
       const proximosCumples = discipulos.filter((d) => {
         if (!d.fecha_nacimiento) return false;
@@ -111,6 +133,15 @@ export default function DashboardPage() {
         proximasAgendas: (agendasRes.data || []) as AgendaBasico[],
         oracionesPendientesList: (oracionesRes.data || []) as OracionBasica[],
         proximosCumples,
+        seguimientosActivos: seguimientosActivos.length,
+        promedioProgreso,
+        seguimientosPorEtapa: ETAPAS.map((e) => ({
+          nombre: e.nombre,
+          cantidad: seguimientosActivos.filter((s) => s.etapa === e.valor).length,
+        })),
+        seguimientoAtencion: [...seguimientosActivos]
+          .sort((a, b) => a.progreso - b.progreso)
+          .slice(0, 5),
       });
     }).catch(console.error);
   }, []);
