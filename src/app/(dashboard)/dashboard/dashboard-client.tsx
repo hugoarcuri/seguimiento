@@ -12,6 +12,50 @@ import { format, isToday } from "date-fns";
 import Link from "next/link";
 import { es } from "date-fns/locale";
 
+const AXIS = {
+  tick: { fill: "currentColor", fontSize: 12 },
+  tickLine: { stroke: "currentColor" },
+  axisLine: { stroke: "currentColor" },
+} as const;
+
+const CURSOR = { fill: "hsl(var(--muted))", opacity: 0.7 };
+
+function ChartTooltip({ active, payload, label }: {
+  active?: boolean;
+  payload?: Array<{ name?: string; value?: string | number; payload?: { fill?: string } }>;
+  label?: string | number;
+}) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="rounded-lg border bg-popover px-3 py-2 shadow-md text-popover-foreground">
+      {label != null && <p className="mb-1.5 text-xs font-semibold">{label}</p>}
+      <div className="space-y-1">
+        {payload.map((p, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: p.payload?.fill || "currentColor" }} />
+            <span className="text-xs text-muted-foreground capitalize">{p.name}</span>
+            <span className="ml-auto text-xs font-semibold tabular-nums">{p.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const pieLabel = ({ cx = 0, cy = 0, midAngle = 0, innerRadius = 0, outerRadius = 0, percent = 0 }: {
+  cx?: number; cy?: number; midAngle?: number; innerRadius?: number; outerRadius?: number; percent?: number;
+}) => {
+  const RADIAN = Math.PI / 180;
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.62;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  return (
+    <text x={x} y={y} fill="var(--foreground)" textAnchor="middle" dominantBaseline="central" style={{ fontSize: 12, fontWeight: 600 }}>
+      {`${Math.round(percent * 100)}%`}
+    </text>
+  );
+};
+
 interface DiscipuloBasico {
   id: string;
   nombre: string;
@@ -89,6 +133,13 @@ export function DashboardClient({
     ...e,
     fill: COLORS[i % COLORS.length],
   }));
+
+  const estadoData = [
+    { name: "Activos", value: activos, fill: COLORS[0] },
+    { name: "Completados", value: completados, fill: COLORS[1] },
+    { name: "Pausados", value: pausados, fill: COLORS[2] },
+    { name: "Retirados", value: retirados, fill: COLORS[3] },
+  ];
 
   const primeraEtapa = discipulosPorEtapa[0];
   const ultimaEtapa = discipulosPorEtapa[discipulosPorEtapa.length - 1];
@@ -180,10 +231,12 @@ export function DashboardClient({
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="name" className="text-xs" />
-                    <YAxis className="text-xs" />
-                    <Tooltip />
-                    <Bar dataKey="value" radius={[4, 4, 0, 0]} />
+                    <XAxis dataKey="name" {...AXIS} />
+                    <YAxis {...AXIS} allowDecimals={false} />
+                    <Tooltip content={<ChartTooltip />} cursor={CURSOR} />
+                    <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                      {chartData.map((d, i) => <Cell key={i} fill={d.fill} />)}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -202,10 +255,12 @@ export function DashboardClient({
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={madurezChartData}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="nombre" className="text-xs" />
-                    <YAxis className="text-xs" />
-                    <Tooltip />
-                    <Bar dataKey="cantidad" radius={[4, 4, 0, 0]} />
+                    <XAxis dataKey="nombre" {...AXIS} />
+                    <YAxis {...AXIS} allowDecimals={false} />
+                    <Tooltip content={<ChartTooltip />} cursor={CURSOR} />
+                    <Bar dataKey="cantidad" radius={[4, 4, 0, 0]}>
+                      {madurezChartData.map((d, i) => <Cell key={i} fill={d.fill} />)}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -370,9 +425,9 @@ export function DashboardClient({
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={agendasPorMes}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="mes" className="text-xs" />
-                    <YAxis className="text-xs" />
-                    <Tooltip />
+                    <XAxis dataKey="mes" {...AXIS} />
+                    <YAxis {...AXIS} allowDecimals={false} />
+                    <Tooltip content={<ChartTooltip />} cursor={CURSOR} />
                     <Bar dataKey="cantidad" radius={[4, 4, 0, 0]} fill="hsl(var(--chart-1))" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -385,11 +440,14 @@ export function DashboardClient({
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={[{ name: "Activos", value: activos }, { name: "Completados", value: completados }, { name: "Pausados", value: pausados }, { name: "Retirados", value: retirados }]} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
-                      {[{ name: "Activos", value: activos }, { name: "Completados", value: completados }, { name: "Pausados", value: pausados }, { name: "Retirados", value: retirados }].map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
+                    <Pie data={estadoData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={pieLabel} paddingAngle={2} stroke="var(--background)" />
+                    <Tooltip content={<ChartTooltip />} />
+                    <Legend
+                      iconType="circle"
+                      formatter={(value: string, entry: { payload?: { value?: number } }) => (
+                        <span className="text-xs text-foreground">{value} · {entry?.payload?.value}</span>
+                      )}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
