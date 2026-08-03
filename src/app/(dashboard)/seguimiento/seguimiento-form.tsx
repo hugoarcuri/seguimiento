@@ -42,7 +42,6 @@ export function SeguimientoForm({
       discipulo_id: "",
       discipulador_id: "",
       etapa: 1,
-      estado: "activo",
       fecha_inicio: new Date().toISOString().split("T")[0],
     },
   });
@@ -54,7 +53,6 @@ export function SeguimientoForm({
         discipulo_id: editing.discipulo_id,
         discipulador_id: editing.discipulador_id,
         etapa: editing.etapa,
-        estado: editing.estado,
         fecha_inicio: editing.fecha_inicio?.slice(0, 10) || new Date().toISOString().split("T")[0],
       });
     } else {
@@ -62,7 +60,6 @@ export function SeguimientoForm({
         discipulo_id: "",
         discipulador_id: defaultDiscipuladorId || "",
         etapa: 1,
-        estado: "activo",
         fecha_inicio: new Date().toISOString().split("T")[0],
       });
     }
@@ -81,7 +78,7 @@ export function SeguimientoForm({
       discipulo_id: data.discipulo_id,
       discipulador_id: data.discipulador_id,
       etapa: data.etapa,
-      estado: data.estado,
+      estado: "activo" as const,
       fecha_inicio: data.fecha_inicio,
     };
 
@@ -120,7 +117,12 @@ export function SeguimientoForm({
               control={form.control}
               name="discipulo_id"
               render={({ field }) => (
-                <Select value={field.value || undefined} disabled={!!editing} onValueChange={(v) => field.onChange(v?.toString() ?? "")}>
+                  <Select
+                    value={field.value || undefined}
+                    disabled={!!editing}
+                    onValueChange={(v) => field.onChange(v?.toString() ?? "")}
+                    items={discipulos.map((d) => ({ value: d.id, label: `${d.apellido}, ${d.nombre}` }))}
+                  >
                   <SelectTrigger><SelectValue placeholder="Seleccionar discípulo" /></SelectTrigger>
                   <SelectContent>
                     {discipulos.map((d) => (
@@ -140,7 +142,11 @@ export function SeguimientoForm({
                 control={form.control}
                 name="discipulador_id"
                 render={({ field }) => (
-                  <Select value={field.value || undefined} onValueChange={(v) => field.onChange(v?.toString() ?? "")}>
+                  <Select
+                    value={field.value || undefined}
+                    onValueChange={(v) => field.onChange(v?.toString() ?? "")}
+                    items={discipuladores.map((p) => ({ value: p.id, label: `${p.apellido}, ${p.nombre}` }))}
+                  >
                     <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                     <SelectContent>
                       {discipuladores.map((p) => (
@@ -157,7 +163,11 @@ export function SeguimientoForm({
                 control={form.control}
                 name="etapa"
                 render={({ field }) => (
-                  <Select value={String(field.value)} onValueChange={(v) => field.onChange(Number(v))}>
+                  <Select
+                    value={String(field.value)}
+                    onValueChange={(v) => field.onChange(Number(v))}
+                    items={ETAPAS.map((e) => ({ value: String(e.valor), label: `${e.valor}. ${e.nombre}` }))}
+                  >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {ETAPAS.map((e) => (
@@ -170,28 +180,10 @@ export function SeguimientoForm({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Estado</Label>
-              <Controller
-                control={form.control}
-                name="estado"
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={(v) => field.onChange(v as SeguimientoInput["estado"])}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="activo">Activo</SelectItem>
-                      <SelectItem value="pausado">Pausado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="fecha_inicio">Fecha de inicio</Label>
-              <Input id="fecha_inicio" type="date" {...form.register("fecha_inicio")} />
-              {form.formState.errors.fecha_inicio && <p className="text-sm text-destructive">{form.formState.errors.fecha_inicio.message}</p>}
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="fecha_inicio">Fecha de inicio</Label>
+            <Input id="fecha_inicio" type="date" {...form.register("fecha_inicio")} />
+            {form.formState.errors.fecha_inicio && <p className="text-sm text-destructive">{form.formState.errors.fecha_inicio.message}</p>}
           </div>
 
           <DialogFooter>

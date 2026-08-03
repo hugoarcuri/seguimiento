@@ -303,9 +303,6 @@ function SeguimientoDetalle({ id }: { id: string }) {
           <h1 className="text-2xl font-bold truncate">{nombreDiscipulo}</h1>
           <p className="text-sm text-muted-foreground">Ficha de seguimiento espiritual</p>
         </div>
-        <Badge variant={seguimiento.estado === "activo" ? "default" : "secondary"}>
-          {seguimiento.estado === "activo" ? "Activo" : "Pausado"}
-        </Badge>
       </div>
 
       <Tabs defaultValue="resumen" className="space-y-4">

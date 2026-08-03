@@ -100,10 +100,17 @@ export interface Timeline {
 export interface Etapa {
   id: number;
   nombre: string;
-  descripcion: string;
+  descripcion?: string | null;
   orden: number;
-  objetivos: string[];
-  material_recomendado: string;
+  objetivos: string[] | null;
+  material_recomendado?: string | null;
+}
+
+export interface Configuracion {
+  id: number;
+  seguimiento: Record<string, unknown>;
+  personal: Record<string, unknown>;
+  updated_at: string;
 }
 
 export interface Seguimiento {

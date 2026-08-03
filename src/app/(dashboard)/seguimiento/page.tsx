@@ -22,9 +22,18 @@ type SeguimientoFila = Seguimiento & {
   discipuladores?: { id: string; nombre: string; apellido: string };
 };
 
+const DIAS_SIN_CONTACTO = 15;
+
+function diasSinEncuentro(fecha: string | null): number {
+  if (!fecha) return Infinity;
+  const t = new Date(fecha.length === 10 ? `${fecha}T12:00:00` : fecha).getTime();
+  return Math.max(0, Math.floor((Date.now() - t) / 86_400_000));
+}
+
 export default function SeguimientoPage() {
   const supabase = useMemo(() => createClient(), []);
   const [seguimientos, setSeguimientos] = useState<SeguimientoFila[]>([]);
+  const [ultimaFechaPorDiscipulo, setUltimaFechaPorDiscipulo] = useState<Record<string, string | null>>({});
   const [discipulos, setDiscipulos] = useState<Array<{ id: string; nombre: string; apellido: string }>>([]);
   const [discipuladores, setDiscipuladores] = useState<Array<{ id: string; nombre: string; apellido: string }>>([]);
   const [loading, setLoading] = useState(true);
@@ -62,9 +71,26 @@ export default function SeguimientoPage() {
       discipulosQuery,
       supabase.from("profiles").select("id, nombre, apellido").order("apellido", { ascending: true }),
     ]);
-    setSeguimientos((seguimientosRes.data as SeguimientoFila[]) || []);
+    const seguimientosData = (seguimientosRes.data as SeguimientoFila[]) || [];
+    setSeguimientos(seguimientosData);
     setDiscipulos(discipulosRes.data || []);
     setDiscipuladores(discipuladoresRes.data || []);
+
+    const ids = [...new Set(seguimientosData.map((s) => s.discipulo_id))];
+    if (ids.length) {
+      const { data: agendaData } = await supabase
+        .from("agenda")
+        .select("discipulo_id, fecha")
+        .in("discipulo_id", ids)
+        .order("fecha", { ascending: false });
+      const mapa: Record<string, string | null> = {};
+      for (const a of agendaData || []) {
+        if (a.discipulo_id && mapa[a.discipulo_id] === undefined) mapa[a.discipulo_id] = a.fecha;
+      }
+      setUltimaFechaPorDiscipulo(mapa);
+    } else {
+      setUltimaFechaPorDiscipulo({});
+    }
     setLoading(false);
   }, [supabase]);
 
@@ -173,22 +199,30 @@ export default function SeguimientoPage() {
                 <TableHead>Etapa</TableHead>
                 <TableHead>Progreso</TableHead>
                 <TableHead>Última actualización</TableHead>
-                <TableHead>Estado</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtrados.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
                     No hay seguimientos registrados
                   </TableCell>
                 </TableRow>
               ) : (
-                filtrados.map((s) => (
+                filtrados.map((s) => {
+                  const dias = diasSinEncuentro(ultimaFechaPorDiscipulo[s.discipulo_id] ?? null);
+                  return (
                   <TableRow key={s.id}>
                     <TableCell className="font-medium">
-                      {s.discipulos ? `${s.discipulos.apellido}, ${s.discipulos.nombre}` : "—"}
+                      <div className="space-y-1">
+                        <div>{s.discipulos ? `${s.discipulos.apellido}, ${s.discipulos.nombre}` : "—"}</div>
+                        {dias > DIAS_SIN_CONTACTO && (
+                          <Badge variant="destructive">
+                            {dias === Infinity ? "Sin encuentro registrado" : `Sin encuentro hace ${dias} días`}
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       {s.discipuladores ? `${s.discipuladores.apellido}, ${s.discipuladores.nombre}` : "—"}
@@ -205,11 +239,6 @@ export default function SeguimientoPage() {
                     <TableCell>
                       {format(new Date(s.ultima_actualizacion), "dd/MM/yyyy HH:mm")}
                     </TableCell>
-                    <TableCell>
-                      <Badge variant={s.estado === "activo" ? "default" : "secondary"}>
-                        {s.estado === "activo" ? "Activo" : "Pausado"}
-                      </Badge>
-                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
                         <Link href={`/seguimiento/ver?id=${s.id}`}>
@@ -223,7 +252,8 @@ export default function SeguimientoPage() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))
+                  );
+                })
               )}
             </TableBody>
           </Table>
