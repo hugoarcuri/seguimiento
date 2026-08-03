@@ -38,7 +38,7 @@ const sexoOptions: Array<{ value: "M" | "F"; label: string }> = [
 function EtapaLabel({ etapa }: { etapa: Etapa }) {
   return (
     <div className="flex flex-col gap-0.5 min-w-0 py-0.5">
-      <span className="truncate text-sm font-medium">{etapa.id}. {etapa.nombre}</span>
+      <span className="truncate text-sm font-medium">{etapa.nombre}</span>
       {etapa.descripcion && (
         <span className="truncate text-[11px] text-muted-foreground leading-snug">{etapa.descripcion}</span>
       )}

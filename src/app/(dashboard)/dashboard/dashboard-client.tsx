@@ -4,149 +4,177 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import type { Etapa } from "@/types/database";
-import { Users, UserPlus, TrendingUp, CalendarCheck, Church, AlertCircle, Cake, Activity } from "lucide-react";
-import { ResponsiveContainer, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Bar, PieChart, Pie, Cell, Legend } from "@/components/recharts-dynamic";
-
-const COLORS = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
-import { format, isToday } from "date-fns";
-import Link from "next/link";
+import {
+  Users,
+  Trophy,
+  Cake,
+  Church,
+  CalendarCheck,
+  Activity,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
+import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
 
-const AXIS = {
-  tick: { fill: "currentColor", fontSize: 12 },
-  tickLine: { stroke: "currentColor" },
-  axisLine: { stroke: "currentColor" },
-} as const;
+const avatarColors = [
+  "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500", "bg-purple-500",
+  "bg-pink-500", "bg-indigo-500", "bg-teal-500", "bg-orange-500", "bg-cyan-500",
+];
 
-const CURSOR = { fill: "hsl(var(--muted))", opacity: 0.7 };
-
-function ChartTooltip({ active, payload, label }: {
-  active?: boolean;
-  payload?: Array<{ name?: string; value?: string | number; payload?: { fill?: string } }>;
-  label?: string | number;
-}) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="rounded-lg border bg-popover px-3 py-2 shadow-md text-popover-foreground">
-      {label != null && <p className="mb-1.5 text-xs font-semibold">{label}</p>}
-      <div className="space-y-1">
-        {payload.map((p, i) => (
-          <div key={i} className="flex items-center gap-2">
-            <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: p.payload?.fill || "currentColor" }} />
-            <span className="text-xs text-muted-foreground capitalize">{p.name}</span>
-            <span className="ml-auto text-xs font-semibold tabular-nums">{p.value}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+function getAvatarColor(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash << 5) - hash + id.charCodeAt(i);
+  return avatarColors[Math.abs(hash) % avatarColors.length];
 }
-
-const pieLabel = ({ cx = 0, cy = 0, midAngle = 0, innerRadius = 0, outerRadius = 0, percent = 0 }: {
-  cx?: number; cy?: number; midAngle?: number; innerRadius?: number; outerRadius?: number; percent?: number;
-}) => {
-  const RADIAN = Math.PI / 180;
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.62;
-  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-  const y = cy + radius * Math.sin(-midAngle * RADIAN);
-  return (
-    <text x={x} y={y} fill="var(--foreground)" textAnchor="middle" dominantBaseline="central" style={{ fontSize: 12, fontWeight: 600 }}>
-      {`${Math.round(percent * 100)}%`}
-    </text>
-  );
-};
 
 interface DiscipuloBasico {
   id: string;
   nombre: string;
   apellido: string;
-  fecha_nacimiento?: string;
+  avatar_url?: string | null;
+  fecha_nacimiento?: string | null;
   etapa_id: number;
+}
+
+interface CumpleInfo extends DiscipuloBasico {
+  fecha_nacimiento: string;
+  proxima_fecha: string;
+  dias: number;
+  edad: number;
+}
+
+interface SeguimientoBasico {
+  id: string;
+  etapa: number;
+  progreso: number;
+  estado: string;
+  discipulos?: { nombre: string; apellido: string };
+}
+
+interface AgendaBasico {
+  id: string;
+  fecha: string;
+  tema_tratado: string;
+  discipulo_id: string;
+  lider_id: string;
+}
+
+interface OracionBasica {
+  id: string;
+  discipulo_id: string;
+  pedido: string;
+  estado: string;
+  fecha: string;
 }
 
 interface DashboardClientProps {
   totalDiscipulos: number;
-  discipulosPorEtapa: Array<{ nombre: string; cantidad: number }>;
   activos: number;
-  completados: number;
-  pausados: number;
-  retirados: number;
+  discipulosPorEtapa: Array<{ id: number; nombre: string; cantidad: number }>;
+  etapaFinal: { id: number; nombre: string };
+  enEtapaFinal: number;
+  faltanParaMeta: number;
+  metaPct: number;
+  multiplicadores: DiscipuloBasico[];
+  cercaDeMeta: DiscipuloBasico[];
+  cumpleProximos7: number;
+  cumpleMes: CumpleInfo[];
   oracionesPendientes: number;
-  totalAgendas: number;
-  totalOraciones: number;
-  oracionesRespondidas: number;
-  agendasPorMes: Array<{ mes: string; cantidad: number }>;
-  proximasAgendas: Array<{
-    id: string;
-    fecha: string;
-    tema_tratado: string;
-    discipulo_id: string;
-    lider_id: string;
-  }>;
-  oracionesPendientesList: Array<{
-    id: string;
-    discipulo_id: string;
-    pedido: string;
-    estado: string;
-    fecha: string;
-  }>;
-  proximosCumples: DiscipuloBasico[];
+  proximasAgendas: AgendaBasico[];
+  oracionesPendientesList: OracionBasica[];
   seguimientosActivos: number;
   promedioProgreso: number;
-  seguimientosPorEtapa: Array<{ nombre: string; cantidad: number }>;
-  seguimientoAtencion: Array<{
-    id: string;
-    etapa: number;
-    progreso: number;
-    estado: string;
-    discipulos?: { nombre: string; apellido: string };
-  }>;
+  seguimientoAtencion: SeguimientoBasico[];
   etapas: Etapa[];
+}
+
+function Avatar({ persona, className }: { persona: DiscipuloBasico; className?: string }) {
+  if (persona.avatar_url) {
+    return (
+      <img
+        src={persona.avatar_url}
+        alt=""
+        className={cn("h-9 w-9 shrink-0 rounded-full object-cover", className)}
+      />
+    );
+  }
+  return (
+    <div
+      className={cn(
+        "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white text-xs font-bold",
+        getAvatarColor(persona.id),
+        className
+      )}
+    >
+      {persona.nombre?.charAt(0)?.toUpperCase()}
+      {persona.apellido?.charAt(0)?.toUpperCase()}
+    </div>
+  );
+}
+
+function ListaPersonas({
+  personas,
+  vacio,
+  badgeNombre,
+}: {
+  personas: DiscipuloBasico[];
+  vacio: string;
+  badgeNombre: string;
+}) {
+  const visibles = personas.slice(0, 5);
+  const restantes = personas.length - visibles.length;
+  if (personas.length === 0) {
+    return <p className="text-sm text-muted-foreground py-2">{vacio}</p>;
+  }
+  return (
+    <div className="space-y-2">
+      {visibles.map((p) => (
+        <div key={p.id} className="flex items-center gap-2.5">
+          <Avatar persona={p} />
+          <Link
+            href={`/discipulos/ver?id=${p.id}`}
+            className="min-w-0 flex-1 truncate text-sm font-medium hover:underline"
+          >
+            {p.apellido}, {p.nombre}
+          </Link>
+          <Badge variant="outline" className="shrink-0">{badgeNombre}</Badge>
+        </div>
+      ))}
+      {restantes > 0 && (
+        <p className="text-xs text-muted-foreground">y {restantes} más...</p>
+      )}
+    </div>
+  );
 }
 
 export function DashboardClient({
   totalDiscipulos,
-  discipulosPorEtapa,
   activos,
-  completados,
-  pausados,
-  retirados,
+  discipulosPorEtapa,
+  etapaFinal,
+  enEtapaFinal,
+  faltanParaMeta,
+  metaPct,
+  multiplicadores,
+  cercaDeMeta,
+  cumpleProximos7,
+  cumpleMes,
   oracionesPendientes,
-  totalAgendas,
-  totalOraciones,
-  oracionesRespondidas,
-  agendasPorMes,
   proximasAgendas,
   oracionesPendientesList,
-  proximosCumples,
   seguimientosActivos,
   promedioProgreso,
-  seguimientosPorEtapa,
   seguimientoAtencion,
   etapas,
 }: DashboardClientProps) {
-  const chartData = discipulosPorEtapa.map((e, i) => ({
-    name: e.nombre,
-    value: e.cantidad,
-    fill: COLORS[i % COLORS.length],
-  }));
+  const nombreEtapaFinal = etapaFinal.nombre.replace(/^\d+\.\s*/, "");
+  const etapaPrevia = etapas.length > 1 ? etapas[etapas.length - 2] : null;
+  const maxPorEtapa = Math.max(...discipulosPorEtapa.map((e) => e.cantidad), 1);
 
-  const madurezChartData = seguimientosPorEtapa.map((e, i) => ({
-    ...e,
-    fill: COLORS[i % COLORS.length],
-  }));
-
-  const estadoData = [
-    { name: "Activos", value: activos, fill: COLORS[0] },
-    { name: "Completados", value: completados, fill: COLORS[1] },
-    { name: "Pausados", value: pausados, fill: COLORS[2] },
-    { name: "Retirados", value: retirados, fill: COLORS[3] },
-  ];
-
-  const primeraEtapa = discipulosPorEtapa[0];
-  const ultimaEtapa = discipulosPorEtapa[discipulosPorEtapa.length - 1];
-
-  const statsCards = [
+  const stats = [
     {
       title: "Total Discípulos",
       value: totalDiscipulos,
@@ -156,34 +184,26 @@ export function DashboardClient({
       bg: "bg-blue-50 dark:bg-blue-950",
     },
     {
-      title: primeraEtapa?.nombre || "Etapa inicial",
-      value: primeraEtapa?.cantidad ?? 0,
-      description: "Etapa inicial",
-      icon: UserPlus,
-      color: "text-green-600",
-      bg: "bg-green-50 dark:bg-green-950",
+      title: `En la meta · ${nombreEtapaFinal}`,
+      value: enEtapaFinal,
+      description: `${metaPct}% del objetivo`,
+      icon: Trophy,
+      color: "text-amber-600",
+      bg: "bg-amber-50 dark:bg-amber-950",
     },
     {
-      title: ultimaEtapa?.nombre || "Etapa final",
-      value: ultimaEtapa?.cantidad ?? 0,
-      description: "Etapa final",
-      icon: TrendingUp,
-      color: "text-purple-600",
-      bg: "bg-purple-50 dark:bg-purple-950",
+      title: "Cumpleaños próximos",
+      value: cumpleProximos7,
+      description: "en los próximos 7 días",
+      icon: Cake,
+      color: "text-pink-600",
+      bg: "bg-pink-50 dark:bg-pink-950",
     },
     {
-      title: "En Seguimiento",
-      value: seguimientosActivos,
-      description: `Progreso promedio ${promedioProgreso}%`,
-      icon: Activity,
-      color: "text-indigo-600",
-      bg: "bg-indigo-50 dark:bg-indigo-950",
-    },
-    {
-      title: "Oración Pendiente",
+      title: "Oraciones pendientes",
       value: oracionesPendientes,
-      description: "Necesitan atención",
-      icon: AlertCircle,
+      description: "necesitan atención",
+      icon: Church,
       color: "text-orange-600",
       bg: "bg-orange-50 dark:bg-orange-950",
     },
@@ -194,268 +214,288 @@ export function DashboardClient({
       <div>
         <h1 className="text-3xl font-bold">Dashboard</h1>
         <p className="text-muted-foreground">
-          Resumen general del discipulado
+          El objetivo final es que todas las personas lleguen a {etapaFinal.nombre}
         </p>
       </div>
 
+      {/* HERO: LA META */}
+      <Card className="overflow-hidden border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-transparent">
+        <CardContent className="p-6">
+          <div className="flex flex-col gap-6">
+            <div className="flex items-start gap-4">
+              <div className="rounded-xl bg-amber-500/15 p-3">
+                <Trophy className="h-6 w-6 text-amber-500" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium uppercase tracking-wide text-amber-500">
+                  La Meta del Discipulado
+                </p>
+                <h2 className="text-xl font-bold leading-tight">
+                  Que todos lleguen a {etapaFinal.nombre}
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  <span className="font-semibold text-foreground">{enEtapaFinal}</span> de{" "}
+                  <span className="font-semibold text-foreground">{totalDiscipulos}</span> personas
+                  ya llegaron a la meta
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Progress value={metaPct} className="h-3" />
+              <p className="text-xs text-muted-foreground">
+                {faltanParaMeta === 0 ? (
+                  <span className="inline-flex items-center gap-1 font-medium text-green-600">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> ¡Objetivo cumplido!
+                  </span>
+                ) : (
+                  <>Faltan <span className="font-semibold text-amber-600">{faltanParaMeta}</span> personas para alcanzar el objetivo</>
+                )}
+              </p>
+            </div>
+
+            <div className="grid gap-6 sm:grid-cols-2">
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Trophy className="h-4 w-4 text-amber-500" />
+                  <h3 className="text-sm font-semibold">Multiplicadores ({multiplicadores.length})</h3>
+                </div>
+                <ListaPersonas
+                  personas={multiplicadores}
+                  vacio="Todavía no hay nadie en la meta"
+                  badgeNombre="Meta"
+                />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <AlertCircle className="h-4 w-4 text-blue-500" />
+                  <h3 className="text-sm font-semibold">
+                    Próximos a la meta ({cercaDeMeta.length})
+                  </h3>
+                </div>
+                <ListaPersonas
+                  personas={cercaDeMeta}
+                  vacio="No hay personas en la etapa previa"
+                  badgeNombre={etapaPrevia ? etapaPrevia.nombre.replace(/^\d+\.\s*/, "") : "Etapa previa"}
+                />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* STATS */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {statsCards.map((stat) => (
+        {stats.map((stat) => (
           <Card key={stat.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {stat.title}
-              </CardTitle>
-              <div className={`rounded-lg p-2 ${stat.bg}`}>
-                <stat.icon className={`h-4 w-4 ${stat.color}`} />
+              <CardTitle className="text-sm font-medium truncate">{stat.title}</CardTitle>
+              <div className={cn("rounded-lg p-2 shrink-0", stat.bg)}>
+                <stat.icon className={cn("h-4 w-4", stat.color)} />
               </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground">
-                {stat.description}
-              </p>
+              <p className="text-xs text-muted-foreground">{stat.description}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
+      {/* ETAPAS + CUMPLEAÑOS */}
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Discípulos por Etapa</CardTitle>
-              <CardDescription>
-                Distribución actual en el proceso de discipulado
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="name" {...AXIS} />
-                    <YAxis {...AXIS} allowDecimals={false} />
-                    <Tooltip content={<ChartTooltip />} cursor={CURSOR} />
-                    <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                      {chartData.map((d, i) => <Cell key={i} fill={d.fill} />)}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Etapa de Madurez</CardTitle>
-              <CardDescription>
-                Discípulos en seguimiento por etapa de crecimiento espiritual
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={madurezChartData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="nombre" {...AXIS} />
-                    <YAxis {...AXIS} allowDecimals={false} />
-                    <Tooltip content={<ChartTooltip />} cursor={CURSOR} />
-                    <Bar dataKey="cantidad" radius={[4, 4, 0, 0]}>
-                      {madurezChartData.map((d, i) => <Cell key={i} fill={d.fill} />)}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Próximas citas</CardTitle>
-                <CalendarCheck className="h-4 w-4 text-muted-foreground" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              {proximasAgendas.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  No hay citas programadas
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {proximasAgendas.map((agenda) => (
-                    <div
-                      key={agenda.id}
-                      className="flex items-center justify-between border-b pb-2 last:border-0"
+        <Card>
+          <CardHeader>
+            <CardTitle>Personas en las diferentes etapas</CardTitle>
+            <CardDescription>
+              El camino de cada persona hasta {etapaFinal.nombre}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {discipulosPorEtapa.map((e, i) => {
+              const esMeta = i === discipulosPorEtapa.length - 1;
+              const pct = Math.round((e.cantidad / maxPorEtapa) * 100);
+              return (
+                <div key={e.id}>
+                  <div className="mb-1 flex items-center justify-between gap-2">
+                    <span
+                      className={cn(
+                        "flex items-center gap-1.5 text-sm font-medium truncate",
+                        esMeta && "text-amber-600"
+                      )}
                     >
-                      <div>
-                        <p className="text-sm font-medium">
-                          {agenda.tema_tratado}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(agenda.fecha), "dd/MM/yyyy")}
-                        </p>
-                      </div>
-                      <Badge variant="secondary">Próximo</Badge>
-                    </div>
-                  ))}
+                      {esMeta && <Trophy className="h-3.5 w-3.5 shrink-0" />}
+                      {e.nombre}
+                    </span>
+                    <span className="text-sm font-bold tabular-nums shrink-0">{e.cantidad}</span>
+                  </div>
+                  <div className="h-5 overflow-hidden rounded-md bg-muted">
+                    <div
+                      className={cn(
+                        "h-full rounded-md",
+                        esMeta ? "bg-amber-500" : "bg-primary/80"
+                      )}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              );
+            })}
+            <div className="flex items-center justify-between border-t pt-3">
+              <span className="text-xs text-muted-foreground">Faltan para alcanzar la meta</span>
+              <span className="text-sm font-bold text-amber-600 tabular-nums">
+                {faltanParaMeta} personas
+              </span>
+            </div>
+          </CardContent>
+        </Card>
 
-          {proximosCumples.length > 0 && (
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">Cumpleaños Próximos</CardTitle>
-                  <Cake className="h-4 w-4 text-pink-500" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {proximosCumples.map((d) => {
-                    if (!d.fecha_nacimiento) return null;
-                    const nac = new Date(d.fecha_nacimiento);
-                    const cumple = new Date(new Date().getFullYear(), nac.getMonth(), nac.getDate());
-                    return (
-                      <div key={d.id} className="flex items-center justify-between border-b pb-2 last:border-0">
-                        <div>
-                          <Link href={`/discipulos/${d.id}`} className="text-sm font-medium hover:underline">
-                            {d.apellido}, {d.nombre}
-                          </Link>
-                          <p className="text-xs text-muted-foreground">
-                            {format(cumple, "dd/MM", { locale: es })}
-                          </p>
-                        </div>
-                        <Badge variant={isToday(cumple) ? "default" : "secondary"}>
-                          {isToday(cumple) ? "Hoy" : format(cumple, "EEEE", { locale: es })}
-                        </Badge>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">
-                  Seguimiento: necesitan atención
-                </CardTitle>
-                <Activity className="h-4 w-4 text-muted-foreground" />
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Cumpleaños próximos</CardTitle>
+                <CardDescription>Los próximos 30 días</CardDescription>
               </div>
-            </CardHeader>
-            <CardContent>
-              {seguimientoAtencion.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  No hay seguimientos activos con progreso bajo
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {seguimientoAtencion.map((s) => (
-                    <div key={s.id} className="border-b pb-2 last:border-0">
-                      <div className="flex items-center justify-between gap-2">
+              <Cake className="h-4 w-4 text-pink-500" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            {cumpleMes.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-2">
+                No hay cumpleaños en los próximos 30 días
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {cumpleMes.map((c) => {
+                  const fechaCumple = new Date(c.proxima_fecha);
+                  const diasLabel =
+                    c.dias === 0
+                      ? "Hoy"
+                      : c.dias === 1
+                        ? "Mañana"
+                        : c.dias <= 7
+                          ? `en ${c.dias} días`
+                          : format(fechaCumple, "dd MMM", { locale: es });
+                  return (
+                    <div key={c.id} className="flex items-center gap-3">
+                      <Avatar persona={c} />
+                      <div className="min-w-0 flex-1">
                         <Link
-                          href={`/seguimiento/ver?id=${s.id}`}
-                          className="text-sm font-medium hover:underline truncate"
+                          href={`/discipulos/ver?id=${c.id}`}
+                          className="block truncate text-sm font-medium hover:underline"
                         >
-                          {s.discipulos ? `${s.discipulos.apellido}, ${s.discipulos.nombre}` : "—"}
+                          {c.apellido}, {c.nombre}
                         </Link>
-                        <span className="text-xs font-medium tabular-nums shrink-0">{s.progreso}%</span>
+                        <p className="text-[11px] text-muted-foreground">
+                          {format(fechaCumple, "dd/MM", { locale: es })} · cumple {c.edad} años
+                        </p>
                       </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Progress value={s.progreso} className="flex-1" />
-                        <Badge variant="outline" className="shrink-0">{etapas.find((e) => e.id === s.etapa)?.nombre || `Etapa ${s.etapa}`}</Badge>
-                      </div>
+                      <Badge variant={c.dias <= 1 ? "default" : "secondary"} className="shrink-0">
+                        {diasLabel}
+                      </Badge>
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">
-                  Oraciones Pendientes
-                </CardTitle>
-                <Church className="h-4 w-4 text-muted-foreground" />
+                  );
+                })}
               </div>
-            </CardHeader>
-            <CardContent>
-              {oracionesPendientesList.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  No hay pedidos de oración pendientes
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {oracionesPendientesList.map((oracion) => (
-                    <div
-                      key={oracion.id}
-                      className="border-b pb-2 last:border-0"
-                    >
-                      <p className="text-sm">{oracion.pedido}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(oracion.fecha), "dd/MM/yyyy")}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Analíticas</h2>
-        <div className="grid gap-4 md:grid-cols-4 mb-4">
-          <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Total Citas</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">{totalAgendas}</p></CardContent></Card>
-          <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Total Oraciones</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">{totalOraciones}</p></CardContent></Card>
-          <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Oraciones Respondidas</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">{oracionesRespondidas}</p></CardContent></Card>
-          <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Discípulos Completados</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold text-green-600">{completados}</p></CardContent></Card>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader><CardTitle>Citas por Mes</CardTitle><CardDescription>Actividad de citas en el tiempo</CardDescription></CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={agendasPorMes}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="mes" {...AXIS} />
-                    <YAxis {...AXIS} allowDecimals={false} />
-                    <Tooltip content={<ChartTooltip />} cursor={CURSOR} />
-                    <Bar dataKey="cantidad" radius={[4, 4, 0, 0]} fill="hsl(var(--chart-1))" />
-                  </BarChart>
-                </ResponsiveContainer>
+      {/* OPERATIVO */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Próximas citas</CardTitle>
+              <CalendarCheck className="h-4 w-4 text-muted-foreground" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            {proximasAgendas.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-2">No hay citas programadas</p>
+            ) : (
+              <div className="space-y-3">
+                {proximasAgendas.map((agenda) => (
+                  <div key={agenda.id} className="flex items-center justify-between border-b pb-2 last:border-0">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{agenda.tema_tratado}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(agenda.fecha), "dd/MM/yyyy", { locale: es })}
+                      </p>
+                    </div>
+                    <Badge variant="secondary">Próximo</Badge>
+                  </div>
+                ))}
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader><CardTitle>Estado de Discípulos</CardTitle><CardDescription>Distribución por estado</CardDescription></CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={estadoData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={pieLabel} paddingAngle={2} stroke="var(--background)" />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Legend
-                      iconType="circle"
-                      formatter={(value: string, entry: { payload?: { value?: number } }) => (
-                        <span className="text-xs text-foreground">{value} · {entry?.payload?.value}</span>
-                      )}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Oraciones pendientes</CardTitle>
+              <Church className="h-4 w-4 text-muted-foreground" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            {oracionesPendientesList.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-2">No hay pedidos de oración pendientes</p>
+            ) : (
+              <div className="space-y-3">
+                {oracionesPendientesList.map((oracion) => (
+                  <div key={oracion.id} className="border-b pb-2 last:border-0">
+                    <p className="line-clamp-2 text-sm">{oracion.pedido}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {format(new Date(oracion.fecha), "dd/MM/yyyy", { locale: es })}
+                    </p>
+                  </div>
+                ))}
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base">Seguimiento: necesitan atención</CardTitle>
+                <CardDescription>
+                  {seguimientosActivos} seguimientos activos · progreso promedio {promedioProgreso}%
+                </CardDescription>
+              </div>
+              <Activity className="h-4 w-4 text-muted-foreground" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            {seguimientoAtencion.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-2">No hay seguimientos con progreso bajo</p>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                {seguimientoAtencion.map((s) => (
+                  <div key={s.id} className="rounded-lg border p-3">
+                    <Link
+                      href={`/seguimiento/ver?id=${s.id}`}
+                      className="block truncate text-sm font-medium hover:underline"
+                    >
+                      {s.discipulos ? `${s.discipulos.apellido}, ${s.discipulos.nombre}` : "—"}
+                    </Link>
+                    <div className="mt-2 flex items-center gap-2">
+                      <Progress value={s.progreso} className="flex-1" />
+                      <span className="text-xs font-medium tabular-nums shrink-0">{s.progreso}%</span>
+                    </div>
+                    <p className="mt-1.5 truncate text-[11px] text-muted-foreground">
+                      {etapas.find((e) => e.id === s.etapa)?.nombre || `Etapa ${s.etapa}`}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

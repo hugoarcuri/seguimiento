@@ -22,14 +22,6 @@ interface OracionBasica {
   fecha: string;
 }
 
-interface DiscipuloBasico {
-  id: string;
-  nombre: string;
-  apellido: string;
-  fecha_nacimiento?: string;
-  etapa_id: number;
-}
-
 interface SeguimientoBasico {
   id: string;
   etapa: number;
@@ -38,33 +30,46 @@ interface SeguimientoBasico {
   discipulos?: { nombre: string; apellido: string };
 }
 
+interface DiscipuloBasico {
+  id: string;
+  nombre: string;
+  apellido: string;
+  avatar_url?: string | null;
+  fecha_nacimiento?: string | null;
+  etapa_id: number;
+}
+
+interface CumpleInfo extends DiscipuloBasico {
+  fecha_nacimiento: string;
+  proxima_fecha: string;
+  dias: number;
+  edad: number;
+}
+
 interface RawData {
   discipulos: Discipulo[];
-  agendas: { fecha: string }[];
-  oraciones: OracionBasica[];
-  seguimientos: SeguimientoBasico[];
   proximasAgendas: AgendaBasico[];
   oracionesPendientesList: OracionBasica[];
+  seguimientos: SeguimientoBasico[];
 }
 
 interface DashboardData {
   totalDiscipulos: number;
-  discipulosPorEtapa: Array<{ nombre: string; cantidad: number }>;
   activos: number;
-  completados: number;
-  pausados: number;
-  retirados: number;
+  discipulosPorEtapa: Array<{ id: number; nombre: string; cantidad: number }>;
+  etapaFinal: { id: number; nombre: string };
+  enEtapaFinal: number;
+  faltanParaMeta: number;
+  metaPct: number;
+  multiplicadores: DiscipuloBasico[];
+  cercaDeMeta: DiscipuloBasico[];
+  cumpleProximos7: number;
+  cumpleMes: CumpleInfo[];
   oracionesPendientes: number;
-  totalAgendas: number;
-  totalOraciones: number;
-  oracionesRespondidas: number;
-  agendasPorMes: Array<{ mes: string; cantidad: number }>;
   proximasAgendas: AgendaBasico[];
   oracionesPendientesList: OracionBasica[];
-  proximosCumples: DiscipuloBasico[];
   seguimientosActivos: number;
   promedioProgreso: number;
-  seguimientosPorEtapa: Array<{ nombre: string; cantidad: number }>;
   seguimientoAtencion: SeguimientoBasico[];
 }
 
@@ -76,7 +81,7 @@ export default function DashboardPage() {
     const supabase = createClient();
 
     Promise.all([
-      supabase.from("discipulos").select("id, nombre, apellido, fecha_nacimiento, etapa_id, estado, lider_id, created_at"),
+      supabase.from("discipulos").select("id, nombre, apellido, avatar_url, fecha_nacimiento, etapa_id, estado, lider_id, created_at"),
       supabase
         .from("agenda")
         .select("id, fecha, discipulo_id, lider_id, tema_tratado")
@@ -89,76 +94,99 @@ export default function DashboardPage() {
         .eq("estado", "pendiente")
         .order("fecha", { ascending: false })
         .limit(5),
-      supabase.from("agenda").select("fecha"),
-      supabase.from("oraciones").select("estado"),
       supabase
         .from("seguimientos")
         .select("id, etapa, progreso, estado, discipulos:discipulo_id(nombre, apellido)"),
-    ]).then(([discipulosRes, agendasRes, oracionesRes, allAgendasRes, allOracionesRes, seguimientosRes]) => {
+    ]).then(([discipulosRes, agendasRes, oracionesRes, seguimientosRes]) => {
       setRaw({
         discipulos: (discipulosRes.data || []) as Discipulo[],
-        agendas: (allAgendasRes.data || []) as { fecha: string }[],
-        oraciones: (allOracionesRes.data || []) as OracionBasica[],
-        seguimientos: (seguimientosRes.data || []) as unknown as SeguimientoBasico[],
         proximasAgendas: (agendasRes.data || []) as AgendaBasico[],
         oracionesPendientesList: (oracionesRes.data || []) as OracionBasica[],
+        seguimientos: (seguimientosRes.data || []) as unknown as SeguimientoBasico[],
       });
     }).catch(console.error);
   }, []);
 
   const data = useMemo<DashboardData | null>(() => {
-    if (!raw) return null;
-    const { discipulos, agendas, oraciones, seguimientos, proximasAgendas, oracionesPendientesList } = raw;
+    if (!raw || etapas.length === 0) return null;
+    const { discipulos, proximasAgendas, oracionesPendientesList, seguimientos } = raw;
     const hoy = new Date();
+    const hoyInicio = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()).getTime();
+
+    const totalDiscipulos = discipulos.length;
+    const activos = discipulos.filter((d) => d.estado === "activo").length;
+
+    const discipulosPorEtapa = etapas.map((e) => ({
+      id: e.id,
+      nombre: e.nombre,
+      cantidad: discipulos.filter((d) => d.etapa_id === e.id).length,
+    }));
+
+    const etapaFinal = etapas[etapas.length - 1];
+    const etapaPrevia = etapas.length > 1 ? etapas[etapas.length - 2] : null;
+
+    const enEtapaFinal = discipulos.filter((d) => d.etapa_id === etapaFinal.id).length;
+    const faltanParaMeta = totalDiscipulos - enEtapaFinal;
+    const metaPct = totalDiscipulos ? Math.round((enEtapaFinal / totalDiscipulos) * 100) : 0;
+
+    const toBasico = (d: Discipulo): DiscipuloBasico => ({
+      id: d.id,
+      nombre: d.nombre,
+      apellido: d.apellido,
+      avatar_url: d.avatar_url,
+      fecha_nacimiento: d.fecha_nacimiento,
+      etapa_id: d.etapa_id,
+    });
+
+    const multiplicadores = discipulos.filter((d) => d.etapa_id === etapaFinal.id).map(toBasico);
+    const cercaDeMeta = (etapaPrevia ? discipulos.filter((d) => d.etapa_id === etapaPrevia.id) : []).map(toBasico);
+
+    const cumples = discipulos
+      .filter((d) => d.fecha_nacimiento)
+      .map((d) => {
+        const [anio, mes, dia] = d.fecha_nacimiento!.split("T")[0].split("-").map(Number);
+        let proxima = new Date(hoy.getFullYear(), mes - 1, dia).getTime();
+        let edad = hoy.getFullYear() - anio;
+        if (proxima < hoyInicio) {
+          proxima = new Date(hoy.getFullYear() + 1, mes - 1, dia).getTime();
+          edad += 1;
+        }
+        return {
+          ...toBasico(d),
+          fecha_nacimiento: d.fecha_nacimiento!,
+          proxima_fecha: new Date(proxima).toISOString(),
+          dias: Math.round((proxima - hoyInicio) / 86400000),
+          edad,
+        };
+      })
+      .sort((a, b) => a.dias - b.dias);
+
+    const cumpleMes = cumples.filter((c) => c.dias <= 30).slice(0, 8);
+    const cumpleProximos7 = cumples.filter((c) => c.dias <= 7).length;
 
     const seguimientosActivos = seguimientos.filter((s) => s.estado === "activo");
     const promedioProgreso = seguimientosActivos.length
       ? Math.round(seguimientosActivos.reduce((acc, s) => acc + s.progreso, 0) / seguimientosActivos.length)
       : 0;
 
-    const proximosCumples = discipulos.filter((d) => {
-      if (!d.fecha_nacimiento) return false;
-      const nac = new Date(d.fecha_nacimiento);
-      const cumple = new Date(hoy.getFullYear(), nac.getMonth(), nac.getDate());
-      const diff = Math.ceil((cumple.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
-      return diff >= 0 && diff <= 7;
-    });
-
-    const nombresMeses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-    const meses: Record<string, number> = {};
-    agendas.forEach((e) => {
-      const fecha = new Date(e.fecha);
-      const key = `${nombresMeses[fecha.getMonth()]} ${fecha.getFullYear()}`;
-      meses[key] = (meses[key] || 0) + 1;
-    });
-
     return {
-      totalDiscipulos: discipulos.length,
-      discipulosPorEtapa: etapas.map((e) => ({
-        nombre: e.nombre,
-        cantidad: discipulos.filter((d) => d.etapa_id === e.id).length,
-      })),
-      activos: discipulos.filter((d) => d.estado === "activo").length,
-      completados: discipulos.filter((d) => d.estado === "completado").length,
-      pausados: discipulos.filter((d) => d.estado === "pausado").length,
-      retirados: discipulos.filter((d) => d.estado === "retirado").length,
-      oracionesPendientes: oraciones.filter((o) => o.estado === "pendiente").length,
-      totalAgendas: agendas.length,
-      totalOraciones: oraciones.length,
-      oracionesRespondidas: oraciones.filter((o) => o.estado === "respondida").length,
-      agendasPorMes: Object.entries(meses).map(([mes, cantidad]) => ({ mes, cantidad })),
+      totalDiscipulos,
+      activos,
+      discipulosPorEtapa,
+      etapaFinal: { id: etapaFinal.id, nombre: etapaFinal.nombre },
+      enEtapaFinal,
+      faltanParaMeta,
+      metaPct,
+      multiplicadores,
+      cercaDeMeta,
+      cumpleMes,
+      cumpleProximos7,
+      oracionesPendientes: oracionesPendientesList.length,
       proximasAgendas,
       oracionesPendientesList,
-      proximosCumples,
       seguimientosActivos: seguimientosActivos.length,
       promedioProgreso,
-      seguimientosPorEtapa: etapas.map((e) => ({
-        nombre: e.nombre,
-        cantidad: seguimientosActivos.filter((s) => s.etapa === e.id).length,
-      })),
-      seguimientoAtencion: [...seguimientosActivos]
-        .sort((a, b) => a.progreso - b.progreso)
-        .slice(0, 5),
+      seguimientoAtencion: [...seguimientosActivos].sort((a, b) => a.progreso - b.progreso).slice(0, 5),
     };
   }, [raw, etapas]);
 
