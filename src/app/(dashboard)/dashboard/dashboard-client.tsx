@@ -29,11 +29,11 @@ interface DashboardClientProps {
   pausados: number;
   retirados: number;
   oracionesPendientes: number;
-  totalEncuentros: number;
+  totalAgendas: number;
   totalOraciones: number;
   oracionesRespondidas: number;
-  encuentrosPorMes: Array<{ mes: string; cantidad: number }>;
-  proximosEncuentros: Array<{
+  agendasPorMes: Array<{ mes: string; cantidad: number }>;
+  proximasAgendas: Array<{
     id: string;
     fecha: string;
     tema_tratado: string;
@@ -61,11 +61,11 @@ export function DashboardClient({
   pausados,
   retirados,
   oracionesPendientes,
-  totalEncuentros,
+  totalAgendas,
   totalOraciones,
   oracionesRespondidas,
-  encuentrosPorMes,
-  proximosEncuentros,
+  agendasPorMes,
+  proximasAgendas,
   oracionesPendientesList,
   proximosCumples,
 }: DashboardClientProps) {
@@ -168,28 +168,28 @@ export function DashboardClient({
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Próximos Encuentros</CardTitle>
+                <CardTitle className="text-base">Próximas citas</CardTitle>
                 <CalendarCheck className="h-4 w-4 text-muted-foreground" />
               </div>
             </CardHeader>
             <CardContent>
-              {proximosEncuentros.length === 0 ? (
+              {proximasAgendas.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  No hay encuentros programados
+                  No hay citas programadas
                 </p>
               ) : (
                 <div className="space-y-3">
-                  {proximosEncuentros.map((encuentro) => (
+                  {proximasAgendas.map((agenda) => (
                     <div
-                      key={encuentro.id}
+                      key={agenda.id}
                       className="flex items-center justify-between border-b pb-2 last:border-0"
                     >
                       <div>
                         <p className="text-sm font-medium">
-                          {encuentro.tema_tratado}
+                          {agenda.tema_tratado}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {format(new Date(encuentro.fecha), "dd/MM/yyyy")}
+                          {format(new Date(agenda.fecha), "dd/MM/yyyy")}
                         </p>
                       </div>
                       <Badge variant="secondary">Próximo</Badge>
@@ -271,18 +271,18 @@ export function DashboardClient({
       <div>
         <h2 className="text-xl font-semibold mb-4">Analíticas</h2>
         <div className="grid gap-4 md:grid-cols-4 mb-4">
-          <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Total Encuentros</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">{totalEncuentros}</p></CardContent></Card>
+          <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Total Citas</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">{totalAgendas}</p></CardContent></Card>
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Total Oraciones</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">{totalOraciones}</p></CardContent></Card>
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Oraciones Respondidas</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold">{oracionesRespondidas}</p></CardContent></Card>
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Discípulos Completados</CardTitle></CardHeader><CardContent><p className="text-3xl font-bold text-green-600">{completados}</p></CardContent></Card>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           <Card>
-            <CardHeader><CardTitle>Encuentros por Mes</CardTitle><CardDescription>Actividad de encuentros en el tiempo</CardDescription></CardHeader>
+            <CardHeader><CardTitle>Citas por Mes</CardTitle><CardDescription>Actividad de citas en el tiempo</CardDescription></CardHeader>
             <CardContent>
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={encuentrosPorMes}>
+                  <BarChart data={agendasPorMes}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis dataKey="mes" className="text-xs" />
                     <YAxis className="text-xs" />

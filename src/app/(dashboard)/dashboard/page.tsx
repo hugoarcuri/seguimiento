@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { DashboardClient } from "./dashboard-client";
 import type { Discipulo } from "@/types/database";
 
-interface EncuentroBasico {
+interface AgendaBasico {
   id: string;
   fecha: string;
   tema_tratado: string;
@@ -40,11 +40,11 @@ interface DashboardData {
   pausados: number;
   retirados: number;
   oracionesPendientes: number;
-  totalEncuentros: number;
+  totalAgendas: number;
   totalOraciones: number;
   oracionesRespondidas: number;
-  encuentrosPorMes: Array<{ mes: string; cantidad: number }>;
-  proximosEncuentros: EncuentroBasico[];
+  agendasPorMes: Array<{ mes: string; cantidad: number }>;
+  proximasAgendas: AgendaBasico[];
   oracionesPendientesList: OracionBasica[];
   proximosCumples: DiscipuloBasico[];
 }
@@ -58,7 +58,7 @@ export default function DashboardPage() {
     Promise.all([
       supabase.from("discipulos").select("id, nombre, apellido, fecha_nacimiento, etapa_id, estado, lider_id, created_at"),
       supabase
-        .from("encuentros")
+        .from("agenda")
         .select("id, fecha, discipulo_id, lider_id, tema_tratado")
         .gte("fecha", new Date().toISOString().split("T")[0])
         .order("fecha", { ascending: true })
@@ -69,11 +69,11 @@ export default function DashboardPage() {
         .eq("estado", "pendiente")
         .order("fecha", { ascending: false })
         .limit(5),
-      supabase.from("encuentros").select("fecha"),
+      supabase.from("agenda").select("fecha"),
       supabase.from("oraciones").select("estado"),
-    ]).then(([discipulosRes, encuentrosRes, oracionesRes, allEncuentrosRes, allOracionesRes]) => {
+    ]).then(([discipulosRes, agendasRes, oracionesRes, allAgendasRes, allOracionesRes]) => {
       const discipulos = (discipulosRes.data || []) as Discipulo[];
-      const encuentros = (allEncuentrosRes.data || []) as { fecha: string }[];
+      const agendas = (allAgendasRes.data || []) as { fecha: string }[];
       const oraciones = (allOracionesRes.data || []) as OracionBasica[];
       const hoy = new Date();
 
@@ -87,7 +87,7 @@ export default function DashboardPage() {
 
       const nombresMeses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
       const meses: Record<string, number> = {};
-      encuentros.forEach((e) => {
+      agendas.forEach((e) => {
         const fecha = new Date(e.fecha);
         const key = `${nombresMeses[fecha.getMonth()]} ${fecha.getFullYear()}`;
         meses[key] = (meses[key] || 0) + 1;
@@ -104,11 +104,11 @@ export default function DashboardPage() {
         pausados: discipulos.filter((d) => d.estado === "pausado").length,
         retirados: discipulos.filter((d) => d.estado === "retirado").length,
         oracionesPendientes: (oracionesRes.data || []).length,
-        totalEncuentros: encuentros.length,
+        totalAgendas: agendas.length,
         totalOraciones: oraciones.length,
         oracionesRespondidas: oraciones.filter((o) => o.estado === "respondida").length,
-        encuentrosPorMes: Object.entries(meses).map(([mes, cantidad]) => ({ mes, cantidad })),
-        proximosEncuentros: (encuentrosRes.data || []) as EncuentroBasico[],
+        agendasPorMes: Object.entries(meses).map(([mes, cantidad]) => ({ mes, cantidad })),
+        proximasAgendas: (agendasRes.data || []) as AgendaBasico[],
         oracionesPendientesList: (oracionesRes.data || []) as OracionBasica[],
         proximosCumples,
       });

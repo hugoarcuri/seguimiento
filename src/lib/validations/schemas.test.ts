@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { loginSchema, registerSchema } from "./auth";
 import { discipuloSchema } from "./discipulo";
-import { encuentroSchema } from "./encuentro";
+import { agendaSchema } from "./agenda";
 import { oracionSchema } from "./oracion";
 import { tareaSchema } from "./tarea";
 
@@ -84,11 +84,11 @@ describe("tareaSchema", () => {
   });
 });
 
-describe("encuentroSchema", () => {
+describe("agendaSchema", () => {
   it("requiere fecha y tema", () => {
     const base = { discipulo_id: "00000000-0000-0000-0000-000000000000" };
-    expect(encuentroSchema.safeParse({ ...base, fecha: "", tema_tratado: "X" }).success).toBe(false);
-    expect(encuentroSchema.safeParse({ ...base, fecha: "2026-08-01", tema_tratado: "X" }).success).toBe(true);
+    expect(agendaSchema.safeParse({ ...base, fecha: "", tema_tratado: "X" }).success).toBe(false);
+    expect(agendaSchema.safeParse({ ...base, fecha: "2026-08-01", tema_tratado: "X" }).success).toBe(true);
   });
 });
 

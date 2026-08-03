@@ -11,11 +11,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/dashboard",
     "/discipulos",
     "/discipulos/nuevo",
-    "/seguimiento",
     "/evangelismo",
     "/tareas",
     "/oracion",
-    "/encuentros",
+    "/agenda",
     "/perfil",
     "/configuracion",
   ];

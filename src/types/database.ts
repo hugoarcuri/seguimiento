@@ -34,7 +34,7 @@ export interface Discipulo {
   updated_at: string;
 }
 
-export interface Encuentro {
+export interface Agenda {
   id: string;
   discipulo_id: string;
   lider_id: string;

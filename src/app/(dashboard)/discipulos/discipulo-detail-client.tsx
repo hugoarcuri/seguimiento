@@ -12,7 +12,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Edit, Camera, Loader2, Calendar, Phone, Mail, MapPin } from "lucide-react";
 import { format } from "date-fns";
-import type { Discipulo, Encuentro, Oracion, Tarea, Timeline, Etapa } from "@/types/database";
+import type { Discipulo, Agenda, Oracion, Tarea, Timeline, Etapa } from "@/types/database";
 import { estadoColors, calcularEdad } from "@/lib/utils";
 import { useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -21,7 +21,7 @@ import { toast } from "sonner";
 interface DiscipuloDetailClientProps {
   discipulo: Discipulo;
   etapas: Etapa[];
-  encuentros: Encuentro[];
+  agendas: Agenda[];
   oraciones: Oracion[];
   tareas: Tarea[];
   timeline: Timeline[];
@@ -30,7 +30,7 @@ interface DiscipuloDetailClientProps {
 export function DiscipuloDetailClient({
   discipulo: initialDiscipulo,
   etapas,
-  encuentros,
+  agendas,
   oraciones,
   tareas,
   timeline,
@@ -160,8 +160,8 @@ export function DiscipuloDetailClient({
       <Tabs defaultValue="info" className="space-y-4">
         <TabsList>
           <TabsTrigger value="info">Información</TabsTrigger>
-          <TabsTrigger value="encuentros">
-            Encuentros ({encuentros.length})
+          <TabsTrigger value="agenda">
+            Agenda ({agendas.length})
           </TabsTrigger>
           <TabsTrigger value="oracion">
             Oración ({oraciones.length})
@@ -237,38 +237,38 @@ export function DiscipuloDetailClient({
           )}
         </TabsContent>
 
-        <TabsContent value="encuentros" className="space-y-4">
-          {encuentros.length === 0 ? (
+        <TabsContent value="agenda" className="space-y-4">
+          {agendas.length === 0 ? (
             <Card>
               <CardContent className="py-8 text-center text-muted-foreground">
-                No hay encuentros registrados
+                No hay citas registradas
               </CardContent>
             </Card>
           ) : (
-            encuentros.map((encuentro) => (
-              <Card key={encuentro.id}>
+            agendas.map((agenda) => (
+              <Card key={agenda.id}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-base">
-                      {encuentro.tema_tratado}
+                      {agenda.tema_tratado}
                     </CardTitle>
                     <Badge variant="outline">
-                      {format(new Date(encuentro.fecha), "dd/MM/yyyy")}
+                      {format(new Date(agenda.fecha), "dd/MM/yyyy")}
                     </Badge>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm">
-                  {encuentro.lugar && (
-                    <p><span className="text-muted-foreground">Lugar:</span> {encuentro.lugar}</p>
+                  {agenda.lugar && (
+                    <p><span className="text-muted-foreground">Lugar:</span> {agenda.lugar}</p>
                   )}
-                  {encuentro.material_utilizado && (
-                    <p><span className="text-muted-foreground">Material:</span> {encuentro.material_utilizado}</p>
+                  {agenda.material_utilizado && (
+                    <p><span className="text-muted-foreground">Material:</span> {agenda.material_utilizado}</p>
                   )}
-                  {encuentro.compromisos && (
-                    <p><span className="text-muted-foreground">Compromisos:</span> {encuentro.compromisos}</p>
+                  {agenda.compromisos && (
+                    <p><span className="text-muted-foreground">Compromisos:</span> {agenda.compromisos}</p>
                   )}
-                  {encuentro.notas && (
-                    <p><span className="text-muted-foreground">Notas:</span> {encuentro.notas}</p>
+                  {agenda.notas && (
+                    <p><span className="text-muted-foreground">Notas:</span> {agenda.notas}</p>
                   )}
                 </CardContent>
               </Card>

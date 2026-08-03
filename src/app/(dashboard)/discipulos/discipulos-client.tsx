@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Search, UserPlus, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import type { Discipulo, Etapa, Encuentro, Oracion, Tarea, Timeline } from "@/types/database";
+import type { Discipulo, Etapa, Agenda, Oracion, Tarea, Timeline } from "@/types/database";
 import { ImportarDiscipulos } from "./importar-discipulos";
 import { DiscipuloDetailClient } from "./discipulo-detail-client";
 import { cn } from "@/lib/utils";
@@ -44,7 +44,7 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detailData, setDetailData] = useState<{
     discipulo: Discipulo;
-    encuentros: Encuentro[];
+    agendas: Agenda[];
     oraciones: Oracion[];
     tareas: Tarea[];
     timeline: Timeline[];
@@ -66,7 +66,7 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
     const supabase = createClient();
     Promise.all([
       supabase.from("discipulos").select("*").eq("id", selectedId).single(),
-      supabase.from("encuentros").select("*").eq("discipulo_id", selectedId).order("fecha", { ascending: false }),
+      supabase.from("agenda").select("*").eq("discipulo_id", selectedId).order("fecha", { ascending: false }),
       supabase.from("oraciones").select("*").eq("discipulo_id", selectedId).order("fecha", { ascending: false }),
       supabase.from("tareas").select("*").eq("discipulo_id", selectedId).order("created_at", { ascending: false }),
       supabase.from("timeline").select("*").eq("discipulo_id", selectedId).order("created_at", { ascending: false }),
@@ -75,7 +75,7 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
       if (!dRes.data) { setLoadingDetail(false); return; }
       setDetailData({
         discipulo: dRes.data,
-        encuentros: eRes.data || [],
+        agendas: eRes.data || [],
         oraciones: oRes.data || [],
         tareas: tRes.data || [],
         timeline: tlRes.data || [],
@@ -178,7 +178,7 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
             key={selectedId}
             discipulo={detailData.discipulo}
             etapas={etapas}
-            encuentros={detailData.encuentros}
+            agendas={detailData.agendas}
             oraciones={detailData.oraciones}
             tareas={detailData.tareas}
             timeline={detailData.timeline}

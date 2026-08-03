@@ -4,12 +4,12 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { DiscipuloDetailClient } from "../discipulo-detail-client";
-import type { Discipulo, Etapa, Encuentro, Oracion, Tarea, Timeline } from "@/types/database";
+import type { Discipulo, Etapa, Agenda, Oracion, Tarea, Timeline } from "@/types/database";
 
 interface WrapperData {
   discipulo: Discipulo;
   etapas: Etapa[];
-  encuentros: Encuentro[];
+  agendas: Agenda[];
   oraciones: Oracion[];
   tareas: Tarea[];
   timeline: Timeline[];
@@ -31,17 +31,17 @@ function DiscipuloVerInner() {
     Promise.all([
       supabase.from("discipulos").select("*").eq("id", id).single(),
       supabase.from("etapas").select("*").order("orden", { ascending: true }),
-      supabase.from("encuentros").select("*").eq("discipulo_id", id).order("fecha", { ascending: false }),
+      supabase.from("agenda").select("*").eq("discipulo_id", id).order("fecha", { ascending: false }),
       supabase.from("oraciones").select("*").eq("discipulo_id", id).order("fecha", { ascending: false }),
       supabase.from("tareas").select("*").eq("discipulo_id", id).order("created_at", { ascending: false }),
       supabase.from("timeline").select("*").eq("discipulo_id", id).order("created_at", { ascending: false }),
-    ]).then(([discipuloRes, etapasRes, encuentrosRes, oracionesRes, tareasRes, timelineRes]) => {
+    ]).then(([discipuloRes, etapasRes, agendasRes, oracionesRes, tareasRes, timelineRes]) => {
       if (cancelado) return;
       if (!discipuloRes.data) { setLoading(false); return; }
       setData({
         discipulo: discipuloRes.data,
         etapas: etapasRes.data || [],
-        encuentros: encuentrosRes.data || [],
+        agendas: agendasRes.data || [],
         oraciones: oracionesRes.data || [],
         tareas: tareasRes.data || [],
         timeline: timelineRes.data || [],

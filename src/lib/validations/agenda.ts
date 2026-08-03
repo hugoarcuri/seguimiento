@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const encuentroSchema = z.object({
+export const agendaSchema = z.object({
   discipulo_id: z.string().uuid("Seleccioná un discípulo"),
   fecha: z.string().min(1, "La fecha es requerida"),
   hora: z.string().optional().nullable(),
@@ -12,4 +12,4 @@ export const encuentroSchema = z.object({
   proximo_encuentro: z.string().optional().nullable(),
 });
 
-export type EncuentroInput = z.infer<typeof encuentroSchema>;
+export type AgendaInput = z.infer<typeof agendaSchema>;

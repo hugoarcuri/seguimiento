@@ -73,7 +73,7 @@ export default function ConfiguracionPage() {
               </div>
               <ul className="text-sm text-muted-foreground space-y-1 ml-4 list-disc">
                 <li>Crear, editar y eliminar discípulos</li>
-                <li>Registrar encuentros y seguimiento</li>
+                <li>Registrar citas en la agenda</li>
                 <li>Ver estadísticas y reportes</li>
                 <li>Administrar materiales</li>
                 <li>Gestionar pedidos de oración</li>

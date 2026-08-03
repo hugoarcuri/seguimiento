@@ -4,7 +4,7 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { encuentroSchema, type EncuentroInput } from "@/lib/validations/encuentro";
+import { agendaSchema, type AgendaInput } from "@/lib/validations/agenda";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,25 +43,25 @@ import {
 import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import type { Encuentro } from "@/types/database";
+import type { Agenda } from "@/types/database";
 
-interface EncuentrosClientProps {
-  encuentros: (Encuentro & { discipulos?: { nombre: string; apellido: string } })[];
-  setEncuentros: React.Dispatch<React.SetStateAction<(Encuentro & { discipulos?: { nombre: string; apellido: string } })[]>>;
+interface AgendaClientProps {
+  agendas: (Agenda & { discipulos?: { nombre: string; apellido: string } })[];
+  setAgendas: React.Dispatch<React.SetStateAction<(Agenda & { discipulos?: { nombre: string; apellido: string } })[]>>;
   discipulos: Array<{ id: string; nombre: string; apellido: string }>;
 }
 
-export function EncuentrosClient({
-  encuentros,
-  setEncuentros,
+export function AgendaClient({
+  agendas,
+  setAgendas,
   discipulos,
-}: EncuentrosClientProps) {
+}: AgendaClientProps) {
   const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<Encuentro | null>(null);
+  const [editing, setEditing] = useState<Agenda | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const form = useForm<EncuentroInput>({
-    resolver: zodResolver(encuentroSchema),
+  const form = useForm<AgendaInput>({
+    resolver: zodResolver(agendaSchema),
   });
 
   const openCreate = () => {
@@ -70,67 +70,67 @@ export function EncuentrosClient({
     setOpen(true);
   };
 
-  const openEdit = (encuentro: Encuentro & { discipulos?: { nombre: string; apellido: string } }) => {
-    setEditing(encuentro);
+  const openEdit = (agenda: Agenda & { discipulos?: { nombre: string; apellido: string } }) => {
+    setEditing(agenda);
     form.reset({
-      discipulo_id: encuentro.discipulo_id,
-      fecha: encuentro.fecha?.split("T")[0] || "",
-      hora: encuentro.hora || "",
-      lugar: encuentro.lugar || "",
-      tema_tratado: encuentro.tema_tratado,
-      material_utilizado: encuentro.material_utilizado || "",
-      compromisos: encuentro.compromisos || "",
-      notas: encuentro.notas || "",
-      proximo_encuentro: encuentro.proximo_encuentro?.slice(0, 16) || "",
+      discipulo_id: agenda.discipulo_id,
+      fecha: agenda.fecha?.split("T")[0] || "",
+      hora: agenda.hora || "",
+      lugar: agenda.lugar || "",
+      tema_tratado: agenda.tema_tratado,
+      material_utilizado: agenda.material_utilizado || "",
+      compromisos: agenda.compromisos || "",
+      notas: agenda.notas || "",
+      proximo_encuentro: agenda.proximo_encuentro?.slice(0, 16) || "",
     });
     setOpen(true);
   };
 
-  const onSubmit = async (data: EncuentroInput) => {
+  const onSubmit = async (data: AgendaInput) => {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
     const payload = { ...data, lider_id: user.id };
     const { error, data: result } = editing
-      ? await supabase.from("encuentros").update(payload).eq("id", editing.id).select("*, discipulos:discipulo_id(nombre, apellido)").single()
-      : await supabase.from("encuentros").insert(payload).select("*, discipulos:discipulo_id(nombre, apellido)").single();
+      ? await supabase.from("agenda").update(payload).eq("id", editing.id).select("*, discipulos:discipulo_id(nombre, apellido)").single()
+      : await supabase.from("agenda").insert(payload).select("*, discipulos:discipulo_id(nombre, apellido)").single();
 
     if (error) {
-      toast.error(editing ? "Error al actualizar encuentro" : "Error al registrar encuentro");
+      toast.error(editing ? "Error al actualizar la cita" : "Error al registrar la cita");
     } else {
-      toast.success(editing ? "Encuentro actualizado" : "Encuentro registrado");
+      toast.success(editing ? "Cita actualizada" : "Cita registrada");
       setOpen(false);
       setEditing(null);
       form.reset();
-      if (!editing && result) setEncuentros((prev) => [result as never, ...prev]);
-      if (editing && result) setEncuentros((prev) => prev.map((e) => e.id === editing.id ? result as never : e));
+      if (!editing && result) setAgendas((prev) => [result as never, ...prev]);
+      if (editing && result) setAgendas((prev) => prev.map((e) => e.id === editing.id ? result as never : e));
     }
   };
 
   const handleDelete = async () => {
     if (!deleteId) return;
-    const { error } = await createClient().from("encuentros").delete().eq("id", deleteId);
-    if (error) { toast.error("Error al eliminar encuentro"); setDeleteId(null); return }
-    toast.success("Encuentro eliminado");
+    const { error } = await createClient().from("agenda").delete().eq("id", deleteId);
+    if (error) { toast.error("Error al eliminar la cita"); setDeleteId(null); return }
+    toast.success("Cita eliminada");
     setDeleteId(null);
-    setEncuentros((prev) => prev.filter((e) => e.id !== deleteId));
+    setAgendas((prev) => prev.filter((e) => e.id !== deleteId));
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Encuentros</h1>
+          <h1 className="text-3xl font-bold">Agenda</h1>
           <p className="text-muted-foreground">
-            Registra y gestiona los encuentros de discipulado
+            Registra y gestiona las citas de discipulado
           </p>
         </div>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditing(null); }}>
-          <DialogTrigger render={<Button onClick={openCreate}><Plus className="mr-2 h-4 w-4" />Nuevo Encuentro</Button>} />
+          <DialogTrigger render={<Button onClick={openCreate}><Plus className="mr-2 h-4 w-4" />Nueva cita</Button>} />
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{editing ? "Editar Encuentro" : "Registrar Encuentro"}</DialogTitle>
+              <DialogTitle>{editing ? "Editar cita" : "Registrar cita"}</DialogTitle>
             </DialogHeader>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
@@ -200,7 +200,7 @@ export function EncuentrosClient({
                 <Textarea id="notas" {...form.register("notas")} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="proximo_encuentro">Próximo Encuentro</Label>
+                <Label htmlFor="proximo_encuentro">Próxima cita</Label>
                 <Input
                   id="proximo_encuentro"
                   type="datetime-local"
@@ -209,7 +209,7 @@ export function EncuentrosClient({
               </div>
               <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {editing ? "Guardar Cambios" : "Registrar Encuentro"}
+                {editing ? "Guardar Cambios" : "Registrar cita"}
               </Button>
             </form>
           </DialogContent>
@@ -218,8 +218,8 @@ export function EncuentrosClient({
 
       <Card>
         <CardHeader>
-          <CardTitle>Todos los Encuentros</CardTitle>
-          <CardDescription>{encuentros.length} registros</CardDescription>
+          <CardTitle>Todas las citas</CardTitle>
+          <CardDescription>{agendas.length} registros</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -234,36 +234,36 @@ export function EncuentrosClient({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {encuentros.length === 0 ? (
+              {agendas.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    No hay encuentros registrados
+                    No hay citas registradas
                   </TableCell>
                 </TableRow>
               ) : (
-                encuentros.map((encuentro) => (
-                  <TableRow key={encuentro.id}>
+                agendas.map((agenda) => (
+                  <TableRow key={agenda.id}>
                     <TableCell>
-                      {format(new Date(encuentro.fecha), "dd/MM/yyyy")}
+                      {format(new Date(agenda.fecha), "dd/MM/yyyy")}
                     </TableCell>
                     <TableCell>
-                      {encuentro.discipulos?.nombre
-                        ? `${encuentro.discipulos.apellido}, ${encuentro.discipulos.nombre}`
+                      {agenda.discipulos?.nombre
+                        ? `${agenda.discipulos.apellido}, ${agenda.discipulos.nombre}`
                         : "—"}
                     </TableCell>
                     <TableCell className="max-w-[200px] truncate">
-                      {encuentro.tema_tratado}
+                      {agenda.tema_tratado}
                     </TableCell>
-                    <TableCell>{encuentro.lugar || "—"}</TableCell>
+                    <TableCell>{agenda.lugar || "—"}</TableCell>
                     <TableCell className="max-w-[200px] truncate">
-                      {encuentro.compromisos || "—"}
+                      {agenda.compromisos || "—"}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="sm" onClick={() => openEdit(encuentro)}>
+                        <Button variant="outline" size="sm" onClick={() => openEdit(agenda)}>
                           <Pencil className="mr-1 h-3.5 w-3.5" /> Editar
                         </Button>
-                        <Button variant="destructive" size="sm" onClick={() => setDeleteId(encuentro.id)}>
+                        <Button variant="destructive" size="sm" onClick={() => setDeleteId(agenda.id)}>
                           <Trash2 className="mr-1 h-3.5 w-3.5" /> Eliminar
                         </Button>
                       </div>
@@ -279,8 +279,8 @@ export function EncuentrosClient({
       <Dialog open={deleteId !== null} onOpenChange={() => setDeleteId(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Eliminar Encuentro</DialogTitle>
-            <DialogDescription>¿Estás seguro de eliminar este encuentro? Esta acción no se puede deshacer.</DialogDescription>
+            <DialogTitle>Eliminar cita</DialogTitle>
+            <DialogDescription>¿Estás seguro de eliminar esta cita? Esta acción no se puede deshacer.</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteId(null)}>Cancelar</Button>
