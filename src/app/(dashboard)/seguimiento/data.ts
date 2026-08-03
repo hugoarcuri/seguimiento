@@ -74,6 +74,8 @@ export const desafiosPredefinidos = [
   "Servir el próximo domingo",
   "Evangelizar a un amigo",
   "Memorizar Efesios 2:8-9",
+  "Seguir estudiando",
+  "Encontrar trabajo",
 ];
 
 export const fmtLocal = (d: Date) =>

@@ -59,8 +59,32 @@ export function ReunionForm({ w, areas, indicadores }: ReunionFormProps) {
         </CardHeader>
         <CardContent className="p-3 space-y-3">
           <div className="flex gap-2">
-            <ChipActivo label="¿Estudia?" activo={w.estudios} onClick={() => w.setEstudios(!w.estudios)} />
-            <ChipActivo label="¿Trabaja?" activo={w.trabajo} onClick={() => w.setTrabajo(!w.trabajo)} />
+            <ChipActivo
+              label="¿Estudia?"
+              activo={w.estudios}
+              onClick={() => {
+                const nuevo = !w.estudios;
+                w.setEstudios(nuevo);
+                w.setCompromisos((prev) =>
+                  nuevo
+                    ? prev.filter((x) => x !== "Seguir estudiando")
+                    : prev.includes("Seguir estudiando") ? prev : [...prev, "Seguir estudiando"]
+                );
+              }}
+            />
+            <ChipActivo
+              label="¿Trabaja?"
+              activo={w.trabajo}
+              onClick={() => {
+                const nuevo = !w.trabajo;
+                w.setTrabajo(nuevo);
+                w.setCompromisos((prev) =>
+                  nuevo
+                    ? prev.filter((x) => x !== "Encontrar trabajo")
+                    : prev.includes("Encontrar trabajo") ? prev : [...prev, "Encontrar trabajo"]
+                );
+              }}
+            />
           </div>
           {w.estudios && <CategoriasColapsables areaIds={[3]} {...base} />}
           {w.trabajo && <CategoriasColapsables areaIds={[4]} {...base} />}

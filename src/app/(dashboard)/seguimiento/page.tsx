@@ -127,11 +127,8 @@ export default function SeguimientoPage() {
 
   const discipulo = discipulos.find((d) => d.id === selectedId);
   const semanaActualReunion = reuniones.find((r) => esSemanaDe(r.fecha, new Date()));
-  const visibleIndicadores = indicadores.filter(
-    (i) => !(i.area_id === 3 && !w.estudios) && !(i.area_id === 4 && !w.trabajo)
-  );
-  const indicadoresRespondidos = visibleIndicadores.filter((i) => w.valores[i.id] !== undefined).length;
-  const pct = visibleIndicadores.length > 0 ? Math.round((indicadoresRespondidos / visibleIndicadores.length) * 100) : 0;
+  const indicadoresRespondidos = indicadores.filter((i) => w.valores[i.id] !== undefined).length;
+  const pct = indicadores.length > 0 ? Math.round((indicadoresRespondidos / indicadores.length) * 100) : 0;
 
   const handleAgregarDesafio = async () => {
     if (!user || !selectedId || !nuevoDesafio.trim()) return;
@@ -196,7 +193,7 @@ export default function SeguimientoPage() {
       reunionId = reunion.id;
     }
 
-    const inserts = visibleIndicadores
+    const inserts = indicadores
       .filter((ind) => w.valores[ind.id] !== undefined)
       .map((ind) => ({
         reunion_id: reunionId,
