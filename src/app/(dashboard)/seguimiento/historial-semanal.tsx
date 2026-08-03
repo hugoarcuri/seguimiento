@@ -3,81 +3,45 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { CalendarRange, ChevronDown } from "lucide-react";
-
-interface HistorialEvaluacion {
-  indicador_id: number;
-  valor: number | null;
-}
-
-interface HistorialReunion {
-  id: string;
-  fecha: string;
-  evaluaciones?: HistorialEvaluacion[];
-}
-
-interface HistorialIndicador {
-  id: number;
-  area_id: number;
-  nombre: string;
-}
-
-interface HistorialArea {
-  id: number;
-  nombre: string;
-}
+import { ChevronDown, LineChart } from "lucide-react";
+import { areasMeta, escalaCrecimiento } from "./data";
+import type { SupabaseArea, SupabaseIndicador, SupabaseReunion } from "./data";
 
 interface HistorialSemanalProps {
-  reuniones: HistorialReunion[];
-  indicadores: HistorialIndicador[];
-  areas: HistorialArea[];
-  opcionesIndicador: Record<string, { type: "escala" | "si_no"; labels: string[] }>;
+  reuniones: SupabaseReunion[];
+  indicadores: SupabaseIndicador[];
+  areas: SupabaseArea[];
+  reunionSeleccionadaId?: string | null;
+  onSeleccionarReunion?: (id: string) => void;
   maxSemanas?: number;
-}
-
-function numeroSemana(fecha: string): number {
-  const date = new Date(fecha + "T12:00:00");
-  date.setHours(12, 0, 0, 0);
-  date.setDate(date.getDate() + 3 - ((date.getDay() + 6) % 7));
-  const week1 = new Date(date.getFullYear(), 0, 4);
-  return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
 }
 
 export function HistorialSemanal({
   reuniones,
   indicadores,
   areas,
-  opcionesIndicador,
+  reunionSeleccionadaId,
+  onSeleccionarReunion,
   maxSemanas = 12,
 }: HistorialSemanalProps) {
-  const [verTodas, setVerTodas] = useState(false);
   const [abierto, setAbierto] = useState(false);
+  const [verTodas, setVerTodas] = useState(false);
 
   const semanas = [...reuniones]
-    .sort((a, b) => b.fecha.localeCompare(a.fecha))
-    .slice(0, verTodas ? undefined : maxSemanas);
+    .sort((a, b) => a.fecha.localeCompare(b.fecha))
+    .slice(verTodas ? 0 : -maxSemanas);
 
-  const areasConIndicadores = areas
-    .map((a) => ({
-      ...a,
-      indicadores: indicadores
-        .filter((i) => i.area_id === a.id)
-        .sort((x, y) => x.id - y.id),
-    }))
-    .filter((a) => a.indicadores.length > 0);
+  const areasConDatos = areas.filter((a) => indicadores.some((i) => i.area_id === a.id));
 
-  const valorColor = (ind: HistorialIndicador, valor: number) => {
-    const opts = opcionesIndicador[ind.nombre];
-    const max = opts ? opts.labels.length - 1 : 4;
-    const pct = (valor / max) * 100;
-    return pct >= 80
-      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
-      : pct >= 50
-        ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
-        : "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400";
+  const valorSemana = (reunion: SupabaseReunion, areaId: number): number | null => {
+    const items = indicadores.filter((i) => i.area_id === areaId);
+    const vals = items
+      .map((i) => reunion.evaluaciones?.find((e) => e.indicador_id === i.id)?.valor)
+      .filter((v): v is number => v !== null && v !== undefined);
+    if (vals.length === 0) return null;
+    return Math.min(...vals);
   };
 
   return (
@@ -92,12 +56,16 @@ export function HistorialSemanal({
         >
           <span className="flex items-center gap-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <CalendarRange className="h-4 w-4" /> Historial semanal
-              {reuniones.length > 0 && <span className="text-xs text-muted-foreground font-normal">({reuniones.length} {reuniones.length === 1 ? "reunión" : "reuniones"})</span>}
+              <LineChart className="h-4 w-4" /> Evolución
+              {reuniones.length > 0 && (
+                <span className="text-xs text-muted-foreground font-normal">
+                  ({reuniones.length} {reuniones.length === 1 ? "reunión" : "reuniones"})
+                </span>
+              )}
             </CardTitle>
           </span>
           <span className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">{abierto ? "Ocultar" : "Ver historial"}</span>
+            <span className="text-xs text-muted-foreground">{abierto ? "Ocultar" : "Ver evolución"}</span>
             <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform duration-200", abierto && "rotate-180")} />
           </span>
         </Button>
@@ -106,62 +74,70 @@ export function HistorialSemanal({
         <div className="overflow-hidden">
           <CardContent className="p-3 pt-0">
             {reuniones.length === 0 ? (
-              <p className="text-xs text-muted-foreground py-2">Aún no hay evaluaciones guardadas</p>
+              <p className="text-xs text-muted-foreground py-2">Aún no hay reuniones guardadas</p>
             ) : (
               <>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-xs">Semana</TableHead>
-                      {areasConIndicadores.map((a) => (
-                        <TableHead key={a.id} className="text-center text-xs" colSpan={a.indicadores.length}>
-                          {a.nombre}
-                        </TableHead>
-                      ))}
-                    </TableRow>
-                    <TableRow>
-                      <TableHead />
-                      {areasConIndicadores.flatMap((a) =>
-                        a.indicadores.map((ind) => (
-                          <TableHead key={ind.id} className="text-center text-[10px] font-normal text-muted-foreground max-w-[90px] truncate">
-                            {ind.nombre}
-                          </TableHead>
-                        ))
-                      )}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {semanas.map((r) => {
-                      const evalPorInd = new Map((r.evaluaciones || []).map((e) => [e.indicador_id, e.valor]));
-                      return (
-                        <TableRow key={r.id}>
-                          <TableCell className="text-xs font-medium whitespace-nowrap">
-                            {format(new Date(r.fecha + "T12:00:00"), "dd/MM/yyyy")}
-                            <span className="text-muted-foreground ml-1">· S{numeroSemana(r.fecha)}</span>
-                          </TableCell>
-                          {areasConIndicadores.flatMap((a) =>
-                            a.indicadores.map((ind) => {
-                              const v = evalPorInd.get(ind.id);
-                              const opts = opcionesIndicador[ind.nombre];
-                              const label = opts && v !== null && v !== undefined && opts.labels[v] ? opts.labels[v] : undefined;
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr>
+                        <th className="text-left py-1 pr-2 text-muted-foreground font-medium whitespace-nowrap">Área</th>
+                        {semanas.map((r) => (
+                          <th key={r.id} className="text-center py-1 px-1 font-medium whitespace-nowrap">
+                            <button
+                              type="button"
+                              onClick={() => onSeleccionarReunion?.(r.id)}
+                              className={cn("cursor-pointer hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 rounded", reunionSeleccionadaId === r.id && "text-primary")}
+                            >
+                              {format(new Date(r.fecha + "T12:00:00"), "dd/MM")}
+                            </button>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {areasConDatos.map((a) => {
+                        const Icon = areasMeta[a.id]?.icon;
+                        return (
+                          <tr key={a.id} className="border-b last:border-0">
+                            <td className="py-1.5 pr-2 font-medium whitespace-nowrap">
+                              <span className="inline-flex items-center gap-1.5">
+                                {Icon && <Icon className="h-3.5 w-3.5 text-muted-foreground" />}
+                                {a.nombre}
+                              </span>
+                            </td>
+                            {semanas.map((r) => {
+                              const v = valorSemana(r, a.id);
+                              const nivel = v !== null ? escalaCrecimiento[v] : undefined;
                               return (
-                                <TableCell key={ind.id} className="text-center">
-                                  {v !== null && v !== undefined ? (
-                                    <span title={label} className={cn("inline-block w-7 h-7 rounded-full text-[11px] font-bold leading-7", valorColor(ind, v))}>
-                                      {v}
-                                    </span>
-                                  ) : (
-                                    <span className="text-muted-foreground">—</span>
-                                  )}
-                                </TableCell>
+                                <td key={r.id} className="text-center py-1.5 px-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => onSeleccionarReunion?.(r.id)}
+                                    className={cn(
+                                      "inline-block w-5 h-5 rounded-full cursor-pointer transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
+                                      reunionSeleccionadaId === r.id && "ring-2 ring-primary ring-offset-1",
+                                      nivel ? nivel.dotCls : "bg-muted"
+                                    )}
+                                    aria-label={`${a.nombre}: ${v !== null ? escalaCrecimiento[v].label : "sin datos"}`}
+                                    title={v !== null ? escalaCrecimiento[v].label : "Sin datos"}
+                                  />
+                                </td>
                               );
-                            })
-                          )}
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                            })}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="flex flex-wrap gap-3 items-center mt-2">
+                  {escalaCrecimiento.map((n) => (
+                    <span key={n.valor} className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                      <span className={cn("w-3 h-3 rounded-full", n.dotCls)} /> {n.label}
+                    </span>
+                  ))}
+                </div>
                 {reuniones.length > maxSemanas && (
                   <div className="flex justify-end mt-2">
                     <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setVerTodas((v) => !v)}>

@@ -10,6 +10,7 @@ import type { SupabaseArea } from "./data";
 
 interface CategoriasColapsablesProps extends Omit<PreguntasDeAreaProps, "areaId"> {
   areaIds: number[];
+  areas: SupabaseArea[];
 }
 
 export function CategoriasColapsables({
@@ -70,7 +71,6 @@ export function CategoriasColapsables({
             onToggle={() => setOpenId(open ? null : areaId)}
             onValor={handleValor}
             valores={valores}
-            areas={areas}
             {...rest}
           />
         );

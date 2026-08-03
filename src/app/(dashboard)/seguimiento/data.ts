@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import { Book, Users, Hand, Target, GraduationCap, Crown } from "lucide-react";
+import { Smile, Home, GraduationCap, Briefcase, Heart, Sparkles, Hand } from "lucide-react";
 
 export interface AreaMeta {
   label: string;
@@ -8,35 +8,64 @@ export interface AreaMeta {
 }
 
 export const areasMeta: Record<number, AreaMeta> = {
-  1: { label: "Vida Devocional", icon: Book, color: "hsl(var(--chart-1))" },
-  4: { label: "Comunión", icon: Users, color: "hsl(var(--chart-4))" },
-  5: { label: "Servicio", icon: Hand, color: "hsl(var(--chart-5))" },
-  6: { label: "Evangelismo", icon: Target, color: "hsl(var(--chart-6))" },
-  7: { label: "Discipulado", icon: GraduationCap, color: "hsl(var(--chart-7))" },
-  8: { label: "Liderazgo", icon: Crown, color: "hsl(var(--chart-8))" },
+  1: { label: "Vida Personal", icon: Smile, color: "hsl(var(--chart-1))" },
+  2: { label: "Vida Familiar", icon: Home, color: "hsl(var(--chart-2))" },
+  3: { label: "Estudios", icon: GraduationCap, color: "hsl(var(--chart-3))" },
+  4: { label: "Trabajo", icon: Briefcase, color: "hsl(var(--chart-4))" },
+  5: { label: "Relación con Dios", icon: Heart, color: "hsl(var(--chart-5))" },
+  6: { label: "Carácter Cristiano", icon: Sparkles, color: "hsl(var(--chart-6))" },
+  7: { label: "Servicio Cristiano", icon: Hand, color: "hsl(var(--chart-7))" },
 };
 
-export const opcionesIndicador: Record<string, { type: "escala" | "si_no"; labels: string[] }> = {
-  Oración: { type: "escala", labels: ["Nunca", "1-2 veces", "3-4 veces", "5-6 veces", "Todos los días"] },
-  "Lectura bíblica": { type: "escala", labels: ["Nunca", "1-2 días", "3-4 días", "5-6 días", "Todos los días"] },
-  "Memorización bíblica": { type: "escala", labels: ["No memoriza", "1 versículo", "2-3 versículos", "4-5 versículos", "6+ versículos"] },
-  "Asistencia al culto": { type: "escala", labels: ["Nunca", "1 vez/mes", "2 veces/mes", "3 veces/mes", "Siempre"] },
-  "Asistencia al grupo pequeño": { type: "escala", labels: ["Nunca", "Casi nunca", "A veces", "Frecuentemente", "Siempre"] },
-  "Relación con la autoridad": { type: "escala", labels: ["No acepta", "Se resiste", "A veces", "Acepta", "Ejemplar"] },
-  "Integración con la iglesia": { type: "escala", labels: ["No integrado", "Poco", "A veces", "Integrado", "Muy integrado"] },
-  "Participa en un ministerio": { type: "si_no", labels: ["No", "Sí"] },
-  "Sirvió esta semana": { type: "si_no", labels: ["No", "Sí"] },
-  "Comparte el evangelio": { type: "si_no", labels: ["No", "Sí"] },
-  "Comparte su testimonio": { type: "si_no", labels: ["No", "Sí"] },
-  "Invita personas": { type: "si_no", labels: ["No", "Sí"] },
-  "Ora por inconversos": { type: "si_no", labels: ["No", "Sí"] },
-  "Seguimiento de nuevos": { type: "si_no", labels: ["No", "Sí"] },
-  "Recibe discipulado": { type: "si_no", labels: ["No", "Sí"] },
-  "Discipula a otros": { type: "si_no", labels: ["No", "Sí"] },
-  "Acompaña nuevos": { type: "si_no", labels: ["No", "Sí"] },
-};
+export interface EscalaNivel {
+  valor: number;
+  label: string;
+  ayuda: string;
+  cls: string;
+  dotCls: string;
+}
 
-export const defaultOpts = ["1", "2", "3", "4", "5"];
+export const escalaCrecimiento: EscalaNivel[] = [
+  {
+    valor: 0,
+    label: "Necesita atención",
+    ayuda: "Requiere acompañamiento esta semana",
+    cls: "bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/40 dark:text-amber-400 dark:border-amber-800",
+    dotCls: "bg-amber-500",
+  },
+  {
+    valor: 1,
+    label: "En desarrollo",
+    ayuda: "Avanza, con altibajos",
+    cls: "bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
+    dotCls: "bg-slate-400 dark:bg-slate-500",
+  },
+  {
+    valor: 2,
+    label: "Bien",
+    ayuda: "Saludable y consistente",
+    cls: "bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-900/40 dark:text-emerald-400 dark:border-emerald-800",
+    dotCls: "bg-emerald-500",
+  },
+];
+
+export const labelEscala = (v?: number | null) =>
+  v === null || v === undefined ? undefined : escalaCrecimiento[v]?.label;
+
+export interface SeccionTracker {
+  id: string;
+  titulo: string;
+  descripcion: string;
+  areaIds: number[];
+  condicional?: boolean;
+}
+
+export const seccionesTracker: SeccionTracker[] = [
+  { id: "personal", titulo: "Vida Personal", descripcion: "Bienestar, salud, tiempo y hábitos", areaIds: [1] },
+  { id: "familiar", titulo: "Vida Familiar", descripcion: "Relaciones y clima en el hogar", areaIds: [2] },
+  { id: "estudios_trabajo", titulo: "Estudios / Trabajo", descripcion: "Actividad académica y laboral", areaIds: [3, 4], condicional: true },
+  { id: "espiritual", titulo: "Vida Espiritual", descripcion: "Relación con Dios, carácter y servicio", areaIds: [5, 6, 7] },
+];
 
 export const desafiosPredefinidos = [
   "Orar diariamente",
@@ -46,15 +75,6 @@ export const desafiosPredefinidos = [
   "Evangelizar a un amigo",
   "Memorizar Efesios 2:8-9",
 ];
-
-export const ministerios = ["Club Bíblico", "Escuela Dominical", "JH", "Enfoque", "Alabanza"];
-
-export const paresEvaluacion = ["Vida Devocional y Comunión", "Servicio y Evangelismo", "Observaciones y Desafíos"];
-
-export const ESCALA_MAX = 5;
-export const MES_ESCALA = 20;
-
-export const pctPromedio = (promedio: number) => Math.round((promedio / ESCALA_MAX) * 100);
 
 export const fmtLocal = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -84,6 +104,8 @@ export interface SupabaseDiscipulo {
   etapas?: { nombre: string };
   avatar_url?: string | null;
   estado?: string | null;
+  meta_actual?: string | null;
+  meta_actual_desde?: string | null;
 }
 
 export interface SupabaseArea {
@@ -97,6 +119,7 @@ export interface SupabaseIndicador {
   area_id: number;
   nombre: string;
   orden: number;
+  condicion?: string | null;
 }
 
 export interface SupabaseEvaluacion {

@@ -13,7 +13,6 @@ interface SeguimientoHeaderProps {
   discipulo?: SupabaseDiscipulo;
   reuniones: SupabaseReunion[];
   pct: number;
-  par: number;
   cargandoReuniones: boolean;
 }
 
@@ -31,7 +30,6 @@ export function SeguimientoHeader({
   discipulo,
   reuniones,
   pct,
-  par,
   cargandoReuniones,
 }: SeguimientoHeaderProps) {
   const ultimaReunion = [...reuniones].sort((a, b) => b.fecha.localeCompare(a.fecha))[0];
@@ -75,7 +73,7 @@ export function SeguimientoHeader({
           <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Progreso de la evaluación">
             <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
           </div>
-          <span className="text-[11px] font-medium text-muted-foreground whitespace-nowrap">{pct}% · Paso {par} de 3</span>
+          <span className="text-[11px] font-medium text-muted-foreground whitespace-nowrap">{pct}% · Progreso de la semana</span>
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5 pt-1">
