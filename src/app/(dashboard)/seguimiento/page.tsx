@@ -131,6 +131,11 @@ export default function SeguimientoPage() {
   const discipulo = discipulos.find((d) => d.id === selectedId);
   const semanaActualReunion = reuniones.find((r) => esSemanaDe(r.fecha, new Date()));
 
+  const irAPaso = (p: number) => {
+    w.setPar(p);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const indicadoresRespondidos = Object.keys(w.valores).filter((k) => w.valores[Number(k)] !== undefined).length;
   const pct = indicadores.length > 0 ? Math.round((indicadoresRespondidos / indicadores.length) * 100) : 0;
 
@@ -341,7 +346,7 @@ export default function SeguimientoPage() {
         <>
           {!w.saved ? (
             <>
-              <WizardProgress par={w.par} totalPasos={3} pct={pct} titulos={paresEvaluacion} />
+              <WizardProgress par={w.par} totalPasos={3} pct={pct} titulos={paresEvaluacion} onSelectPaso={irAPaso} />
 
               {w.par === 1 && (
                 <PasoVidaDevocional w={w} areas={areas} indicadores={indicadores} objetivosNivel={objetivosNivel} etapaId={discipulo?.etapa_id} />
@@ -360,11 +365,11 @@ export default function SeguimientoPage() {
               )}
 
               <div className="flex items-center justify-between gap-3 pt-1">
-                <Button variant="outline" size="sm" disabled={w.par === 1} onClick={() => w.setPar(w.par - 1)}>
+                <Button variant="outline" size="sm" disabled={w.par === 1} onClick={() => irAPaso(w.par - 1)}>
                   <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
                 </Button>
                 {w.par < 3 ? (
-                  <Button size="sm" onClick={() => w.setPar(w.par + 1)}>
+                  <Button size="sm" onClick={() => irAPaso(w.par + 1)}>
                     Siguiente <ChevronRight className="h-4 w-4 ml-1" />
                   </Button>
                 ) : (

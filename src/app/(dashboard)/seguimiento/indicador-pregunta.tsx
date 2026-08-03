@@ -51,7 +51,7 @@ export function IndicadorPregunta({
                 onClick={() => onValor(v)}
                 aria-pressed={valor === v}
                 className={cn(
-                  "flex-1 h-9 rounded-lg text-xs font-medium transition-all duration-150 cursor-pointer",
+                  "flex-1 h-9 rounded-lg text-xs sm:text-sm font-medium transition-all duration-150 cursor-pointer",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-1",
                   valor === v
                     ? "bg-primary text-primary-foreground shadow-sm scale-[1.02]"
@@ -106,7 +106,7 @@ export function IndicadorPregunta({
                 aria-pressed={valor === v}
                 title={label}
                 className={cn(
-                  "flex-1 h-10 rounded-lg text-[11px] font-medium transition-all duration-150 cursor-pointer",
+                  "flex-1 h-10 rounded-lg text-xs sm:text-sm font-medium transition-all duration-150 cursor-pointer",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-1",
                   valor === v
                     ? "bg-primary text-primary-foreground shadow-sm scale-[1.02]"

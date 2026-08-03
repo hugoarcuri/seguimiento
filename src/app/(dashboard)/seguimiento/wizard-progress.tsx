@@ -8,22 +8,27 @@ interface WizardProgressProps {
   totalPasos: number;
   pct: number;
   titulos: string[];
+  onSelectPaso?: (paso: number) => void;
 }
 
-export function WizardProgress({ par, totalPasos, pct, titulos }: WizardProgressProps) {
+export function WizardProgress({ par, totalPasos, pct, titulos, onSelectPaso }: WizardProgressProps) {
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1" role="group" aria-label="Pasos de la evaluación">
         {titulos.map((title, i) => {
           const paso = i + 1;
           const activo = paso === par;
           const hecho = paso < par;
           return (
-            <div
+            <button
               key={i}
+              type="button"
+              onClick={() => onSelectPaso?.(paso)}
+              disabled={!onSelectPaso}
               className={cn(
-                "flex flex-1 items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-medium whitespace-nowrap transition-colors",
-                activo ? "bg-primary/10 text-primary" : hecho ? "text-muted-foreground" : "text-muted-foreground/50"
+                "flex flex-1 items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] sm:text-xs font-medium whitespace-nowrap transition-colors cursor-pointer text-left",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60",
+                activo ? "bg-primary/10 text-primary" : hecho ? "text-muted-foreground hover:bg-muted/40" : "text-muted-foreground/50 hover:bg-muted/40"
               )}
             >
               <span className={cn(
@@ -33,7 +38,7 @@ export function WizardProgress({ par, totalPasos, pct, titulos }: WizardProgress
                 {hecho ? <Check className="h-3 w-3" /> : paso}
               </span>
               <span className="hidden sm:inline">{title}</span>
-            </div>
+            </button>
           );
         })}
       </div>
