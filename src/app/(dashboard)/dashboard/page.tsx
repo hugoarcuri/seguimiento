@@ -40,10 +40,7 @@ interface SeguimientoBasico {
 
 interface DashboardData {
   totalDiscipulos: number;
-  nuevos: number;
-  consolidacion: number;
-  caracter: number;
-  servicio: number;
+  discipulosPorEtapa: Array<{ nombre: string; cantidad: number }>;
   activos: number;
   completados: number;
   pausados: number;
@@ -117,10 +114,10 @@ export default function DashboardPage() {
 
       setData({
         totalDiscipulos: discipulos.length,
-        nuevos: discipulos.filter((d) => d.etapa_id === 1).length,
-        consolidacion: discipulos.filter((d) => d.etapa_id === 2).length,
-        caracter: discipulos.filter((d) => d.etapa_id === 3).length,
-        servicio: discipulos.filter((d) => d.etapa_id === 4).length,
+        discipulosPorEtapa: ETAPAS.map((e) => ({
+          nombre: e.nombre,
+          cantidad: discipulos.filter((d) => d.etapa_id === e.valor).length,
+        })),
         activos: discipulos.filter((d) => d.estado === "activo").length,
         completados: discipulos.filter((d) => d.estado === "completado").length,
         pausados: discipulos.filter((d) => d.estado === "pausado").length,

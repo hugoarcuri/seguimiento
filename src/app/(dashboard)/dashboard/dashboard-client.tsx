@@ -22,10 +22,7 @@ interface DiscipuloBasico {
 
 interface DashboardClientProps {
   totalDiscipulos: number;
-  nuevos: number;
-  consolidacion: number;
-  caracter: number;
-  servicio: number;
+  discipulosPorEtapa: Array<{ nombre: string; cantidad: number }>;
   activos: number;
   completados: number;
   pausados: number;
@@ -64,10 +61,7 @@ interface DashboardClientProps {
 
 export function DashboardClient({
   totalDiscipulos,
-  nuevos,
-  consolidacion,
-  caracter,
-  servicio,
+  discipulosPorEtapa,
   activos,
   completados,
   pausados,
@@ -85,17 +79,19 @@ export function DashboardClient({
   seguimientosPorEtapa,
   seguimientoAtencion,
 }: DashboardClientProps) {
-  const chartData = [
-    { name: "Nueva Vida", value: nuevos, fill: "hsl(var(--chart-1))" },
-    { name: "Consolidación", value: consolidacion, fill: "hsl(var(--chart-2))" },
-    { name: "Carácter", value: caracter, fill: "hsl(var(--chart-3))" },
-    { name: "Servicio", value: servicio, fill: "hsl(var(--chart-4))" },
-  ];
+  const chartData = discipulosPorEtapa.map((e, i) => ({
+    name: e.nombre,
+    value: e.cantidad,
+    fill: COLORS[i % COLORS.length],
+  }));
 
   const madurezChartData = seguimientosPorEtapa.map((e, i) => ({
     ...e,
     fill: COLORS[i % COLORS.length],
   }));
+
+  const primeraEtapa = discipulosPorEtapa[0];
+  const ultimaEtapa = discipulosPorEtapa[discipulosPorEtapa.length - 1];
 
   const statsCards = [
     {
@@ -107,16 +103,16 @@ export function DashboardClient({
       bg: "bg-blue-50 dark:bg-blue-950",
     },
     {
-      title: "Nueva Vida",
-      value: nuevos,
+      title: primeraEtapa?.nombre || "Etapa inicial",
+      value: primeraEtapa?.cantidad ?? 0,
       description: "Etapa inicial",
       icon: UserPlus,
       color: "text-green-600",
       bg: "bg-green-50 dark:bg-green-950",
     },
     {
-      title: "Servicio",
-      value: servicio,
+      title: ultimaEtapa?.nombre || "Etapa final",
+      value: ultimaEtapa?.cantidad ?? 0,
       description: "Etapa final",
       icon: TrendingUp,
       color: "text-purple-600",
