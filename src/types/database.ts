@@ -105,3 +105,55 @@ export interface Etapa {
   objetivos: string[];
   material_recomendado: string;
 }
+
+export interface Seguimiento {
+  id: string;
+  discipulo_id: string;
+  discipulador_id: string;
+  etapa: number;
+  progreso: number;
+  estado: "activo" | "pausado";
+  fecha_inicio: string;
+  ultima_actualizacion: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SeguimientoEvaluacion {
+  id: string;
+  seguimiento_id: string;
+  fecha: string;
+  vida_devocional?: number | null;
+  oracion?: number | null;
+  lectura_biblica?: number | null;
+  comunion?: number | null;
+  caracter?: number | null;
+  servicio?: number | null;
+  evangelismo?: number | null;
+  discipulado?: number | null;
+}
+
+export interface SeguimientoObjetivo {
+  id: string;
+  seguimiento_id: string;
+  descripcion: string;
+  completado: boolean;
+  fecha_cumplimiento?: string | null;
+  created_at: string;
+}
+
+export interface SeguimientoObservacion {
+  id: string;
+  seguimiento_id: string;
+  usuario: string;
+  fecha: string;
+  comentario: string;
+}
+
+export interface SeguimientoHistorial {
+  id: string;
+  seguimiento_id: string;
+  fecha: string;
+  tipo: "etapa" | "evaluacion" | "objetivo" | "observacion";
+  descripcion: string;
+}

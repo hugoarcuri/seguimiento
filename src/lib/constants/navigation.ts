@@ -8,6 +8,7 @@ import {
   User,
   ClipboardCheck,
   Heart,
+  BookOpen,
 } from "lucide-react";
 
 export interface NavItem {
@@ -20,6 +21,7 @@ export const adminMenuItems: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/discipulos", label: "Discípulos", icon: Users },
   { href: "/tareas", label: "Tareas", icon: ClipboardCheck },
+  { href: "/seguimiento", label: "Seguimiento", icon: BookOpen },
   { href: "/evangelismo", label: "Evangelismo", icon: Heart },
   { href: "/agenda", label: "Agenda", icon: CalendarCheck },
   { href: "/oracion", label: "Oración", icon: Church },
@@ -29,6 +31,7 @@ export const adminMenuItems: NavItem[] = [
 export const discipuloMenuItems: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/tareas", label: "Tareas", icon: ClipboardCheck },
+  { href: "/seguimiento", label: "Seguimiento", icon: BookOpen },
   { href: "/evangelismo", label: "Evangelismo", icon: Heart },
   { href: "/oracion", label: "Oración", icon: Church },
   { href: "/perfil", label: "Mi Perfil", icon: User },

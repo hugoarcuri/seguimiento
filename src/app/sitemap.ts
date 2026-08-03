@@ -13,6 +13,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/discipulos/nuevo",
     "/evangelismo",
     "/tareas",
+    "/seguimiento",
     "/oracion",
     "/agenda",
     "/perfil",
