@@ -275,30 +275,33 @@ export function DiscipuloForm({
             <Input id="direccion" className={inputClass} {...register("direccion")} />
           </div>
           <div className="space-y-1">
-            <Label className={inputLabelClass}>Etapa</Label>
-            <Select
-              onValueChange={(v) => setValue("etapa_id", parseInt(v?.toString() ?? "1"))}
-              defaultValue={String(initialData?.etapa_id || 1)}
-              items={etapas.map((e) => ({ value: String(e.id), label: <EtapaLabel etapa={e} /> }))}
-            >
-              <SelectTrigger className={inputClass}><SelectValue /></SelectTrigger>
-              <SelectContent className="min-w-[15rem]">
-                {etapas.map((etapa) => (
-                  <SelectItem key={etapa.id} value={String(etapa.id)}>
-                    <EtapaLabel etapa={etapa} />
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="convive_con" className={inputLabelClass}>¿Con quién vive?</Label>
+            <Input id="convive_con" className={inputClass} {...register("convive_con")} placeholder="Ej.: con sus padres, solo/a..." />
           </div>
         </div>
 
+        {/* ETAPA */}
+        <div className="space-y-1 pt-2">
+          <Label className={inputLabelClass}>Etapa *</Label>
+          <Select
+            onValueChange={(v) => setValue("etapa_id", parseInt(v?.toString() ?? "1"))}
+            defaultValue={String(initialData?.etapa_id || 1)}
+            items={etapas.map((e) => ({ value: String(e.id), label: <EtapaLabel etapa={e} /> }))}
+          >
+            <SelectTrigger className="w-full h-11"><SelectValue /></SelectTrigger>
+            <SelectContent className="min-w-[15rem]">
+              {etapas.map((etapa) => (
+                <SelectItem key={etapa.id} value={String(etapa.id)}>
+                  <EtapaLabel etapa={etapa} />
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.etapa_id && <p className="text-sm text-destructive">{errors.etapa_id.message}</p>}
+        </div>
+
         {/* VIDA ESPIRITUAL */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-4 gap-y-3 pt-2">
-          <div className="space-y-1">
-            <Label className={inputLabelClass}>Ministerio</Label>
-            <Input id="ministerio" className={inputClass} {...register("ministerio")} />
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 pt-2">
           <div className="space-y-1">
             <Label htmlFor="fecha_conversion" className={inputLabelClass}>Conversión</Label>
             <Input id="fecha_conversion" type="date" className={inputClass} {...register("fecha_conversion")} />
@@ -308,10 +311,10 @@ export function DiscipuloForm({
             <Input id="fecha_bautismo" type="date" className={inputClass} {...register("fecha_bautismo")} />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="convive_con" className={inputLabelClass}>¿Con quién vive?</Label>
-            <Input id="convive_con" className={inputClass} {...register("convive_con")} placeholder="Ej.: con sus padres, solo/a..." />
+            <Label className={inputLabelClass}>Ministerio</Label>
+            <Input id="ministerio" className={inputClass} {...register("ministerio")} />
           </div>
-          <div className="space-y-1 lg:col-span-2">
+          <div className="space-y-1">
             <Label htmlFor="observaciones" className={inputLabelClass}>Observaciones</Label>
             <Input id="observaciones" className={inputClass} {...register("observaciones")} />
           </div>
