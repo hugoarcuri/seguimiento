@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { CalendarRange } from "lucide-react";
+import { CalendarRange, ChevronDown } from "lucide-react";
 
 interface HistorialEvaluacion {
   indicador_id: number;
@@ -54,6 +54,7 @@ export function HistorialSemanal({
   maxSemanas = 12,
 }: HistorialSemanalProps) {
   const [verTodas, setVerTodas] = useState(false);
+  const [abierto, setAbierto] = useState(false);
 
   const semanas = [...reuniones]
     .sort((a, b) => b.fecha.localeCompare(a.fecha))
@@ -82,76 +83,97 @@ export function HistorialSemanal({
   return (
     <Card>
       <CardHeader className="p-3 pb-2">
-        <div className="flex items-center justify-between gap-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <CalendarRange className="h-4 w-4" /> Historial semanal
-          </CardTitle>
-          {reuniones.length > maxSemanas && (
-            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setVerTodas((v) => !v)}>
-              {verTodas ? "Ver últimas 12" : `Ver todas (${reuniones.length})`}
-            </Button>
-          )}
-        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full h-auto flex items-center justify-between gap-2 py-2 px-1"
+          onClick={() => setAbierto((v) => !v)}
+          aria-expanded={abierto}
+        >
+          <span className="flex items-center gap-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <CalendarRange className="h-4 w-4" /> Historial semanal
+              {reuniones.length > 0 && <span className="text-xs text-muted-foreground font-normal">({reuniones.length} {reuniones.length === 1 ? "reunión" : "reuniones"})</span>}
+            </CardTitle>
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">{abierto ? "Ocultar" : "Ver historial"}</span>
+            <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform duration-200", abierto && "rotate-180")} />
+          </span>
+        </Button>
       </CardHeader>
-      <CardContent className="p-3">
-        {reuniones.length === 0 ? (
-          <p className="text-xs text-muted-foreground py-2">Aún no hay evaluaciones guardadas</p>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="text-xs">Semana</TableHead>
-                {areasConIndicadores.map((a) => (
-                  <TableHead key={a.id} className="text-center text-xs" colSpan={a.indicadores.length}>
-                    {a.nombre}
-                  </TableHead>
-                ))}
-              </TableRow>
-              <TableRow>
-                <TableHead />
-                {areasConIndicadores.flatMap((a) =>
-                  a.indicadores.map((ind) => (
-                    <TableHead key={ind.id} className="text-center text-[10px] font-normal text-muted-foreground max-w-[90px] truncate">
-                      {ind.nombre}
-                    </TableHead>
-                  ))
-                )}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {semanas.map((r) => {
-                const evalPorInd = new Map((r.evaluaciones || []).map((e) => [e.indicador_id, e.valor]));
-                return (
-                  <TableRow key={r.id}>
-                    <TableCell className="text-xs font-medium whitespace-nowrap">
-                      {format(new Date(r.fecha + "T12:00:00"), "dd/MM/yyyy")}
-                      <span className="text-muted-foreground ml-1">· S{numeroSemana(r.fecha)}</span>
-                    </TableCell>
-                    {areasConIndicadores.flatMap((a) =>
-                      a.indicadores.map((ind) => {
-                        const v = evalPorInd.get(ind.id);
-                        const opts = opcionesIndicador[ind.nombre];
-                        const label = opts && v !== null && v !== undefined && opts.labels[v] ? opts.labels[v] : undefined;
-                        return (
-                          <TableCell key={ind.id} className="text-center">
-                            {v !== null && v !== undefined ? (
-                              <span title={label} className={cn("inline-block w-7 h-7 rounded-full text-[11px] font-bold leading-7", valorColor(ind, v))}>
-                                {v}
-                              </span>
-                            ) : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
+      <div className={cn("grid transition-[grid-template-rows,opacity] duration-200 ease-in-out", abierto ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
+        <div className="overflow-hidden">
+          <CardContent className="p-3 pt-0">
+            {reuniones.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-2">Aún no hay evaluaciones guardadas</p>
+            ) : (
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs">Semana</TableHead>
+                      {areasConIndicadores.map((a) => (
+                        <TableHead key={a.id} className="text-center text-xs" colSpan={a.indicadores.length}>
+                          {a.nombre}
+                        </TableHead>
+                      ))}
+                    </TableRow>
+                    <TableRow>
+                      <TableHead />
+                      {areasConIndicadores.flatMap((a) =>
+                        a.indicadores.map((ind) => (
+                          <TableHead key={ind.id} className="text-center text-[10px] font-normal text-muted-foreground max-w-[90px] truncate">
+                            {ind.nombre}
+                          </TableHead>
+                        ))
+                      )}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {semanas.map((r) => {
+                      const evalPorInd = new Map((r.evaluaciones || []).map((e) => [e.indicador_id, e.valor]));
+                      return (
+                        <TableRow key={r.id}>
+                          <TableCell className="text-xs font-medium whitespace-nowrap">
+                            {format(new Date(r.fecha + "T12:00:00"), "dd/MM/yyyy")}
+                            <span className="text-muted-foreground ml-1">· S{numeroSemana(r.fecha)}</span>
                           </TableCell>
-                        );
-                      })
-                    )}
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        )}
-      </CardContent>
+                          {areasConIndicadores.flatMap((a) =>
+                            a.indicadores.map((ind) => {
+                              const v = evalPorInd.get(ind.id);
+                              const opts = opcionesIndicador[ind.nombre];
+                              const label = opts && v !== null && v !== undefined && opts.labels[v] ? opts.labels[v] : undefined;
+                              return (
+                                <TableCell key={ind.id} className="text-center">
+                                  {v !== null && v !== undefined ? (
+                                    <span title={label} className={cn("inline-block w-7 h-7 rounded-full text-[11px] font-bold leading-7", valorColor(ind, v))}>
+                                      {v}
+                                    </span>
+                                  ) : (
+                                    <span className="text-muted-foreground">—</span>
+                                  )}
+                                </TableCell>
+                              );
+                            })
+                          )}
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+                {reuniones.length > maxSemanas && (
+                  <div className="flex justify-end mt-2">
+                    <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setVerTodas((v) => !v)}>
+                      {verTodas ? "Ver últimas 12" : `Ver todas (${reuniones.length})`}
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </div>
+      </div>
     </Card>
   );
 }

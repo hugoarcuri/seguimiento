@@ -82,6 +82,8 @@ export interface SupabaseDiscipulo {
   apellido: string;
   etapa_id: number;
   etapas?: { nombre: string };
+  avatar_url?: string | null;
+  estado?: string | null;
 }
 
 export interface SupabaseArea {

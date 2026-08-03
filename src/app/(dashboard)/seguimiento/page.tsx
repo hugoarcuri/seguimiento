@@ -2,10 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ClipboardCheck, Loader2, CheckCircle2, ChevronLeft, ChevronRight, Plus, Trash2, User as UserIcon } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import {
@@ -15,6 +13,9 @@ import { ResultadoEvaluacion } from "./resultado-evaluacion";
 import { HistorialSemanal } from "./historial-semanal";
 import { PasoVidaDevocional, PasoServicioEvangelismo, PasoObservaciones } from "./paso-evaluacion";
 import { useEvaluacionWizard } from "./use-evaluacion-wizard";
+import { SeguimientoHeader } from "./seguimiento-header";
+import { WizardProgress } from "./wizard-progress";
+import { DesafiosCard } from "./desafios-card";
 import {
   areasMeta, opcionesIndicador, paresEvaluacion,
   fmtLocal, inicioSemana, esSemanaDe, MES_ESCALA, pctPromedio,
@@ -40,6 +41,7 @@ export default function SeguimientoPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [alertas, setAlertas] = useState<SupabaseAlerta[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cargandoReuniones, setCargandoReuniones] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const w = useEvaluacionWizard();
@@ -75,6 +77,7 @@ export default function SeguimientoPage() {
   useEffect(() => {
     if (!selectedId) return;
     let cancelado = false;
+    const mostrarCarga = setTimeout(() => { if (!cancelado) setCargandoReuniones(true); }, 150);
     Promise.all([
       supabase.from("reuniones").select("*, evaluaciones(*)").eq("discipulo_id", selectedId).order("fecha", { ascending: false }),
       supabase.from("desafios").select("*").eq("discipulo_id", selectedId).order("fecha_asignado", { ascending: false }),
@@ -101,8 +104,10 @@ export default function SeguimientoPage() {
         if (semanaActual.compromisos) w.setCompromisos(semanaActual.compromisos.split("\n"));
         if (semanaActual.proxima_reunion) w.setProximaReunion(semanaActual.proxima_reunion);
       }
-    }).catch(console.error);
-    return () => { cancelado = true; };
+      setCargandoReuniones(false);
+      clearTimeout(mostrarCarga);
+    }).catch(() => { if (!cancelado) { setCargandoReuniones(false); clearTimeout(mostrarCarga); } });
+    return () => { cancelado = true; clearTimeout(mostrarCarga); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId, supabase]);
 
@@ -125,6 +130,9 @@ export default function SeguimientoPage() {
 
   const discipulo = discipulos.find((d) => d.id === selectedId);
   const semanaActualReunion = reuniones.find((r) => esSemanaDe(r.fecha, new Date()));
+
+  const indicadoresRespondidos = Object.keys(w.valores).filter((k) => w.valores[Number(k)] !== undefined).length;
+  const pct = indicadores.length > 0 ? Math.round((indicadoresRespondidos / indicadores.length) * 100) : 0;
 
   const handleGuardarPersonasOracion = async () => {
     if (!user || !selectedId) { toast.error("Seleccioná un discípulo primero"); return; }
@@ -313,104 +321,27 @@ export default function SeguimientoPage() {
   if (loading) return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" /></div>;
 
   return (
-    <div className="space-y-4 max-w-6xl mx-auto">
-      {/* HEADER */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold">Seguimiento</h1>
-          <p className="text-xs text-muted-foreground">Reunión de discipulado</p>
-        </div>
-        <div className="flex flex-wrap gap-1.5 justify-end max-w-[60%]">
-          {discipulos.map((d) => (
-            <button key={d.id} type="button" onClick={() => handleSelectDiscipulo(d.id)}
-              className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition-colors ${
-                selectedId === d.id ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"
-              }`}
-            ><UserIcon className="h-3 w-3" />{d.nombre}</button>
-          ))}
-        </div>
-      </div>
+    <div className="space-y-4 max-w-[920px] mx-auto">
+      <SeguimientoHeader
+        discipulos={discipulos}
+        selectedId={selectedId}
+        onSelect={handleSelectDiscipulo}
+        discipulo={discipulo}
+        reuniones={reuniones}
+        pct={pct}
+        par={w.par}
+        cargandoReuniones={cargandoReuniones}
+      />
 
       {!selectedId ? (
-        <Card><CardContent className="py-12 text-center text-muted-foreground text-sm">Seleccioná un discípulo para iniciar la evaluación</CardContent></Card>
+        <p className="py-10 text-center text-sm text-muted-foreground">
+          Seleccioná un discípulo para iniciar la evaluación
+        </p>
       ) : discipulo ? (
         <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-            {/* DISCIPLE INFO BAR */}
-            <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
-                {discipulo.nombre?.[0]}{discipulo.apellido?.[0]}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{discipulo.nombre} {discipulo.apellido}</p>
-                <p className="text-[11px] text-muted-foreground">{discipulo.etapas?.nombre || `Nivel ${discipulo.etapa_id}`}{reuniones.length > 0 && ` · ${reuniones.length} reuniones`}</p>
-                {semanaActualReunion && (
-                  <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
-                    Evaluación de esta semana guardada · se actualizará al guardar
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* DESAFÍOS CRUD */}
-            <Card>
-              <CardHeader className="p-3 pb-2">
-                <CardTitle className="text-sm flex items-center gap-2"><ClipboardCheck className="h-4 w-4" /> Desafíos</CardTitle>
-              </CardHeader>
-              <CardContent className="p-3 space-y-2">
-                <div className="flex gap-2">
-                  <Input placeholder="Nuevo desafío..." className="h-9 text-sm" value={nuevoDesafio} onChange={(e) => setNuevoDesafio(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") handleAgregarDesafio(); }}
-                  />
-                  <Button size="sm" variant="outline" onClick={handleAgregarDesafio} disabled={!nuevoDesafio.trim()}>
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-                {desafios.length === 0 ? (
-                  <p className="text-xs text-muted-foreground py-2">Sin desafíos pendientes</p>
-                ) : (
-                  <div className="space-y-1 max-h-48 overflow-y-auto">
-                    {desafios.filter((d) => d.estado !== "completado" && d.estado !== "no_realizado").map((d) => (
-                      <div key={d.id} className="flex items-center justify-between gap-2 py-1.5 px-2 rounded-lg bg-muted/30 text-sm">
-                        <span className="truncate">{d.descripcion}</span>
-                        <button type="button" onClick={() => setDeleteId(d.id)} className="shrink-0 text-muted-foreground hover:text-destructive transition-colors">
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* HISTORIAL SEMANAL */}
-          <HistorialSemanal
-            reuniones={reuniones}
-            indicadores={indicadores}
-            areas={areas}
-            opcionesIndicador={opcionesIndicador}
-          />
-
-          {/* WIZARD */}
           {!w.saved ? (
             <>
-              {/* STEP INDICATOR */}
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1 overflow-x-auto pb-1">
-                  {paresEvaluacion.map((title, i) => (
-                    <button key={i} type="button" onClick={() => w.setPar(i + 1)}
-                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium whitespace-nowrap transition-colors ${
-                        w.par === i + 1 ? "bg-primary text-primary-foreground shadow-sm" : w.par > i + 1 ? "bg-muted text-muted-foreground" : "bg-muted/50 text-muted-foreground/60"
-                      }`}
-                    >
-                      {w.par > i + 1 ? <CheckCircle2 className="h-3 w-3" /> : null}
-                      {title}
-                    </button>
-                  ))}
-                </div>
-                <span className="text-xs text-muted-foreground whitespace-nowrap">Paso {w.par} de 3</span>
-              </div>
+              <WizardProgress par={w.par} totalPasos={3} pct={pct} titulos={paresEvaluacion} />
 
               {w.par === 1 && (
                 <PasoVidaDevocional w={w} areas={areas} indicadores={indicadores} objetivosNivel={objetivosNivel} etapaId={discipulo?.etapa_id} />
@@ -422,8 +353,13 @@ export default function SeguimientoPage() {
                 <PasoObservaciones w={w} />
               )}
 
-              {/* NAVIGATION */}
-              <div className="flex items-center justify-between gap-3">
+              {semanaActualReunion && (
+                <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium text-center">
+                  Evaluación de esta semana guardada · se actualizará al guardar
+                </p>
+              )}
+
+              <div className="flex items-center justify-between gap-3 pt-1">
                 <Button variant="outline" size="sm" disabled={w.par === 1} onClick={() => w.setPar(w.par - 1)}>
                   <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
                 </Button>
@@ -454,10 +390,24 @@ export default function SeguimientoPage() {
               onNuevaEvaluacion={w.reset}
             />
           )}
+
+          <DesafiosCard
+            desafios={desafios}
+            nuevoDesafio={nuevoDesafio}
+            setNuevoDesafio={setNuevoDesafio}
+            onAgregar={handleAgregarDesafio}
+            onSolicitarEliminar={(id) => setDeleteId(id)}
+          />
+
+          <HistorialSemanal
+            reuniones={reuniones}
+            indicadores={indicadores}
+            areas={areas}
+            opcionesIndicador={opcionesIndicador}
+          />
         </>
       ) : null}
 
-      {/* DELETE CONFIRMATION */}
       <Dialog open={!!deleteId} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
         <DialogContent>
           <DialogHeader>
