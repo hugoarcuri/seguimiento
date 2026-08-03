@@ -37,8 +37,8 @@ const sexoOptions: Array<{ value: "M" | "F"; label: string }> = [
 
 function EtapaLabel({ etapa }: { etapa: Etapa }) {
   return (
-    <div className="flex flex-col gap-0.5 min-w-0">
-      <span className="truncate">{etapa.id}. {etapa.nombre}</span>
+    <div className="flex flex-col gap-0.5 min-w-0 py-0.5">
+      <span className="truncate text-sm font-medium">{etapa.id}. {etapa.nombre}</span>
       {etapa.descripcion && (
         <span className="truncate text-[11px] text-muted-foreground leading-snug">{etapa.descripcion}</span>
       )}
@@ -270,11 +270,11 @@ export function DiscipuloForm({
             <Label htmlFor="email" className={inputLabelClass}>Email</Label>
             <Input id="email" type="email" className={inputClass} {...register("email")} />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1 sm:col-span-2">
             <Label htmlFor="direccion" className={inputLabelClass}>Dirección</Label>
             <Input id="direccion" className={inputClass} {...register("direccion")} />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1 sm:col-span-2 lg:col-span-4">
             <Label htmlFor="convive_con" className={inputLabelClass}>¿Con quién vive?</Label>
             <Input id="convive_con" className={inputClass} {...register("convive_con")} placeholder="Ej.: con sus padres, solo/a..." />
           </div>
@@ -288,7 +288,9 @@ export function DiscipuloForm({
             defaultValue={String(initialData?.etapa_id || 1)}
             items={etapas.map((e) => ({ value: String(e.id), label: <EtapaLabel etapa={e} /> }))}
           >
-            <SelectTrigger className="w-full h-11"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-auto sm:min-w-[20rem] min-h-14 *:data-[slot=select-value]:items-start *:data-[slot=select-value]:!line-clamp-none">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent className="min-w-[15rem]">
               {etapas.map((etapa) => (
                 <SelectItem key={etapa.id} value={String(etapa.id)}>
