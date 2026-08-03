@@ -35,13 +35,6 @@ const sexoOptions: Array<{ value: "M" | "F"; label: string }> = [
   { value: "F", label: "Femenino" },
 ];
 
-const estadoOptions: Array<{ value: "activo" | "pausado" | "completado" | "retirado"; label: string }> = [
-  { value: "activo", label: "Activo" },
-  { value: "pausado", label: "Pausado" },
-  { value: "completado", label: "Completado" },
-  { value: "retirado", label: "Retirado" },
-];
-
 function ChipGroup<T extends string>({
   options,
   value,
@@ -100,7 +93,6 @@ export function DiscipuloForm({
   });
 
   const sexo = watch("sexo") as "M" | "F" | null | undefined;
-  const estado = watch("estado") as "activo" | "pausado" | "completado" | "retirado" | undefined;
 
   const uploadAvatar = async (file: File, discipuloId: string): Promise<string | null> => {
     setSubiendoAvatar(true);
@@ -149,8 +141,7 @@ export function DiscipuloForm({
       fecha_bautismo: data.fecha_bautismo || null,
       ministerio: data.ministerio || null,
       dones: data.dones || null,
-      observaciones: data.observaciones || null,
-    };
+      observaciones: data.observaciones || null,    };
 
     if (isEditing && initialData?.id) {
       if (pendingFile) {
@@ -271,12 +262,12 @@ export function DiscipuloForm({
             <Label className={inputLabelClass}>Etapa</Label>
             <Select onValueChange={(v) => setValue("etapa_id", parseInt(v?.toString() ?? "1"))} defaultValue={String(initialData?.etapa_id || 1)}>
               <SelectTrigger className={inputClass}><SelectValue /></SelectTrigger>
-              <SelectContent>
+              <SelectContent className="min-w-[15rem]">
                 {etapas.map((etapa) => (
                   <SelectItem key={etapa.id} value={String(etapa.id)}>
-                    <div className="flex flex-col">
+                    <div className="flex flex-col gap-0.5">
                       <span>{etapa.nombre}</span>
-                      {etapa.descripcion && <span className="text-[11px] text-muted-foreground">{etapa.descripcion}</span>}
+                      {etapa.descripcion && <span className="whitespace-normal text-[11px] text-muted-foreground leading-snug line-clamp-2">{etapa.descripcion}</span>}
                     </div>
                   </SelectItem>
                 ))}
@@ -285,16 +276,8 @@ export function DiscipuloForm({
           </div>
         </div>
 
-        {/* ESTADO + VIDA ESPIRITUAL */}
+        {/* VIDA ESPIRITUAL */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-4 gap-y-3 pt-2">
-          <div className="space-y-1.5">
-            <Label className={inputLabelClass}>Estado</Label>
-            <ChipGroup
-              options={estadoOptions}
-              value={estado}
-              onChange={(v) => setValue("estado", v, { shouldValidate: true })}
-            />
-          </div>
           <div className="space-y-1">
             <Label className={inputLabelClass}>Ministerio</Label>
             <Input id="ministerio" className={inputClass} {...register("ministerio")} />
@@ -306,10 +289,6 @@ export function DiscipuloForm({
           <div className="space-y-1">
             <Label htmlFor="fecha_bautismo" className={inputLabelClass}>Bautismo</Label>
             <Input id="fecha_bautismo" type="date" className={inputClass} {...register("fecha_bautismo")} />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="dones" className={inputLabelClass}>Dones</Label>
-            <Input id="dones" className={inputClass} {...register("dones")} />
           </div>
           <div className="space-y-1 lg:col-span-2">
             <Label htmlFor="observaciones" className={inputLabelClass}>Observaciones</Label>
