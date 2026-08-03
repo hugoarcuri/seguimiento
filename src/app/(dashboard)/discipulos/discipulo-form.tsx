@@ -16,11 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
-import { Loader2, User, Calendar, Phone, Mail, MapPin, Church, Target, Activity, FileText, Camera } from "lucide-react";
+import { Loader2, Camera } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useRef } from "react";
 import type { Etapa } from "@/types/database";
@@ -32,6 +28,51 @@ interface DiscipuloFormProps {
 }
 
 const inputClass = "h-9";
+const inputLabelClass = "text-[11px] font-medium text-muted-foreground";
+
+const sexoOptions: Array<{ value: "M" | "F"; label: string }> = [
+  { value: "M", label: "Masculino" },
+  { value: "F", label: "Femenino" },
+];
+
+const estadoOptions: Array<{ value: "activo" | "pausado" | "completado" | "retirado"; label: string }> = [
+  { value: "activo", label: "Activo" },
+  { value: "pausado", label: "Pausado" },
+  { value: "completado", label: "Completado" },
+  { value: "retirado", label: "Retirado" },
+];
+
+function ChipGroup<T extends string>({
+  options,
+  value,
+  onChange,
+}: {
+  options: Array<{ value: T; label: string }>;
+  value?: T | null;
+  onChange: (v: T) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {options.map((opt) => {
+        const active = value === opt.value;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onChange(opt.value)}
+            className={`h-9 px-3 rounded-lg text-xs font-medium transition-colors ${
+              active
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
+            }`}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 export function DiscipuloForm({
   etapas,
@@ -48,6 +89,7 @@ export function DiscipuloForm({
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<DiscipuloInput>({
     resolver: zodResolver(discipuloSchema),
@@ -56,6 +98,9 @@ export function DiscipuloForm({
       estado: "activo",
     },
   });
+
+  const sexo = watch("sexo") as "M" | "F" | null | undefined;
+  const estado = watch("estado") as "activo" | "pausado" | "completado" | "retirado" | undefined;
 
   const uploadAvatar = async (file: File, discipuloId: string): Promise<string | null> => {
     setSubiendoAvatar(true);
@@ -153,133 +198,142 @@ export function DiscipuloForm({
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <Card className="overflow-hidden">
-        <CardContent className="p-6">
-          <div className="flex justify-center mb-6">
-            <div className="relative group">
-              {avatarPreview || initialData?.avatar_url ? (
-                <img src={avatarPreview || initialData?.avatar_url || ""} alt="" className="w-20 h-20 rounded-full object-cover" />
-              ) : (
-                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-2xl">
-                  {initialData?.nombre?.charAt(0)?.toUpperCase()}{initialData?.apellido?.charAt(0)?.toUpperCase()}
-                </div>
-              )}
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                disabled={subiendoAvatar}
-                className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-              >
-                {subiendoAvatar ? <Loader2 className="h-6 w-6 text-white animate-spin" /> : <Camera className="h-6 w-6 text-white" />}
-              </button>
-              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+    <form onSubmit={handleSubmit(onSubmit)} className="max-w-3xl mx-auto">
+      {/* HERO */}
+      <div className="flex flex-col items-center gap-3 pt-4 pb-6">
+        <div className="relative group">
+          {avatarPreview || initialData?.avatar_url ? (
+            <img src={avatarPreview || initialData?.avatar_url || ""} alt="" className="w-28 h-28 rounded-full object-cover ring-4 ring-primary/20" />
+          ) : (
+            <div className="w-28 h-28 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center text-primary font-bold text-4xl ring-4 ring-primary/20">
+              {initialData?.nombre?.charAt(0)?.toUpperCase()}{initialData?.apellido?.charAt(0)?.toUpperCase()}
             </div>
+          )}
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={subiendoAvatar}
+            className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+          >
+            {subiendoAvatar ? <Loader2 className="h-7 w-7 text-white animate-spin" /> : <Camera className="h-7 w-7 text-white" />}
+          </button>
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+        </div>
+        {isEditing ? (
+          <div className="text-center">
+            <h2 className="text-lg font-semibold leading-tight">{initialData?.nombre} {initialData?.apellido}</h2>
+            <p className="text-xs text-muted-foreground">Editar información del discípulo</p>
           </div>
-          <div className="grid gap-5 md:grid-cols-3">
-            <div className="space-y-1.5 md:col-span-3">
-              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground border-b pb-1.5 mb-3">
-                <User className="h-4 w-4" /> Datos personales
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="apellido" className="text-xs">Apellido *</Label>
-              <Input id="apellido" className={inputClass} {...register("apellido")} />
-              {errors.apellido && <p className="text-xs text-destructive">{errors.apellido.message}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="nombre" className="text-xs">Nombre *</Label>
-              <Input id="nombre" className={inputClass} {...register("nombre")} />
-              {errors.nombre && <p className="text-xs text-destructive">{errors.nombre.message}</p>}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="sexo" className="text-xs">Sexo</Label>
-              <Select onValueChange={(v) => setValue("sexo", (v?.toString() ?? "M") as "M" | "F")} defaultValue={initialData?.sexo || undefined}>
-                <SelectTrigger className={inputClass}><SelectValue placeholder="—" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="M">Masculino</SelectItem>
-                  <SelectItem value="F">Femenino</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="fecha_nacimiento" className="text-xs flex items-center gap-1"><Calendar className="h-3 w-3" /> Nacimiento</Label>
-              <Input id="fecha_nacimiento" type="date" className={inputClass} {...register("fecha_nacimiento")} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="telefono" className="text-xs flex items-center gap-1"><Phone className="h-3 w-3" /> Teléfono</Label>
-              <Input id="telefono" className={inputClass} {...register("telefono")} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-xs flex items-center gap-1"><Mail className="h-3 w-3" /> Email</Label>
-              <Input id="email" type="email" className={inputClass} {...register("email")} />
-            </div>
-            <div className="space-y-1.5 md:col-span-3">
-              <Label htmlFor="direccion" className="text-xs flex items-center gap-1"><MapPin className="h-3 w-3" /> Dirección</Label>
-              <Input id="direccion" className={inputClass} {...register("direccion")} />
-            </div>
+        ) : (
+          <div className="text-center">
+            <h2 className="text-lg font-semibold leading-tight">Nuevo discípulo</h2>
+            <p className="text-xs text-muted-foreground">Completá los datos para comenzar el seguimiento</p>
+          </div>
+        )}
+      </div>
 
-            <div className="space-y-1.5 md:col-span-3">
-              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground border-b pb-1.5 mb-3 mt-1">
-                <Church className="h-4 w-4" /> Vida espiritual
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="fecha_conversion" className="text-xs flex items-center gap-1"><Calendar className="h-3 w-3" /> Conversión</Label>
-              <Input id="fecha_conversion" type="date" className={inputClass} {...register("fecha_conversion")} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="fecha_bautismo" className="text-xs flex items-center gap-1"><Calendar className="h-3 w-3" /> Bautismo</Label>
-              <Input id="fecha_bautismo" type="date" className={inputClass} {...register("fecha_bautismo")} />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs flex items-center gap-1"><Target className="h-3 w-3" /> Etapa</Label>
-              <Select onValueChange={(v) => setValue("etapa_id", parseInt(v?.toString() ?? "1"))} defaultValue={String(initialData?.etapa_id || 1)}>
-                <SelectTrigger className={inputClass}><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {etapas.map((etapa) => (
-                    <SelectItem key={etapa.id} value={String(etapa.id)}>{etapa.nombre}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs flex items-center gap-1"><Activity className="h-3 w-3" /> Estado</Label>
-              <Select onValueChange={(v) => setValue("estado", (v?.toString() ?? "activo") as "activo" | "pausado" | "completado" | "retirado")} defaultValue={initialData?.estado || "activo"}>
-                <SelectTrigger className={inputClass}><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="activo">Activo</SelectItem>
-                  <SelectItem value="pausado">Pausado</SelectItem>
-                  <SelectItem value="completado">Completado</SelectItem>
-                  <SelectItem value="retirado">Retirado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="ministerio" className="text-xs">Ministerio</Label>
-              <Input id="ministerio" className={inputClass} {...register("ministerio")} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="dones" className="text-xs">Dones</Label>
-              <Input id="dones" className={inputClass} {...register("dones")} />
-            </div>
-            <div className="space-y-1.5 md:col-span-3">
-              <Label htmlFor="observaciones" className="text-xs flex items-center gap-1"><FileText className="h-3 w-3" /> Observaciones</Label>
-              <Input id="observaciones" className={inputClass} {...register("observaciones")} />
-            </div>
+      {/* DATOS PERSONALES */}
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3">
+          <div className="space-y-1">
+            <Label htmlFor="apellido" className={inputLabelClass}>Apellido *</Label>
+            <Input id="apellido" className={inputClass} {...register("apellido")} aria-invalid={!!errors.apellido} />
           </div>
+          <div className="space-y-1">
+            <Label htmlFor="nombre" className={inputLabelClass}>Nombre *</Label>
+            <Input id="nombre" className={inputClass} {...register("nombre")} aria-invalid={!!errors.nombre} />
+          </div>
+          <div className="space-y-1">
+            <Label className={inputLabelClass}>Sexo</Label>
+            <ChipGroup
+              options={sexoOptions}
+              value={sexo}
+              onChange={(v) => setValue("sexo", v, { shouldValidate: true })}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="fecha_nacimiento" className={inputLabelClass}>Nacimiento</Label>
+            <Input id="fecha_nacimiento" type="date" className={inputClass} {...register("fecha_nacimiento")} />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="telefono" className={inputLabelClass}>Teléfono</Label>
+            <Input id="telefono" className={inputClass} {...register("telefono")} />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="email" className={inputLabelClass}>Email</Label>
+            <Input id="email" type="email" className={inputClass} {...register("email")} />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="direccion" className={inputLabelClass}>Dirección</Label>
+            <Input id="direccion" className={inputClass} {...register("direccion")} />
+          </div>
+          <div className="space-y-1">
+            <Label className={inputLabelClass}>Etapa</Label>
+            <Select onValueChange={(v) => setValue("etapa_id", parseInt(v?.toString() ?? "1"))} defaultValue={String(initialData?.etapa_id || 1)}>
+              <SelectTrigger className={inputClass}><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {etapas.map((etapa) => (
+                  <SelectItem key={etapa.id} value={String(etapa.id)}>
+                    <div className="flex flex-col">
+                      <span>{etapa.nombre}</span>
+                      {etapa.descripcion && <span className="text-[11px] text-muted-foreground">{etapa.descripcion}</span>}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
-          <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-            <Button type="button" variant="outline" size="sm" onClick={() => router.push("/discipulos")}>
-              Cancelar
-            </Button>
-            <Button type="submit" size="sm" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditing ? "Guardar Cambios" : "Crear Discípulo"}
-            </Button>
+        {/* ESTADO + VIDA ESPIRITUAL */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-4 gap-y-3 pt-2">
+          <div className="space-y-1.5">
+            <Label className={inputLabelClass}>Estado</Label>
+            <ChipGroup
+              options={estadoOptions}
+              value={estado}
+              onChange={(v) => setValue("estado", v, { shouldValidate: true })}
+            />
           </div>
-        </CardContent>
-      </Card>
+          <div className="space-y-1">
+            <Label className={inputLabelClass}>Ministerio</Label>
+            <Input id="ministerio" className={inputClass} {...register("ministerio")} />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="fecha_conversion" className={inputLabelClass}>Conversión</Label>
+            <Input id="fecha_conversion" type="date" className={inputClass} {...register("fecha_conversion")} />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="fecha_bautismo" className={inputLabelClass}>Bautismo</Label>
+            <Input id="fecha_bautismo" type="date" className={inputClass} {...register("fecha_bautismo")} />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="dones" className={inputLabelClass}>Dones</Label>
+            <Input id="dones" className={inputClass} {...register("dones")} />
+          </div>
+          <div className="space-y-1 lg:col-span-2">
+            <Label htmlFor="observaciones" className={inputLabelClass}>Observaciones</Label>
+            <Input id="observaciones" className={inputClass} {...register("observaciones")} />
+          </div>
+        </div>
+
+        {(errors.nombre || errors.apellido || errors.email) && (
+          <p className="text-xs text-destructive">
+            {errors.apellido?.message || errors.nombre?.message || errors.email?.message}
+          </p>
+        )}
+      </div>
+
+      {/* STICKY FOOTER */}
+      <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm pt-3 pb-2 mt-6 flex justify-end gap-3">
+        <Button type="button" variant="outline" size="sm" onClick={() => router.push("/discipulos")}>
+          Cancelar
+        </Button>
+        <Button type="submit" size="sm" disabled={isSubmitting}>
+          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isEditing ? "Guardar Cambios" : "Crear Discípulo"}
+        </Button>
+      </div>
     </form>
   );
 }
