@@ -12,8 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { ETAPAS } from "./seguimiento-constants";
-import type { Seguimiento } from "@/types/database";
+import type { Etapa, Seguimiento } from "@/types/database";
 
 interface SeguimientoFormProps {
   open: boolean;
@@ -22,6 +21,7 @@ interface SeguimientoFormProps {
   onSaved: () => void;
   discipulos: Array<{ id: string; nombre: string; apellido: string }>;
   discipuladores: Array<{ id: string; nombre: string; apellido: string }>;
+  etapas: Etapa[];
   defaultDiscipuladorId?: string;
   onValidarUnico?: (discipuloId: string) => Promise<boolean>;
 }
@@ -33,6 +33,7 @@ export function SeguimientoForm({
   onSaved,
   discipulos,
   discipuladores,
+  etapas,
   defaultDiscipuladorId,
   onValidarUnico,
 }: SeguimientoFormProps) {
@@ -166,12 +167,12 @@ export function SeguimientoForm({
                   <Select
                     value={String(field.value)}
                     onValueChange={(v) => field.onChange(Number(v))}
-                    items={ETAPAS.map((e) => ({ value: String(e.valor), label: `${e.valor}. ${e.nombre}` }))}
+                    items={etapas.map((e) => ({ value: String(e.id), label: `${e.id}. ${e.nombre}` }))}
                   >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {ETAPAS.map((e) => (
-                        <SelectItem key={e.valor} value={String(e.valor)}>{e.valor}. {e.nombre}</SelectItem>
+                      {etapas.map((e) => (
+                        <SelectItem key={e.id} value={String(e.id)}>{e.id}. {e.nombre}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

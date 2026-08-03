@@ -3,8 +3,9 @@
 import { useUser } from "@/hooks/useUser";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { UserCog, Shield, Crown, Mail, Calendar } from "lucide-react";
+import { UserCog, Shield, Crown, Mail, Calendar, ListTree } from "lucide-react";
 import { format } from "date-fns";
+import { EtapasEditor } from "./etapas-editor";
 
 export default function ConfiguracionPage() {
   const { user } = useUser();
@@ -94,6 +95,21 @@ export default function ConfiguracionPage() {
           </CardContent>
         </Card>
       </div>
+
+      {user?.rol === "admin" && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <ListTree className="h-5 w-5 text-muted-foreground" />
+            <div>
+              <h2 className="text-2xl font-semibold">Etapas del Discipulado</h2>
+              <p className="text-sm text-muted-foreground">
+                Editá las etapas de madurez. Los cambios se reflejan en todo el sitio.
+              </p>
+            </div>
+          </div>
+          <EtapasEditor />
+        </div>
+      )}
     </div>
   );
 }

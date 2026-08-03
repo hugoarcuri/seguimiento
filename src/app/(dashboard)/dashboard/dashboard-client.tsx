@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { nombreEtapa } from "../seguimiento/seguimiento-constants";
+import type { Etapa } from "@/types/database";
 import { Users, UserPlus, TrendingUp, CalendarCheck, Church, AlertCircle, Cake, Activity } from "lucide-react";
 import { ResponsiveContainer, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Bar, PieChart, Pie, Cell, Legend } from "@/components/recharts-dynamic";
 
@@ -101,6 +101,7 @@ interface DashboardClientProps {
     estado: string;
     discipulos?: { nombre: string; apellido: string };
   }>;
+  etapas: Etapa[];
 }
 
 export function DashboardClient({
@@ -122,6 +123,7 @@ export function DashboardClient({
   promedioProgreso,
   seguimientosPorEtapa,
   seguimientoAtencion,
+  etapas,
 }: DashboardClientProps) {
   const chartData = discipulosPorEtapa.map((e, i) => ({
     name: e.nombre,
@@ -367,7 +369,7 @@ export function DashboardClient({
                       </div>
                       <div className="flex items-center gap-2 mt-1">
                         <Progress value={s.progreso} className="flex-1" />
-                        <Badge variant="outline" className="shrink-0">{nombreEtapa(s.etapa)}</Badge>
+                        <Badge variant="outline" className="shrink-0">{etapas.find((e) => e.id === s.etapa)?.nombre || `Etapa ${s.etapa}`}</Badge>
                       </div>
                     </div>
                   ))}

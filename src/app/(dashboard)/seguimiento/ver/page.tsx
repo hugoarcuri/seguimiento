@@ -24,7 +24,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { calcularEdad, estadoColors } from "@/lib/utils";
 import {
-  ETAPAS, nombreEtapa, CAMPOS_EVALUACION, codificarCampoEvaluacion, decodificarCampoEvaluacion,
+  CAMPOS_EVALUACION, codificarCampoEvaluacion, decodificarCampoEvaluacion,
   OBJETIVOS_SUGERIDOS, calcularProgreso,
 } from "../seguimiento-constants";
 import type {
@@ -165,7 +165,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
     const { error } = await supabase.from("seguimientos").update({ etapa }).eq("id", id);
     if (error) { toast.error("Error al actualizar la etapa"); return; }
     setSeguimiento((prev) => prev ? { ...prev, etapa } : prev);
-    await registrarHistorial("etapa", `Etapa cambiada a: ${nombreEtapa(etapa)}`);
+    await registrarHistorial("etapa", `Etapa cambiada a: ${etapas.find((e) => e.id === etapa)?.nombre || `Etapa ${etapa}`}`);
     await supabase.from("seguimientos").update({ ultima_actualizacion: new Date().toISOString() }).eq("id", id);
     toast.success("Etapa actualizada");
   };
@@ -423,15 +423,15 @@ function SeguimientoDetalle({ id }: { id: string }) {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                    <p className="text-sm font-medium">Etapa actual: {nombreEtapa(seguimiento.etapa)}</p>
+                    <p className="text-sm font-medium">Etapa actual: {etapas.find((e) => e.id === seguimiento.etapa)?.nombre || `Etapa ${seguimiento.etapa}`}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Label className="text-xs text-muted-foreground">Cambiar etapa</Label>
                     <Select value={String(seguimiento.etapa)} onValueChange={(v) => cambiarEtapa(Number(v))}>
                       <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {ETAPAS.map((e) => (
-                          <SelectItem key={e.valor} value={String(e.valor)}>{e.valor}. {e.nombre}</SelectItem>
+                        {etapas.map((e) => (
+                          <SelectItem key={e.id} value={String(e.id)}>{e.id}. {e.nombre}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>

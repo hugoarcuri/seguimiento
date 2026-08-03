@@ -14,7 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { Plus, Loader2, Search, Pencil, Eye, ArrowUpDown } from "lucide-react";
 import { format } from "date-fns";
 import { SeguimientoForm } from "./seguimiento-form";
-import { ETAPAS, nombreEtapa } from "./seguimiento-constants";
+import { useEtapas } from "@/hooks/useEtapas";
 import type { Seguimiento } from "@/types/database";
 
 type SeguimientoFila = Seguimiento & {
@@ -32,6 +32,7 @@ function diasSinEncuentro(fecha: string | null): number {
 
 export default function SeguimientoPage() {
   const supabase = useMemo(() => createClient(), []);
+  const { etapas } = useEtapas();
   const [seguimientos, setSeguimientos] = useState<SeguimientoFila[]>([]);
   const [ultimaFechaPorDiscipulo, setUltimaFechaPorDiscipulo] = useState<Record<string, string | null>>({});
   const [discipulos, setDiscipulos] = useState<Array<{ id: string; nombre: string; apellido: string }>>([]);
@@ -164,8 +165,8 @@ export default function SeguimientoPage() {
                 <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Todas</SelectItem>
-                  {ETAPAS.map((e) => (
-                    <SelectItem key={e.valor} value={String(e.valor)}>{e.nombre}</SelectItem>
+                  {etapas.map((e) => (
+                    <SelectItem key={e.id} value={String(e.id)}>{e.nombre}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -228,7 +229,7 @@ export default function SeguimientoPage() {
                       {s.discipuladores ? `${s.discipuladores.apellido}, ${s.discipuladores.nombre}` : "—"}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{s.etapa}. {nombreEtapa(s.etapa)}</Badge>
+                      <Badge variant="outline">{etapas.find((e) => e.id === s.etapa)?.nombre || `Etapa ${s.etapa}`}</Badge>
                     </TableCell>
                     <TableCell className="min-w-[160px]">
                       <div className="flex items-center gap-2">
@@ -267,6 +268,7 @@ export default function SeguimientoPage() {
         onSaved={fetchData}
         discipulos={discipulos}
         discipuladores={discipuladores}
+        etapas={etapas}
         defaultDiscipuladorId={isAdmin ? undefined : currentUserId}
         onValidarUnico={onValidarUnico}
       />

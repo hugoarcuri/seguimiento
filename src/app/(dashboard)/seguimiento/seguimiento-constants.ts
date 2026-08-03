@@ -1,16 +1,5 @@
 import type { SeguimientoObjetivo } from "@/types/database";
 
-export const ETAPAS = [
-  { valor: 1, nombre: "No Creyente" },
-  { valor: 2, nombre: "Bebé Espiritual" },
-  { valor: 3, nombre: "Niño Espiritual" },
-  { valor: 4, nombre: "Joven Espiritual" },
-  { valor: 5, nombre: "Padre/Madre Espiritual" },
-] as const;
-
-export const nombreEtapa = (etapa: number) =>
-  ETAPAS.find((e) => e.valor === etapa)?.nombre || `Etapa ${etapa}`;
-
 export type CampoEvaluacionDef = {
   key: string;
   label: string;
