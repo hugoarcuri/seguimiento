@@ -210,20 +210,21 @@ export function DashboardClient({
   ];
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">
+    <div className="flex flex-col gap-3 lg:h-[calc(100dvh-6.5rem)] lg:overflow-hidden">
+      {/* HEADER */}
+      <div className="lg:shrink-0">
+        <h1 className="text-2xl font-bold lg:text-xl">Dashboard</h1>
+        <p className="text-sm text-muted-foreground">
           El objetivo final es que todas las personas lleguen a {etapaFinal.nombre}
         </p>
       </div>
 
       {/* STATS */}
-      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:shrink-0 lg:grid-cols-4">
         {stats.map((stat) => (
           <Card key={stat.title} size="sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-sm truncate">{stat.title}</CardTitle>
+              <CardTitle className="truncate text-sm">{stat.title}</CardTitle>
               <div className={cn("rounded-lg p-2 shrink-0", stat.bg)}>
                 <stat.icon className={cn("h-4 w-4", stat.color)} />
               </div>
@@ -236,10 +237,11 @@ export function DashboardClient({
         ))}
       </div>
 
-      {/* META + CUMPLEAÑOS */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card size="sm" className="md:col-span-2 border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-transparent">
-          <CardContent className="space-y-4 p-4">
+      {/* CONTENIDO PRINCIPAL (2 filas) */}
+      <div className="grid gap-3 md:grid-cols-3 lg:min-h-0 lg:flex-1 lg:grid-rows-2">
+        {/* LA META */}
+        <Card size="sm" className="min-h-0 border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-transparent md:col-span-2">
+          <CardContent className="flex min-h-0 flex-1 flex-col gap-3 p-4">
             <div className="flex items-start gap-3">
               <div className="rounded-lg bg-amber-500/15 p-2">
                 <Trophy className="h-5 w-5 text-amber-500" />
@@ -272,8 +274,8 @@ export function DashboardClient({
               </span>
             </div>
 
-            <div className="grid gap-4 border-t pt-3 sm:grid-cols-2">
-              <div>
+            <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-hidden border-t pt-3 sm:grid-cols-2">
+              <div className="min-h-0 overflow-y-auto pr-1">
                 <div className="mb-2 flex items-center gap-1.5">
                   <Trophy className="h-3.5 w-3.5 text-amber-500" />
                   <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -286,7 +288,7 @@ export function DashboardClient({
                   badgeNombre="Meta"
                 />
               </div>
-              <div>
+              <div className="min-h-0 overflow-y-auto pr-1">
                 <div className="mb-2 flex items-center gap-1.5">
                   <AlertCircle className="h-3.5 w-3.5 text-blue-500" />
                   <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -303,7 +305,8 @@ export function DashboardClient({
           </CardContent>
         </Card>
 
-        <Card size="sm">
+        {/* CUMPLEAÑOS */}
+        <Card size="sm" className="min-h-0">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">Cumpleaños próximos</CardTitle>
@@ -311,7 +314,7 @@ export function DashboardClient({
             </div>
             <CardDescription>Próximos 30 días</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2.5">
+          <CardContent className="min-h-0 flex-1 space-y-2.5 overflow-y-auto pr-1">
             {cumpleMes.length === 0 ? (
               <p className="text-sm text-muted-foreground py-1">
                 No hay cumpleaños en los próximos 30 días
@@ -350,16 +353,14 @@ export function DashboardClient({
             )}
           </CardContent>
         </Card>
-      </div>
 
-      {/* ETAPAS + CITAS + ORACIONES */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card size="sm">
+        {/* ETAPAS */}
+        <Card size="sm" className="min-h-0">
           <CardHeader>
             <CardTitle className="text-base">Personas por etapa</CardTitle>
             <CardDescription>Camino hacia {etapaFinal.nombre}</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2.5">
+          <CardContent className="min-h-0 flex-1 space-y-2.5 overflow-y-auto pr-1">
             {discipulosPorEtapa.map((e, i) => {
               const esMeta = i === discipulosPorEtapa.length - 1;
               const pct = Math.round((e.cantidad / maxPorEtapa) * 100);
@@ -393,14 +394,15 @@ export function DashboardClient({
           </CardContent>
         </Card>
 
-        <Card size="sm">
+        {/* CITAS */}
+        <Card size="sm" className="min-h-0">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">Próximas citas</CardTitle>
               <CalendarCheck className="h-4 w-4 text-muted-foreground" />
             </div>
           </CardHeader>
-          <CardContent className="space-y-2.5">
+          <CardContent className="min-h-0 flex-1 space-y-2.5 overflow-y-auto pr-1">
             {proximasAgendas.length === 0 ? (
               <p className="text-sm text-muted-foreground py-1">No hay citas programadas</p>
             ) : (
@@ -419,14 +421,15 @@ export function DashboardClient({
           </CardContent>
         </Card>
 
-        <Card size="sm">
+        {/* ORACIONES */}
+        <Card size="sm" className="min-h-0">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">Oraciones pendientes</CardTitle>
               <Church className="h-4 w-4 text-muted-foreground" />
             </div>
           </CardHeader>
-          <CardContent className="space-y-2.5">
+          <CardContent className="min-h-0 flex-1 space-y-2.5 overflow-y-auto pr-1">
             {oracionesPendientesList.length === 0 ? (
               <p className="text-sm text-muted-foreground py-1">No hay pedidos de oración pendientes</p>
             ) : (
@@ -443,43 +446,38 @@ export function DashboardClient({
         </Card>
       </div>
 
-      {/* SEGUIMIENTO */}
-      <Card size="sm">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-base">Seguimiento: necesitan atención</CardTitle>
-              <CardDescription>
-                {seguimientosActivos} activos · progreso promedio {promedioProgreso}%
-              </CardDescription>
-            </div>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+      {/* SEGUIMIENTO: NECESITAN ATENCIÓN */}
+      <Card size="sm" className="shrink-0">
+        <CardContent className="flex items-center gap-4 p-3">
+          <div className="shrink-0 space-y-0.5">
+            <p className="flex items-center gap-1.5 text-xs font-semibold">
+              <Activity className="h-3.5 w-3.5 text-muted-foreground" />
+              Necesitan atención
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              {seguimientosActivos} activos · progreso promedio {promedioProgreso}%
+            </p>
           </div>
-        </CardHeader>
-        <CardContent>
-          {seguimientoAtencion.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-1">No hay seguimientos con progreso bajo</p>
-          ) : (
-            <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
-              {seguimientoAtencion.map((s) => (
-                <div key={s.id} className="rounded-lg border p-3">
+          <div className="flex min-w-0 flex-1 gap-3 overflow-x-auto">
+            {seguimientoAtencion.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-2">Sin seguimientos con progreso bajo</p>
+            ) : (
+              seguimientoAtencion.slice(0, 5).map((s) => (
+                <div key={s.id} className="flex min-w-[150px] flex-1 flex-col gap-1 rounded-lg border p-2">
                   <Link
                     href={`/seguimiento/ver?id=${s.id}`}
-                    className="block truncate text-sm font-medium hover:underline"
+                    className="truncate text-xs font-medium hover:underline"
                   >
-                    {s.discipulos ? `${s.discipulos.apellido}, ${s.discipulos.nombre}` : "—"}
+                    {s.discipulos ? `${s.discipulos.nombre} ${s.discipulos.apellido}` : "—"}
                   </Link>
-                  <div className="mt-2 flex items-center gap-2">
+                  <div className="flex items-center gap-2">
                     <Progress value={s.progreso} className="flex-1" />
-                    <span className="text-xs font-medium tabular-nums shrink-0">{s.progreso}%</span>
+                    <span className="text-[11px] font-medium tabular-nums">{s.progreso}%</span>
                   </div>
-                  <p className="mt-1.5 truncate text-[11px] text-muted-foreground">
-                    {etapas.find((e) => e.id === s.etapa)?.nombre || `Etapa ${s.etapa}`}
-                  </p>
                 </div>
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
