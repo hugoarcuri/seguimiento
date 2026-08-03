@@ -11,20 +11,91 @@ export const ETAPAS = [
 export const nombreEtapa = (etapa: number) =>
   ETAPAS.find((e) => e.valor === etapa)?.nombre || `Etapa ${etapa}`;
 
-export const OPCIONES_RELACION_DIOS = ["Regular", "Irregular"] as const;
+export type CampoEvaluacionDef = {
+  key: string;
+  label: string;
+  placeholder?: string;
+  opciones?: readonly string[];
+  detalleSi?: string;
+  detalleLabel?: string;
+  detallePlaceholder?: string;
+};
 
-export const CAMPOS_EVALUACION = [
-  { key: "relacion_dios", label: "Relación con Dios", placeholder: "Ej: Irregular, regular" },
-  { key: "habitos_pecaminosos", label: "Hábitos pecaminosos a abandonar", placeholder: "Describí los hábitos a trabajar" },
-  { key: "don_espiritual", label: "Don espiritual", placeholder: "¿Lo conoce? ¿Cuál?" },
-  { key: "ministerio", label: "¿Está sirviendo?", placeholder: "¿En qué ministerio?" },
-  { key: "relacion_autoridad", label: "Relación con la autoridad", placeholder: "¿Conflictivo?" },
-  { key: "estudia", label: "¿Estudia?", placeholder: "¿Qué estudia?" },
-  { key: "trabaja", label: "¿Trabaja?", placeholder: "¿En qué trabaja?" },
-  { key: "convive_con", label: "¿Con quién vive?", placeholder: "Convivencia" },
-] as const;
+export const CAMPOS_EVALUACION: CampoEvaluacionDef[] = [
+  {
+    key: "habitos_pecaminosos",
+    label: "Hábitos pecaminosos a abandonar",
+    placeholder: "Describí los hábitos a trabajar (aparecerá como objetivo fijo)",
+  },
+  {
+    key: "don_espiritual",
+    label: "Don Espiritual",
+    opciones: ["Lo conoce", "No lo conoce"],
+    detalleSi: "Lo conoce",
+    detalleLabel: "¿Cuál?",
+    detallePlaceholder: "Ej: Profecía, enseñanza...",
+  },
+  {
+    key: "ministerio",
+    label: "¿Está sirviendo?",
+    opciones: ["No", "Sí"],
+    detalleSi: "Sí",
+    detalleLabel: "¿En qué ministerio o de qué manera?",
+    detallePlaceholder: "Ej: Alabanza, ujier...",
+  },
+  {
+    key: "relacion_autoridad",
+    label: "Relación con la autoridad",
+    opciones: ["Conflictivo", "Se maneja bien"],
+  },
+  {
+    key: "estudia",
+    label: "¿Estudia?",
+    opciones: ["No", "Sí"],
+    detalleSi: "Sí",
+    detalleLabel: "¿Qué estudia y en qué año de la cursada?",
+    detallePlaceholder: "Ej: Ingeniería, 2º año",
+  },
+  {
+    key: "trabaja",
+    label: "¿Trabaja?",
+    opciones: ["No", "Sí"],
+    detalleSi: "Sí",
+    detalleLabel: "¿En qué trabaja?",
+    detallePlaceholder: "Ej: Atención al cliente",
+  },
+  {
+    key: "convive_con",
+    label: "¿Con quién vive?",
+    opciones: ["Solo", "Con la familia"],
+    detalleSi: "Con la familia",
+    detalleLabel: "¿Con quiénes?",
+    detallePlaceholder: "Ej: madre, padre, hermanos, tíos",
+  },
+];
 
 export type CampoEvaluacionKey = (typeof CAMPOS_EVALUACION)[number]["key"];
+
+export const codificarCampoEvaluacion = (campo: CampoEvaluacionDef, opcion: string, detalle: string): string => {
+  const op = (opcion || "").trim();
+  const det = (detalle || "").trim();
+  if (!campo.opciones) return det;
+  if (!campo.detalleSi) return op;
+  if (op !== campo.detalleSi) return op;
+  return det || op;
+};
+
+export const decodificarCampoEvaluacion = (
+  campo: CampoEvaluacionDef,
+  valor: string | null | undefined
+): { opcion: string; detalle: string } => {
+  const v = (valor || "").trim();
+  if (!v) return { opcion: "", detalle: "" };
+  if (!campo.opciones) return { opcion: "", detalle: v };
+  if (!campo.detalleSi) return { opcion: v, detalle: "" };
+  if ((campo.opciones as readonly string[]).includes(v)) return { opcion: v, detalle: "" };
+  return { opcion: campo.detalleSi, detalle: v };
+};
 
 export const OBJETIVOS_SUGERIDOS = [
   "Leer la Biblia diariamente",

@@ -13,7 +13,6 @@ const SEGUIMIENTO_DEFAULTS = {
   historial: true,
   observaciones: true,
   campos_evaluacion: {
-    relacion_dios: true,
     habitos_pecaminosos: true,
     don_espiritual: true,
     ministerio: true,

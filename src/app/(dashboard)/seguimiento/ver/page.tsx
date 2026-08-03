@@ -17,25 +17,26 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   ArrowLeft, Loader2, Save, Plus, Trash2, User, CalendarDays, UserCheck, TrendingUp,
-  Phone, Mail, MapPin, Church, Pencil, CalendarPlus,
+  Phone, Mail, MapPin, Church, Pencil, CalendarPlus, Pin,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { calcularEdad, estadoColors } from "@/lib/utils";
 import {
-  ETAPAS, nombreEtapa, CAMPOS_EVALUACION, OPCIONES_RELACION_DIOS, OBJETIVOS_SUGERIDOS, calcularProgreso,
+  ETAPAS, nombreEtapa, CAMPOS_EVALUACION, codificarCampoEvaluacion, decodificarCampoEvaluacion,
+  OBJETIVOS_SUGERIDOS, calcularProgreso,
 } from "../seguimiento-constants";
 import type {
   Seguimiento, SeguimientoEvaluacion, SeguimientoObjetivo, SeguimientoObservacion, SeguimientoHistorial,
   Discipulo, Etapa, Agenda,
 } from "@/types/database";
 
-type EvalDraft = Record<string, string>;
+type EvalDraft = Record<string, { opcion: string; detalle: string }>;
 
 const draftVacio = (): EvalDraft => {
   const d: EvalDraft = {};
-  CAMPOS_EVALUACION.forEach((c) => { d[c.key] = ""; });
+  CAMPOS_EVALUACION.forEach((c) => { d[c.key] = { opcion: "", detalle: "" }; });
   return d;
 };
 
@@ -97,7 +98,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
     setEvaluacion(ev);
     if (ev) {
       const draft = draftVacio();
-      CAMPOS_EVALUACION.forEach((c) => { draft[c.key] = ev[c.key] ?? ""; });
+      CAMPOS_EVALUACION.forEach((c) => { draft[c.key] = decodificarCampoEvaluacion(c, ev[c.key as keyof SeguimientoEvaluacion] ?? ""); });
       setEvalDraft(draft);
     } else {
       setEvalDraft(draftVacio());
@@ -138,7 +139,10 @@ function SeguimientoDetalle({ id }: { id: string }) {
   const guardarEvaluacion = async () => {
     setGuardando(true);
     const payload: Record<string, string | null> = { seguimiento_id: id, fecha: new Date().toISOString().split("T")[0] };
-    CAMPOS_EVALUACION.forEach((c) => { payload[c.key] = (evalDraft[c.key] || "").trim() || null; });
+    CAMPOS_EVALUACION.forEach((c) => {
+      const v = codificarCampoEvaluacion(c, evalDraft[c.key]?.opcion ?? "", evalDraft[c.key]?.detalle ?? "");
+      payload[c.key] = v || null;
+    });
 
     const { error } = evaluacion
       ? await supabase.from("seguimiento_evaluaciones").update(payload).eq("seguimiento_id", id)
@@ -456,28 +460,56 @@ function SeguimientoDetalle({ id }: { id: string }) {
             </CardHeader>
             <CardContent className="space-y-4">
               {CAMPOS_EVALUACION.map((campo) => {
-                const esSelect = campo.key === "relacion_dios";
+                const draft = evalDraft[campo.key] || { opcion: "", detalle: "" };
+                const esTextoLibre = !campo.opciones;
+                const mostrarDetalle = !!campo.detalleSi && draft.opcion === campo.detalleSi;
                 return (
                   <div key={campo.key} className="space-y-2">
                     <Label htmlFor={`eval-${campo.key}`}>{campo.label}</Label>
-                    {esSelect ? (
-                      <Select value={evalDraft[campo.key] || ""} onValueChange={(v) => setEvalDraft((prev) => ({ ...prev, [campo.key]: v ?? "" }))}>
-                        <SelectTrigger id={`eval-${campo.key}`}>
-                          <SelectValue placeholder={campo.placeholder} />
+                    {esTextoLibre ? (
+                      <Input
+                        id={`eval-${campo.key}`}
+                        placeholder={campo.placeholder}
+                        value={draft.detalle}
+                        onChange={(e) => setEvalDraft((prev) => ({ ...prev, [campo.key]: { ...prev[campo.key], detalle: e.target.value } }))}
+                      />
+                    ) : campo.detalleSi ? (
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                        <Select
+                          value={draft.opcion}
+                          onValueChange={(v) => setEvalDraft((prev) => ({ ...prev, [campo.key]: { ...prev[campo.key], opcion: v ?? "" } }))}
+                        >
+                          <SelectTrigger id={`eval-${campo.key}`} className="w-full sm:w-56">
+                            <SelectValue placeholder="Seleccionar..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {campo.opciones!.map((op) => (
+                              <SelectItem key={op} value={op}>{op}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {mostrarDetalle && (
+                          <Input
+                            value={draft.detalle}
+                            placeholder={campo.detallePlaceholder}
+                            onChange={(e) => setEvalDraft((prev) => ({ ...prev, [campo.key]: { ...prev[campo.key], detalle: e.target.value } }))}
+                          />
+                        )}
+                      </div>
+                    ) : (
+                      <Select
+                        value={draft.opcion}
+                        onValueChange={(v) => setEvalDraft((prev) => ({ ...prev, [campo.key]: { ...prev[campo.key], opcion: v ?? "" } }))}
+                      >
+                        <SelectTrigger id={`eval-${campo.key}`} className="w-full">
+                          <SelectValue placeholder="Seleccionar..." />
                         </SelectTrigger>
                         <SelectContent>
-                          {OPCIONES_RELACION_DIOS.map((op) => (
+                          {campo.opciones!.map((op) => (
                             <SelectItem key={op} value={op}>{op}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                    ) : (
-                      <Input
-                        id={`eval-${campo.key}`}
-                        placeholder={campo.placeholder}
-                        value={evalDraft[campo.key] || ""}
-                        onChange={(e) => setEvalDraft((prev) => ({ ...prev, [campo.key]: e.target.value }))}
-                      />
                     )}
                   </div>
                 );
@@ -549,8 +581,20 @@ function SeguimientoDetalle({ id }: { id: string }) {
               <CardDescription>Objetivos del discipulado. Marcalos al cumplirse.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {evaluacion?.habitos_pecaminosos ? (
+                <div className="flex items-start gap-3 rounded-lg border border-dashed border-primary/40 bg-primary/5 p-3">
+                  <Pin className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-primary">Objetivo fijo · desde la evaluación</p>
+                    <p className="text-sm font-medium">{evaluacion.habitos_pecaminosos}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Se edita en la Evaluación, en &quot;Hábitos pecaminosos a abandonar&quot;.</p>
+                  </div>
+                </div>
+              ) : null}
               {objetivos.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">Todavía no hay objetivos.</p>
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  {evaluacion?.habitos_pecaminosos ? "Sin objetivos adicionales. Agregá los que quieras." : "Todavía no hay objetivos."}
+                </p>
               ) : (
                 <div className="space-y-2">
                   {objetivos.map((obj) => (
