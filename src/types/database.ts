@@ -24,6 +24,8 @@ export interface Discipulo {
   direccion?: string;
   fecha_conversion?: string;
   fecha_bautismo?: string;
+  bautizado?: boolean;
+  es_miembro?: boolean;
   etapa_id: number;
   estado: "activo" | "pausado" | "completado" | "retirado";
   ministerio?: string;
@@ -148,6 +150,7 @@ export interface SeguimientoObjetivo {
   completado: boolean;
   fecha_cumplimiento?: string | null;
   created_at: string;
+  es_habito?: boolean;
 }
 
 export interface SeguimientoObservacion {

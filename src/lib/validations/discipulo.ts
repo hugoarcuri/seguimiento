@@ -10,6 +10,8 @@ export const discipuloSchema = z.object({
   direccion: z.string().optional().nullable(),
   fecha_conversion: z.string().optional().nullable(),
   fecha_bautismo: z.string().optional().nullable(),
+  bautizado: z.boolean().optional(),
+  es_miembro: z.boolean().optional(),
   etapa_id: z.number().min(1, "Seleccioná una etapa"),
   estado: z.enum(["activo", "pausado", "completado", "retirado"]),
   ministerio: z.string().optional().nullable(),

@@ -37,6 +37,8 @@ interface DiscipuloBasico {
   avatar_url?: string | null;
   fecha_nacimiento?: string | null;
   etapa_id: number;
+  bautizado?: boolean;
+  es_miembro?: boolean;
 }
 
 interface CumpleInfo extends DiscipuloBasico {
@@ -71,6 +73,7 @@ interface DashboardData {
   seguimientosActivos: number;
   promedioProgreso: number;
   seguimientoAtencion: SeguimientoBasico[];
+  pendientes: DiscipuloBasico[];
 }
 
 export default function DashboardPage() {
@@ -81,7 +84,7 @@ export default function DashboardPage() {
     const supabase = createClient();
 
     Promise.all([
-      supabase.from("discipulos").select("id, nombre, apellido, avatar_url, fecha_nacimiento, etapa_id, estado, lider_id, created_at"),
+      supabase.from("discipulos").select("id, nombre, apellido, avatar_url, fecha_nacimiento, etapa_id, estado, lider_id, created_at, bautizado, es_miembro"),
       supabase
         .from("agenda")
         .select("id, fecha, discipulo_id, lider_id, tema_tratado")
@@ -136,10 +139,16 @@ export default function DashboardPage() {
       avatar_url: d.avatar_url,
       fecha_nacimiento: d.fecha_nacimiento,
       etapa_id: d.etapa_id,
+      bautizado: d.bautizado,
+      es_miembro: d.es_miembro,
     });
 
     const multiplicadores = discipulos.filter((d) => d.etapa_id === etapaFinal.id).map(toBasico);
     const cercaDeMeta = (etapaPrevia ? discipulos.filter((d) => d.etapa_id === etapaPrevia.id) : []).map(toBasico);
+
+    const pendientes = discipulos
+      .filter((d) => d.etapa_id >= 2 && (!d.bautizado || !d.es_miembro))
+      .map(toBasico);
 
     const cumples = discipulos
       .filter((d) => d.fecha_nacimiento)
@@ -187,6 +196,7 @@ export default function DashboardPage() {
       seguimientosActivos: seguimientosActivos.length,
       promedioProgreso,
       seguimientoAtencion: [...seguimientosActivos].sort((a, b) => a.progreso - b.progreso).slice(0, 5),
+      pendientes,
     };
   }, [raw, etapas]);
 

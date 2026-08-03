@@ -37,6 +37,8 @@ interface DiscipuloBasico {
   avatar_url?: string | null;
   fecha_nacimiento?: string | null;
   etapa_id: number;
+  bautizado?: boolean;
+  es_miembro?: boolean;
 }
 
 interface CumpleInfo extends DiscipuloBasico {
@@ -88,6 +90,7 @@ interface DashboardClientProps {
   seguimientosActivos: number;
   promedioProgreso: number;
   seguimientoAtencion: SeguimientoBasico[];
+  pendientes: DiscipuloBasico[];
   etapas: Etapa[];
 }
 
@@ -168,6 +171,7 @@ export function DashboardClient({
   seguimientosActivos,
   promedioProgreso,
   seguimientoAtencion,
+  pendientes,
   etapas,
 }: DashboardClientProps) {
   const nombreEtapaFinal = etapaFinal.nombre.replace(/^\d+\.\s*/, "");
@@ -456,26 +460,48 @@ export function DashboardClient({
             </p>
             <p className="text-[11px] text-muted-foreground">
               {seguimientosActivos} activos · progreso promedio {promedioProgreso}%
+              {pendientes.length > 0 && ` · ${pendientes.length} pendientes`}
             </p>
           </div>
-          <div className="flex min-w-0 flex-1 gap-3 overflow-x-auto">
-            {seguimientoAtencion.length === 0 ? (
-              <p className="text-xs text-muted-foreground py-2">Sin seguimientos con progreso bajo</p>
-            ) : (
-              seguimientoAtencion.slice(0, 5).map((s) => (
-                <div key={s.id} className="flex min-w-[150px] flex-1 flex-col gap-1 rounded-lg border p-2">
-                  <Link
-                    href={`/seguimiento/ver?id=${s.id}`}
-                    className="truncate text-xs font-medium hover:underline"
-                  >
-                    {s.discipulos ? `${s.discipulos.nombre} ${s.discipulos.apellido}` : "—"}
-                  </Link>
-                  <div className="flex items-center gap-2">
-                    <Progress value={s.progreso} className="flex-1" />
-                    <span className="text-[11px] font-medium tabular-nums">{s.progreso}%</span>
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <div className="flex gap-3 overflow-x-auto">
+              {seguimientoAtencion.length === 0 ? (
+                <p className="text-xs text-muted-foreground py-2">Sin seguimientos con progreso bajo</p>
+              ) : (
+                seguimientoAtencion.slice(0, 5).map((s) => (
+                  <div key={s.id} className="flex min-w-[150px] flex-1 flex-col gap-1 rounded-lg border p-2">
+                    <Link
+                      href={`/seguimiento/ver?id=${s.id}`}
+                      className="truncate text-xs font-medium hover:underline"
+                    >
+                      {s.discipulos ? `${s.discipulos.nombre} ${s.discipulos.apellido}` : "—"}
+                    </Link>
+                    <div className="flex items-center gap-2">
+                      <Progress value={s.progreso} className="flex-1" />
+                      <span className="text-[11px] font-medium tabular-nums">{s.progreso}%</span>
+                    </div>
                   </div>
-                </div>
-              ))
+                ))
+              )}
+            </div>
+            {pendientes.length > 0 && (
+              <div className="flex gap-3 overflow-x-auto">
+                {pendientes.slice(0, 5).map((d) => (
+                  <div key={d.id} className="flex min-w-[190px] flex-1 flex-col gap-0.5 rounded-lg border border-amber-500/40 bg-amber-50 p-2 dark:bg-amber-950">
+                    <Link
+                      href={`/discipulos/ver?id=${d.id}`}
+                      className="truncate text-xs font-medium hover:underline"
+                    >
+                      {d.apellido}, {d.nombre}
+                    </Link>
+                    <p className="text-[11px] text-amber-700 dark:text-amber-400">
+                      Pendiente: {!d.bautizado && "bautismo"}
+                      {!d.bautizado && !d.es_miembro && " + "}
+                      {!d.es_miembro && "membresía"}
+                    </p>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </CardContent>

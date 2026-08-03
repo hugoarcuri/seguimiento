@@ -96,6 +96,12 @@ export function DiscipuloDetailClient({
           </div>
           <div className="flex items-center gap-2 mt-1">
             <Badge variant="secondary">{etapaActual?.nombre || "Sin etapa"}</Badge>
+            {discipulo.etapa_id >= 2 && !discipulo.bautizado && (
+              <Badge variant="destructive">Pendiente: bautismo</Badge>
+            )}
+            {discipulo.etapa_id >= 2 && !discipulo.es_miembro && (
+              <Badge variant="destructive">Pendiente: membresía</Badge>
+            )}
             <span className="text-sm capitalize text-muted-foreground">{discipulo.estado}</span>
           </div>
         </div>
@@ -214,8 +220,14 @@ export function DiscipuloDetailClient({
                   <span>
                     {discipulo.fecha_bautismo
                       ? format(new Date(discipulo.fecha_bautismo), "dd/MM/yyyy")
-                      : "—"}
+                      : discipulo.bautizado
+                        ? "Sí"
+                        : "—"}
                   </span>
+                  <span className="text-muted-foreground">Bautizado</span>
+                  <span>{discipulo.bautizado ? "Sí" : "No"}</span>
+                  <span className="text-muted-foreground">Miembro</span>
+                  <span>{discipulo.es_miembro ? "Sí" : "No"}</span>
                   <span className="text-muted-foreground">Etapa</span>
                   <Badge variant="secondary" className="w-fit">
                     {etapaActual?.nombre || "Sin etapa"}

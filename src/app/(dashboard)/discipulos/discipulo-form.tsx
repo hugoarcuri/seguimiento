@@ -9,6 +9,7 @@ import { generarAvatarUrl, calcularEdad } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -97,15 +98,25 @@ export function DiscipuloForm({
     formState: { errors, isSubmitting },
   } = useForm<DiscipuloInput>({
     resolver: zodResolver(discipuloSchema),
-    defaultValues: initialData || {
-      etapa_id: 1,
-      estado: "activo",
-    },
+    defaultValues: initialData
+      ? {
+          ...initialData,
+          bautizado: initialData.bautizado ?? !!initialData.fecha_bautismo,
+          es_miembro: initialData.es_miembro ?? false,
+        }
+      : {
+          etapa_id: 1,
+          estado: "activo",
+          bautizado: false,
+          es_miembro: false,
+        },
   });
 
   const sexo = watch("sexo") as "M" | "F" | null | undefined;
   const fechaNacimiento = watch("fecha_nacimiento") as string | undefined;
   const edad = fechaNacimiento ? calcularEdad(fechaNacimiento) : null;
+  const bautizado = !!watch("bautizado");
+  const esMiembro = !!watch("es_miembro");
 
   const uploadAvatar = async (file: File, discipuloId: string): Promise<string | null> => {
     setSubiendoAvatar(true);
@@ -145,6 +156,8 @@ export function DiscipuloForm({
 
     const payload = {
       ...data,
+      bautizado: data.bautizado ?? false,
+      es_miembro: data.es_miembro ?? false,
       avatar_url: data.avatar_url || generarAvatarUrl(data.nombre, data.apellido),
       email: data.email || null,
       telefono: data.telefono || null,
@@ -309,9 +322,30 @@ export function DiscipuloForm({
             <Input id="fecha_conversion" type="date" className={inputClass} {...register("fecha_conversion")} />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="fecha_bautismo" className={inputLabelClass}>Bautismo</Label>
-            <Input id="fecha_bautismo" type="date" className={inputClass} {...register("fecha_bautismo")} />
+            <Label className={inputLabelClass}>Marcas espirituales</Label>
+            <div className="flex h-9 flex-wrap items-center gap-6">
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <Checkbox
+                  checked={bautizado}
+                  onCheckedChange={(v) => { setValue("bautizado", !!v); if (!v) setValue("fecha_bautismo", ""); }}
+                />
+                Está bautizado
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <Checkbox
+                  checked={esMiembro}
+                  onCheckedChange={(v) => setValue("es_miembro", !!v)}
+                />
+                Es miembro
+              </label>
+            </div>
           </div>
+          {bautizado && (
+            <div className="space-y-1">
+              <Label htmlFor="fecha_bautismo" className={inputLabelClass}>Fecha de bautismo</Label>
+              <Input id="fecha_bautismo" type="date" className={inputClass} {...register("fecha_bautismo")} />
+            </div>
+          )}
           <div className="space-y-1">
             <Label className={inputLabelClass}>Ministerio</Label>
             <Input id="ministerio" className={inputClass} {...register("ministerio")} />

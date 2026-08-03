@@ -17,7 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   ArrowLeft, Loader2, Save, Plus, Trash2, User, CalendarDays, UserCheck, TrendingUp,
-  Phone, Mail, MapPin, Church, Pencil, CalendarPlus, Pin, Check,
+  Phone, Mail, MapPin, Church, Pencil, CalendarPlus, Check, AlertTriangle,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -62,6 +62,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
   const [historial, setHistorial] = useState<SeguimientoHistorial[]>([]);
 
   const [evalDraft, setEvalDraft] = useState<EvalDraft>({});
+  const [habitosDraft, setHabitosDraft] = useState<string[]>([]);
   const [nuevoObjetivo, setNuevoObjetivo] = useState("");
   const [nuevaObservacion, setNuevaObservacion] = useState("");
   const [guardando, setGuardando] = useState(false);
@@ -104,6 +105,14 @@ function SeguimientoDetalle({ id }: { id: string }) {
       setEvalDraft(draftVacio());
     }
     setObjetivos((objRes.data as SeguimientoObjetivo[]) || []);
+    const objetivosData = (objRes.data as SeguimientoObjetivo[]) || [];
+    const habitoRows = objetivosData.filter((o) => o.es_habito);
+    if (habitoRows.length) {
+      setHabitosDraft(habitoRows.map((h) => h.descripcion));
+    } else {
+      const txt = ev?.habitos_pecaminosos;
+      setHabitosDraft(txt ? txt.split("\n").map((s) => s.trim()).filter(Boolean) : []);
+    }
     setObservaciones((obsRes.data as typeof observaciones) || []);
     setHistorial((histRes.data as SeguimientoHistorial[]) || []);
     setLoading(false);
@@ -138,11 +147,14 @@ function SeguimientoDetalle({ id }: { id: string }) {
 
   const guardarEvaluacion = async () => {
     setGuardando(true);
+    const habitosLimpios = habitosDraft.map((h) => h.trim()).filter(Boolean);
     const payload: Record<string, string | null> = { seguimiento_id: id, fecha: new Date().toISOString().split("T")[0] };
     CAMPOS_EVALUACION.forEach((c) => {
+      if (c.key === "habitos_pecaminosos") return;
       const v = codificarCampoEvaluacion(c, evalDraft[c.key]?.opcion ?? "", evalDraft[c.key]?.detalle ?? "");
       payload[c.key] = v || null;
     });
+    payload.habitos_pecaminosos = habitosLimpios.join("\n") || null;
 
     const { error } = evaluacion
       ? await supabase.from("seguimiento_evaluaciones").update(payload).eq("seguimiento_id", id)
@@ -154,8 +166,23 @@ function SeguimientoDetalle({ id }: { id: string }) {
     ev.id = evaluacion?.id || "";
     ev.seguimiento_id = id;
     setEvaluacion(ev);
+
+    const habitoRows = objetivos.filter((o) => o.es_habito);
+    for (const row of habitoRows) {
+      if (!habitosLimpios.includes(row.descripcion)) {
+        await supabase.from("seguimiento_objetivos").delete().eq("id", row.id);
+      }
+    }
+    for (const h of habitosLimpios) {
+      if (habitoRows.some((r) => r.descripcion === h)) continue;
+      const { error: insErr } = await supabase.from("seguimiento_objetivos").insert({ seguimiento_id: id, descripcion: h, es_habito: true });
+      if (insErr) { toast.error("Error al sincronizar los hábitos con los objetivos"); setGuardando(false); return; }
+    }
+    const { data: objNuevos } = await supabase.from("seguimiento_objetivos").select("*").eq("seguimiento_id", id).order("created_at", { ascending: true });
+    const lista = (objNuevos as SeguimientoObjetivo[]) || [];
+    setObjetivos(lista);
     await registrarHistorial("evaluacion", "Evaluación guardada");
-    await persistirProgreso(objetivos);
+    await persistirProgreso(lista);
     toast.success("Evaluación guardada");
     setGuardando(false);
   };
@@ -207,6 +234,15 @@ function SeguimientoDetalle({ id }: { id: string }) {
     await persistirProgreso(nuevos);
     toast.success("Objetivo eliminado");
   };
+
+  const objetivosOrdenados = useMemo(
+    () => [...objetivos].sort(
+      (a, b) =>
+        Number(b.es_habito ?? false) - Number(a.es_habito ?? false) ||
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    ),
+    [objetivos]
+  );
 
   const guardarObservacion = async () => {
     const comentario = nuevaObservacion.trim();
@@ -319,6 +355,33 @@ function SeguimientoDetalle({ id }: { id: string }) {
         </TabsList>
 
         <TabsContent value="resumen" className="space-y-4">
+          {seguimiento.etapa >= 2 && seguimiento.discipulos && (!seguimiento.discipulos.bautizado || !seguimiento.discipulos.es_miembro) && (
+            <div className="space-y-3 rounded-lg border border-amber-500/40 bg-amber-50 dark:bg-amber-950 p-4">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+                <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Pasos pendientes del discipulado</p>
+              </div>
+              <ul className="space-y-1 text-sm text-amber-800 dark:text-amber-300">
+                {!seguimiento.discipulos.bautizado && (
+                  <li className="flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" />
+                    Pendiente: bautizarse
+                  </li>
+                )}
+                {!seguimiento.discipulos.es_miembro && (
+                  <li className="flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" />
+                    Pendiente: clase de membresía
+                  </li>
+                )}
+              </ul>
+              <Link href={`/discipulos/editar?id=${seguimiento.discipulos.id}`}>
+                <Button variant="outline" size="sm">
+                  <Pencil className="mr-2 h-3.5 w-3.5" /> Completar bautismo / membresía
+                </Button>
+              </Link>
+            </div>
+          )}
           {seguimiento.discipulos && (
             <Card>
               <CardHeader>
@@ -504,6 +567,37 @@ function SeguimientoDetalle({ id }: { id: string }) {
                 const draft = evalDraft[campo.key] || { opcion: "", detalle: "" };
                 const esTextoLibre = !campo.opciones;
                 const mostrarDetalle = !!campo.detalleSi && draft.opcion === campo.detalleSi;
+                if (campo.key === "habitos_pecaminosos") {
+                  return (
+                    <div key={campo.key} className="space-y-2">
+                      <Label>{campo.label}</Label>
+                      {habitosDraft.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">Sin hábitos cargados. Agregá los que quieras trabajar.</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {habitosDraft.map((h, i) => (
+                            <div key={i} className="flex items-center gap-2">
+                              <Input
+                                value={h}
+                                placeholder={`Hábito ${i + 1}`}
+                                onChange={(e) => setHabitosDraft((prev) => prev.map((x, j) => (j === i ? e.target.value : x)))}
+                              />
+                              <Button type="button" variant="ghost" size="icon" title="Quitar hábito" onClick={() => setHabitosDraft((prev) => prev.filter((_, j) => j !== i))}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <Button type="button" variant="outline" size="sm" onClick={() => setHabitosDraft((prev) => [...prev, ""])}>
+                        <Plus className="mr-1 h-4 w-4" /> Agregar hábito
+                      </Button>
+                      <p className="text-xs text-muted-foreground">
+                        Cada hábito aparece en la pestaña &quot;Objetivos&quot; para marcarlo como cumplido.
+                      </p>
+                    </div>
+                  );
+                }
                 return (
                   <div key={campo.key} className="space-y-2">
                     <Label htmlFor={`eval-${campo.key}`}>{campo.label}</Label>
@@ -622,23 +716,13 @@ function SeguimientoDetalle({ id }: { id: string }) {
               <CardDescription>Objetivos del discipulado. Marcalos al cumplirse.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {evaluacion?.habitos_pecaminosos ? (
-                <div className="flex items-start gap-3 rounded-lg border border-dashed border-primary/40 bg-primary/5 p-3">
-                  <Pin className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-primary">Objetivo fijo · desde la evaluación</p>
-                    <p className="text-sm font-medium">{evaluacion.habitos_pecaminosos}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">Se edita en la Evaluación, en &quot;Hábitos pecaminosos a abandonar&quot;.</p>
-                  </div>
-                </div>
-              ) : null}
               {objetivos.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">
-                  {evaluacion?.habitos_pecaminosos ? "Sin objetivos adicionales. Agregá los que quieras." : "Todavía no hay objetivos."}
+                  Todavía no hay objetivos. Agregá hábitos en la pestaña &quot;Evaluación&quot; o creá objetivos acá.
                 </p>
               ) : (
                 <div className="space-y-2">
-                  {objetivos.map((obj) => (
+                  {objetivosOrdenados.map((obj) => (
                     <div key={obj.id} className="flex items-center gap-3 rounded-lg border p-3">
                       <Checkbox
                         id={`obj-${obj.id}`}
@@ -649,16 +733,21 @@ function SeguimientoDetalle({ id }: { id: string }) {
                         htmlFor={`obj-${obj.id}`}
                         className={cn("flex-1 text-sm cursor-pointer", obj.completado && "line-through text-muted-foreground")}
                       >
-                        {obj.descripcion}
+                        <span className="flex flex-wrap items-center gap-2">
+                          {obj.es_habito && <Badge variant="secondary">Hábito</Badge>}
+                          <span>{obj.descripcion}</span>
+                        </span>
                         {obj.fecha_cumplimiento && (
                           <span className="ml-2 text-xs text-green-600 dark:text-green-400">
                             Cumplido {format(new Date(obj.fecha_cumplimiento + "T12:00:00"), "dd/MM/yyyy")}
                           </span>
                         )}
                       </label>
-                      <Button variant="ghost" size="icon" onClick={() => eliminarObjetivo(obj)} title="Eliminar">
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      {!obj.es_habito && (
+                        <Button variant="ghost" size="icon" onClick={() => eliminarObjetivo(obj)} title="Eliminar">
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </div>
