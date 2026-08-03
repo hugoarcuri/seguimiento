@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, Suspense, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -17,7 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   ArrowLeft, Loader2, Save, Plus, Trash2, User, CalendarDays, UserCheck, TrendingUp,
-  Phone, Mail, MapPin, Church, Pencil, CalendarPlus, Pin,
+  Phone, Mail, MapPin, Church, Pencil, CalendarPlus, Pin, Check,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -431,12 +431,53 @@ function SeguimientoDetalle({ id }: { id: string }) {
                       <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         {etapas.map((e) => (
-                          <SelectItem key={e.id} value={String(e.id)}>{e.id}. {e.nombre}</SelectItem>
+                          <SelectItem key={e.id} value={String(e.id)}>{e.nombre}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
+
+                {(() => {
+                  const idx = etapas.findIndex((e) => e.id === seguimiento.etapa);
+                  const actualIdx = idx === -1 ? 0 : idx;
+                  return (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-muted-foreground">Progreso por etapas (1 a {etapas.length})</span>
+                        <span className="text-sm font-medium tabular-nums">Etapa {actualIdx + 1}/{etapas.length}</span>
+                      </div>
+                      <div className="flex items-start">
+                        {etapas.map((e, i) => {
+                          const completada = i < actualIdx;
+                          const actual = i === actualIdx;
+                          return (
+                            <Fragment key={e.id}>
+                              {i > 0 && (
+                                <div className={cn("mt-[15px] h-0.5 flex-1", i <= actualIdx ? "bg-primary" : "bg-muted")} />
+                              )}
+                              <div className="flex w-16 shrink-0 flex-col items-center gap-1.5">
+                                <div className={cn(
+                                  "flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-bold",
+                                  actual && "bg-primary text-primary-foreground border-primary",
+                                  completada && "bg-primary/15 text-primary border-primary",
+                                  !actual && !completada && "bg-muted text-muted-foreground border-foreground/15",
+                                )}>
+                                  {completada ? <Check className="h-4 w-4" /> : i + 1}
+                                </div>
+                                <span className="line-clamp-2 text-center text-[10px] leading-tight text-muted-foreground">
+                                  {e.nombre.replace(/^\d+\.\s*/, "")}
+                                </span>
+                              </div>
+                            </Fragment>
+                          );
+                        })}
+                      </div>
+                      <Progress value={((actualIdx + 1) / etapas.length) * 100} className="mt-3" />
+                    </div>
+                  );
+                })()}
+
                 <div>
                   <div className="flex items-center justify-between text-sm mb-1">
                     <span className="text-muted-foreground">Progreso general</span>

@@ -10,9 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Plus, Loader2, Search, Pencil, Eye, ArrowUpDown } from "lucide-react";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import { SeguimientoForm } from "./seguimiento-form";
 import { useEtapas } from "@/hooks/useEtapas";
 import type { Seguimiento } from "@/types/database";
@@ -231,10 +231,14 @@ export default function SeguimientoPage() {
                     <TableCell>
                       <Badge variant="outline">{etapas.find((e) => e.id === s.etapa)?.nombre || `Etapa ${s.etapa}`}</Badge>
                     </TableCell>
-                    <TableCell className="min-w-[160px]">
+                    <TableCell className="min-w-[170px]">
                       <div className="flex items-center gap-2">
-                        <Progress value={s.progreso} className="flex-1" />
-                        <span className="text-xs font-medium tabular-nums w-8 text-right">{s.progreso}%</span>
+                        <div className="flex flex-1 items-center gap-0.5" title="Etapa del discipulado (1 a 5)">
+                          {etapas.map((e, i) => (
+                            <span key={e.id} className={cn("h-2.5 flex-1 rounded-sm", i <= etapas.findIndex((ev) => ev.id === s.etapa) ? "bg-primary" : "bg-muted")} />
+                          ))}
+                        </div>
+                        <span className="text-xs font-medium tabular-nums text-muted-foreground">{s.etapa}/{etapas.length}</span>
                       </div>
                     </TableCell>
                     <TableCell>
