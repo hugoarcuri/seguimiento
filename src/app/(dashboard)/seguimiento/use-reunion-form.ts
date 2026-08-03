@@ -2,12 +2,6 @@
 
 import { useState } from "react";
 
-export interface PersonaOracion {
-  nombre: string;
-  apellido: string;
-  estado: string;
-}
-
 export interface ReunionFormState {
   saved: boolean;
   setSaved: (v: boolean) => void;
@@ -19,18 +13,6 @@ export interface ReunionFormState {
   setEstudios: (v: boolean) => void;
   trabajo: boolean;
   setTrabajo: (v: boolean) => void;
-  positivo: string;
-  setPositivo: (v: string) => void;
-  desafioPrincipal: string;
-  setDesafioPrincipal: (v: string) => void;
-  compromisos: string[];
-  setCompromisos: React.Dispatch<React.SetStateAction<string[]>>;
-  desafioPersonalizado: string;
-  setDesafioPersonalizado: (v: string) => void;
-  proximaReunion: string;
-  setProximaReunion: (v: string) => void;
-  personasOracion: PersonaOracion[];
-  setPersonasOracion: React.Dispatch<React.SetStateAction<PersonaOracion[]>>;
   reset: () => void;
 }
 
@@ -40,12 +22,6 @@ export function useReunionForm(): ReunionFormState {
   const [evalObs, setEvalObs] = useState<Record<number, string>>({});
   const [estudios, setEstudios] = useState(true);
   const [trabajo, setTrabajo] = useState(true);
-  const [positivo, setPositivo] = useState("");
-  const [desafioPrincipal, setDesafioPrincipal] = useState("");
-  const [compromisos, setCompromisos] = useState<string[]>([]);
-  const [desafioPersonalizado, setDesafioPersonalizado] = useState("");
-  const [proximaReunion, setProximaReunion] = useState("");
-  const [personasOracion, setPersonasOracion] = useState<PersonaOracion[]>([]);
 
   const reset = () => {
     setSaved(false);
@@ -53,12 +29,6 @@ export function useReunionForm(): ReunionFormState {
     setEvalObs({});
     setEstudios(true);
     setTrabajo(true);
-    setPositivo("");
-    setDesafioPrincipal("");
-    setCompromisos([]);
-    setDesafioPersonalizado("");
-    setProximaReunion("");
-    setPersonasOracion([]);
   };
 
   return {
@@ -67,12 +37,6 @@ export function useReunionForm(): ReunionFormState {
     evalObs, setEvalObs,
     estudios, setEstudios,
     trabajo, setTrabajo,
-    positivo, setPositivo,
-    desafioPrincipal, setDesafioPrincipal,
-    compromisos, setCompromisos,
-    desafioPersonalizado, setDesafioPersonalizado,
-    proximaReunion, setProximaReunion,
-    personasOracion, setPersonasOracion,
     reset,
   };
 }
