@@ -2,78 +2,76 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { DashboardClient } from "./dashboard-client";
+import { DashboardClient, type DashboardData } from "./dashboard-client";
 import { useEtapas } from "@/hooks/useEtapas";
-import type { Discipulo } from "@/types/database";
+import { differenceInCalendarDays } from "date-fns";
 
-interface AgendaBasico {
+const PROGRESO_BAJO = 40;
+const LISTO_AVANZAR = 80;
+const SIN_CONTACTO_DIAS = 15;
+const ORACION_VEJEZ_DIAS = 30;
+const EVANGELISMO_LISTO_DIAS = 30;
+
+interface DiscipuloRaw {
   id: string;
-  fecha: string;
-  tema_tratado: string;
-  discipulo_id: string;
-  lider_id: string;
+  nombre: string;
+  apellido: string;
+  avatar_url?: string | null;
+  etapa_id: number;
+  estado: string;
+  lider_id?: string | null;
+  bautizado?: boolean | null;
+  es_miembro?: boolean | null;
 }
 
-interface OracionBasica {
+interface PerfilRaw {
+  id: string;
+  nombre: string;
+  apellido: string;
+  rol: string;
+}
+
+interface SeguimientoRaw {
   id: string;
   discipulo_id: string;
+  progreso: number;
+  estado: string;
+}
+
+interface AgendaRaw {
+  id: string;
+  discipulo_id: string;
+  fecha: string;
+}
+
+interface OracionRaw {
+  id: string;
   pedido: string;
   estado: string;
   fecha: string;
 }
 
-interface SeguimientoBasico {
+interface TareaRaw {
   id: string;
-  etapa: number;
-  progreso: number;
   estado: string;
-  discipulos?: { nombre: string; apellido: string };
 }
 
-interface DiscipuloBasico {
+interface EvangelismoRaw {
   id: string;
   nombre: string;
   apellido: string;
-  avatar_url?: string | null;
-  fecha_nacimiento?: string | null;
-  etapa_id: number;
-  bautizado?: boolean;
-  es_miembro?: boolean;
-}
-
-interface CumpleInfo extends DiscipuloBasico {
-  fecha_nacimiento: string;
-  proxima_fecha: string;
-  dias: number;
-  edad: number;
+  estado: string;
+  fecha_inicio_estado: string;
 }
 
 interface RawData {
-  discipulos: Discipulo[];
-  proximasAgendas: AgendaBasico[];
-  oracionesPendientesList: OracionBasica[];
-  seguimientos: SeguimientoBasico[];
-}
-
-interface DashboardData {
-  totalDiscipulos: number;
-  activos: number;
-  discipulosPorEtapa: Array<{ id: number; nombre: string; cantidad: number }>;
-  etapaFinal: { id: number; nombre: string };
-  enEtapaFinal: number;
-  faltanParaMeta: number;
-  metaPct: number;
-  multiplicadores: DiscipuloBasico[];
-  cercaDeMeta: DiscipuloBasico[];
-  cumpleProximos7: number;
-  cumpleMes: CumpleInfo[];
-  oracionesPendientes: number;
-  proximasAgendas: AgendaBasico[];
-  oracionesPendientesList: OracionBasica[];
-  seguimientosActivos: number;
-  promedioProgreso: number;
-  seguimientoAtencion: SeguimientoBasico[];
-  pendientes: DiscipuloBasico[];
+  discipulos: DiscipuloRaw[];
+  perfiles: PerfilRaw[];
+  seguimientos: SeguimientoRaw[];
+  agenda: AgendaRaw[];
+  oraciones: OracionRaw[];
+  tareas: TareaRaw[];
+  evangelismo: EvangelismoRaw[];
 }
 
 export default function DashboardPage() {
@@ -84,40 +82,41 @@ export default function DashboardPage() {
     const supabase = createClient();
 
     Promise.all([
-      supabase.from("discipulos").select("id, nombre, apellido, avatar_url, fecha_nacimiento, etapa_id, estado, lider_id, created_at, bautizado, es_miembro"),
-      supabase
-        .from("agenda")
-        .select("id, fecha, discipulo_id, lider_id, tema_tratado")
-        .gte("fecha", new Date().toISOString().split("T")[0])
-        .order("fecha", { ascending: true })
-        .limit(5),
-      supabase
-        .from("oraciones")
-        .select("id, discipulo_id, pedido, estado, fecha")
-        .eq("estado", "pendiente")
-        .order("fecha", { ascending: false })
-        .limit(5),
-      supabase
-        .from("seguimientos")
-        .select("id, etapa, progreso, estado, discipulos:discipulo_id(nombre, apellido)"),
-    ]).then(([discipulosRes, agendasRes, oracionesRes, seguimientosRes]) => {
+      supabase.from("discipulos").select("id, nombre, apellido, avatar_url, etapa_id, estado, lider_id, bautizado, es_miembro"),
+      supabase.from("profiles").select("id, nombre, apellido, rol"),
+      supabase.from("seguimientos").select("id, discipulo_id, progreso, estado"),
+      supabase.from("agenda").select("id, discipulo_id, fecha").order("fecha", { ascending: false }),
+      supabase.from("oraciones").select("id, pedido, estado, fecha"),
+      supabase.from("tareas").select("id, estado"),
+      supabase.from("acompanamiento_evangelistico").select("id, nombre, apellido, estado, fecha_inicio_estado"),
+    ]).then(([discipulosRes, perfilesRes, seguimientosRes, agendaRes, oracionesRes, tareasRes, evRes]) => {
       setRaw({
-        discipulos: (discipulosRes.data || []) as Discipulo[],
-        proximasAgendas: (agendasRes.data || []) as AgendaBasico[],
-        oracionesPendientesList: (oracionesRes.data || []) as OracionBasica[],
-        seguimientos: (seguimientosRes.data || []) as unknown as SeguimientoBasico[],
+        discipulos: (discipulosRes.data || []) as DiscipuloRaw[],
+        perfiles: (perfilesRes.data || []) as PerfilRaw[],
+        seguimientos: (seguimientosRes.data || []) as SeguimientoRaw[],
+        agenda: (agendaRes.data || []) as AgendaRaw[],
+        oraciones: (oracionesRes.data || []) as OracionRaw[],
+        tareas: (tareasRes.data || []) as TareaRaw[],
+        evangelismo: (evRes.data || []) as EvangelismoRaw[],
       });
     }).catch(console.error);
   }, []);
 
   const data = useMemo<DashboardData | null>(() => {
     if (!raw || etapas.length === 0) return null;
-    const { discipulos, proximasAgendas, oracionesPendientesList, seguimientos } = raw;
+    const { discipulos, perfiles, seguimientos, agenda, oraciones, tareas, evangelismo } = raw;
     const hoy = new Date();
-    const hoyInicio = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()).getTime();
+    const diasDesde = (fecha: string) => differenceInCalendarDays(hoy, new Date(fecha + "T00:00:00"));
 
+    const activos = discipulos.filter((d) => d.estado === "activo");
+    const pausados = discipulos.filter((d) => d.estado === "pausado").length;
+    const retirados = discipulos.filter((d) => d.estado === "retirado").length;
     const totalDiscipulos = discipulos.length;
-    const activos = discipulos.filter((d) => d.estado === "activo").length;
+    const retencionPct = totalDiscipulos ? Math.round((activos.length / totalDiscipulos) * 100) : 0;
+
+    const etapaFinal = etapas[etapas.length - 1];
+    const enEtapaFinal = activos.filter((d) => d.etapa_id === etapaFinal.id).length;
+    const metaPct = activos.length ? Math.round((enEtapaFinal / activos.length) * 100) : 0;
 
     const discipulosPorEtapa = etapas.map((e) => ({
       id: e.id,
@@ -125,82 +124,157 @@ export default function DashboardPage() {
       cantidad: discipulos.filter((d) => d.etapa_id === e.id).length,
     }));
 
-    const etapaFinal = etapas[etapas.length - 1];
-    const etapaPrevia = etapas.length > 1 ? etapas[etapas.length - 2] : null;
-
-    const enEtapaFinal = discipulos.filter((d) => d.etapa_id === etapaFinal.id).length;
-    const faltanParaMeta = totalDiscipulos - enEtapaFinal;
-    const metaPct = totalDiscipulos ? Math.round((enEtapaFinal / totalDiscipulos) * 100) : 0;
-
-    const toBasico = (d: Discipulo): DiscipuloBasico => ({
-      id: d.id,
-      nombre: d.nombre,
-      apellido: d.apellido,
-      avatar_url: d.avatar_url,
-      fecha_nacimiento: d.fecha_nacimiento,
-      etapa_id: d.etapa_id,
-      bautizado: d.bautizado,
-      es_miembro: d.es_miembro,
-    });
-
-    const multiplicadores = discipulos.filter((d) => d.etapa_id === etapaFinal.id).map(toBasico);
-    const cercaDeMeta = (etapaPrevia ? discipulos.filter((d) => d.etapa_id === etapaPrevia.id) : []).map(toBasico);
-
-    const pendientes = discipulos
-      .filter((d) => d.etapa_id >= 2 && (!d.bautizado || !d.es_miembro))
-      .map(toBasico);
-
-    const cumples = discipulos
-      .filter((d) => d.fecha_nacimiento)
-      .map((d) => {
-        const [anio, mes, dia] = d.fecha_nacimiento!.split("T")[0].split("-").map(Number);
-        let proxima = new Date(hoy.getFullYear(), mes - 1, dia).getTime();
-        let edad = hoy.getFullYear() - anio;
-        if (proxima < hoyInicio) {
-          proxima = new Date(hoy.getFullYear() + 1, mes - 1, dia).getTime();
-          edad += 1;
-        }
-        return {
-          ...toBasico(d),
-          fecha_nacimiento: d.fecha_nacimiento!,
-          proxima_fecha: new Date(proxima).toISOString(),
-          dias: Math.round((proxima - hoyInicio) / 86400000),
-          edad,
-        };
-      })
-      .sort((a, b) => a.dias - b.dias);
-
-    const cumpleMes = cumples.filter((c) => c.dias <= 30).slice(0, 8);
-    const cumpleProximos7 = cumples.filter((c) => c.dias <= 7).length;
-
-    const seguimientosActivos = seguimientos.filter((s) => s.estado === "activo");
-    const promedioProgreso = seguimientosActivos.length
-      ? Math.round(seguimientosActivos.reduce((acc, s) => acc + s.progreso, 0) / seguimientosActivos.length)
+    const segPorDiscipulo = new Map<string, SeguimientoRaw>();
+    for (const s of seguimientos) {
+      const existente = segPorDiscipulo.get(s.discipulo_id);
+      if (!existente || (s.estado === "activo" && existente.estado !== "activo")) {
+        segPorDiscipulo.set(s.discipulo_id, s);
+      }
+    }
+    const segActivos = seguimientos.filter((s) => s.estado === "activo");
+    const promedioProgreso = segActivos.length
+      ? Math.round(segActivos.reduce((acc, s) => acc + s.progreso, 0) / segActivos.length)
       : 0;
 
+    const ultimoEncuentro = new Map<string, string>();
+    for (const a of agenda) {
+      if (!ultimoEncuentro.has(a.discipulo_id)) ultimoEncuentro.set(a.discipulo_id, a.fecha);
+    }
+    const diasSinContacto = (id: string): number | null => {
+      const f = ultimoEncuentro.get(id);
+      if (!f) return null;
+      return diasDesde(f);
+    };
+
+    const urgentesFull = activos
+      .map((d) => {
+        const razones: string[] = [];
+        const seg = segPorDiscipulo.get(d.id);
+        if (!seg) razones.push("Sin seguimiento activo");
+        else if (seg.progreso < PROGRESO_BAJO) razones.push(`Progreso bajo (${seg.progreso}%)`);
+        const dias = diasSinContacto(d.id);
+        if (dias === null) razones.push("Sin encuentros registrados");
+        else if (dias >= SIN_CONTACTO_DIAS) razones.push(`Sin encuentro (${dias} días)`);
+        if (d.etapa_id >= 2) {
+          if (!d.bautizado) razones.push("Pendiente bautismo");
+          if (!d.es_miembro) razones.push("Pendiente membresía");
+        }
+        if (!d.lider_id) razones.push("Sin discipulador asignado");
+        return { discipulo: d, razones };
+      })
+      .filter((x) => x.razones.length > 0)
+      .sort((a, b) => b.razones.length - a.razones.length);
+
+    const urgentes = urgentesFull.slice(0, 8);
+
+    const oracionesViejas = oraciones
+      .filter((o) => o.estado !== "respondida")
+      .map((o) => ({ id: o.id, pedido: o.pedido, dias: diasDesde(o.fecha) }))
+      .filter((o) => o.dias >= ORACION_VEJEZ_DIAS)
+      .sort((a, b) => b.dias - a.dias)
+      .slice(0, 4);
+
+    const listosAvanzar = activos
+      .map((d) => ({ discipulo: d, seg: segPorDiscipulo.get(d.id) }))
+      .filter((x): x is { discipulo: DiscipuloRaw; seg: SeguimientoRaw } =>
+        x.seg !== undefined && x.seg.estado === "activo" && x.seg.progreso >= LISTO_AVANZAR && x.discipulo.etapa_id !== etapaFinal.id
+      )
+      .map(({ discipulo, seg }) => {
+        const idx = etapas.findIndex((e) => e.id === discipulo.etapa_id);
+        const prox = idx >= 0 && idx < etapas.length - 1 ? etapas[idx + 1] : undefined;
+        return {
+          discipulo,
+          progreso: seg.progreso,
+          proximaEtapa: prox?.nombre.replace(/^\d+\.\s*/, ""),
+        };
+      })
+      .sort((a, b) => b.progreso - a.progreso)
+      .slice(0, 6);
+
+    const evangelismoListos = evangelismo
+      .map((p) => ({ ...p, dias: diasDesde(p.fecha_inicio_estado) }))
+      .filter((p) => p.dias >= EVANGELISMO_LISTO_DIAS)
+      .sort((a, b) => b.dias - a.dias)
+      .slice(0, 6);
+
+    const riesgoIds = new Set(urgentesFull.map((x) => x.discipulo.id));
+    const sinContactoIds = new Set(
+      activos.filter((d) => {
+        const ds = diasSinContacto(d.id);
+        return ds === null || ds >= SIN_CONTACTO_DIAS;
+      }).map((d) => d.id)
+    );
+    const perfilPorId = new Map(perfiles.map((p) => [p.id, p]));
+    const porLider = new Map<string, DiscipuloRaw[]>();
+    for (const d of activos) {
+      if (!d.lider_id) continue;
+      const arr = porLider.get(d.lider_id) || [];
+      arr.push(d);
+      porLider.set(d.lider_id, arr);
+    }
+    const discipuladores = [...porLider.entries()]
+      .map(([id, lista]) => {
+        const perfil = perfilPorId.get(id);
+        return {
+          id,
+          nombre: perfil?.nombre || "Discipulador",
+          apellido: perfil?.apellido || "",
+          total: lista.length,
+          enRiesgo: lista.filter((d) => riesgoIds.has(d.id)).length,
+          sinContacto: lista.filter((d) => sinContactoIds.has(d.id)).length,
+        };
+      })
+      .filter((x) => x.enRiesgo > 0 || x.sinContacto > 0)
+      .sort((a, b) => b.enRiesgo - a.enRiesgo || b.sinContacto - a.sinContacto)
+      .slice(0, 5);
+
+    const tareasTotal = tareas.length;
+    const tareasCompletadas = tareas.filter((t) => t.estado === "completada").length;
+    const tareasCumplimientoPct = tareasTotal ? Math.round((tareasCompletadas / tareasTotal) * 100) : 0;
+    const tareasVencidas = tareas.filter((t) => t.estado === "vencida").length;
+
+    const bautizadosPct = totalDiscipulos ? Math.round((discipulos.filter((d) => d.bautizado).length / totalDiscipulos) * 100) : 0;
+    const miembrosPct = totalDiscipulos ? Math.round((discipulos.filter((d) => d.es_miembro).length / totalDiscipulos) * 100) : 0;
+
+    const oracionesRespondidas = oraciones.filter((o) => o.estado === "respondida").length;
+    const oracionesRespondidasPct = oraciones.length ? Math.round((oracionesRespondidas / oraciones.length) * 100) : 0;
+    const oracionesPendientes = oraciones.filter((o) => o.estado !== "respondida").length;
+
+    const conContacto = activos.filter((d) => {
+      const ds = diasSinContacto(d.id);
+      return ds !== null && ds <= SIN_CONTACTO_DIAS;
+    }).length;
+    const contactoPct = activos.length ? Math.round((conContacto / activos.length) * 100) : 0;
+
     return {
-      totalDiscipulos,
-      activos,
-      discipulosPorEtapa,
       etapaFinal: { id: etapaFinal.id, nombre: etapaFinal.nombre },
-      enEtapaFinal,
-      faltanParaMeta,
-      metaPct,
-      multiplicadores,
-      cercaDeMeta,
-      cumpleMes,
-      cumpleProximos7,
-      oracionesPendientes: oracionesPendientesList.length,
-      proximasAgendas,
-      oracionesPendientesList,
-      seguimientosActivos: seguimientosActivos.length,
-      promedioProgreso,
-      seguimientoAtencion: [...seguimientosActivos].sort((a, b) => a.progreso - b.progreso).slice(0, 5),
-      pendientes,
+      salud: {
+        totalDiscipulos,
+        activos: activos.length,
+        pausados,
+        retirados,
+        retencionPct,
+        enEtapaFinal,
+        metaPct,
+        promedioProgreso,
+        tareasCumplimientoPct,
+        tareasVencidas,
+        bautizadosPct,
+        miembrosPct,
+        oracionesPendientes,
+        oracionesRespondidasPct,
+        contactoPct,
+        discipulosPorEtapa,
+      },
+      urgentes,
+      oracionesViejas,
+      listosAvanzar,
+      evangelismoListos,
+      discipuladores,
     };
   }, [raw, etapas]);
 
   if (!data) return <div className="flex items-center justify-center min-h-[50vh]"><p className="text-muted-foreground">Cargando...</p></div>;
 
-  return <DashboardClient {...data} etapas={etapas} />;
+  return <DashboardClient data={data} />;
 }
