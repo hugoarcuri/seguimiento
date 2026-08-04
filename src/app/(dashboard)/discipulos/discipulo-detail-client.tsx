@@ -62,18 +62,29 @@ export function DiscipuloDetailClient({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between">
         <Link
           href="/discipulos"
           className="inline-flex items-center justify-center rounded-lg border border-border bg-background hover:bg-muted size-11 md:size-9"
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
+        <Link
+          href={`/discipulos/editar?id=${discipulo.id}`}
+          className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/80 min-h-11 md:min-h-8 gap-1.5 px-3 text-sm font-medium shrink-0"
+        >
+          <Edit className="h-4 w-4" />
+          Editar
+        </Link>
+      </div>
+
+      {/* PERFIL CENTRADO */}
+      <div className="flex flex-col items-center gap-3 text-center">
         <div className="relative group shrink-0">
           {discipulo.avatar_url ? (
-            <img src={discipulo.avatar_url} alt="" className="w-24 h-24 rounded-full object-cover ring-4 ring-background shadow-lg" />
+            <img src={discipulo.avatar_url} alt="" className="w-28 h-28 rounded-full object-cover ring-4 ring-background shadow-lg" />
           ) : (
-            <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-3xl ring-4 ring-background shadow-lg">
+            <div className="w-28 h-28 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-4xl ring-4 ring-background shadow-lg">
               {discipulo.nombre?.charAt(0)?.toUpperCase()}{discipulo.apellido?.charAt(0)?.toUpperCase()}
             </div>
           )}
@@ -87,31 +98,24 @@ export function DiscipuloDetailClient({
           </button>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleSubirAvatar} />
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold truncate">
-              {discipulo.apellido}, {discipulo.nombre}
-            </h1>
-            <div className={`h-3 w-3 rounded-full shrink-0 ${estadoColors[discipulo.estado]}`} />
-          </div>
-          <div className="flex items-center gap-2 mt-1">
-            <Badge variant="secondary">{etapaActual?.nombre || "Sin etapa"}</Badge>
-            {discipulo.etapa_id >= 2 && !discipulo.bautizado && (
-              <Badge variant="destructive">Pendiente: bautismo</Badge>
-            )}
-            {discipulo.etapa_id >= 2 && !discipulo.es_miembro && (
-              <Badge variant="destructive">Pendiente: membresía</Badge>
-            )}
-            <span className="text-sm capitalize text-muted-foreground">{discipulo.estado}</span>
-          </div>
+
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold">
+            {discipulo.apellido}, {discipulo.nombre}
+          </h1>
+          <div className={`h-3 w-3 rounded-full shrink-0 ${estadoColors[discipulo.estado]}`} />
         </div>
-        <Link
-          href={`/discipulos/editar?id=${discipulo.id}`}
-          className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/80 min-h-11 md:min-h-8 gap-1.5 px-3 text-sm font-medium shrink-0"
-        >
-          <Edit className="h-4 w-4" />
-          Editar
-        </Link>
+
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <Badge variant="secondary">{etapaActual?.nombre || "Sin etapa"}</Badge>
+          {discipulo.etapa_id >= 2 && !discipulo.bautizado && (
+            <Badge variant="destructive">Pendiente: bautismo</Badge>
+          )}
+          {discipulo.etapa_id >= 2 && !discipulo.es_miembro && (
+            <Badge variant="destructive">Pendiente: membresía</Badge>
+          )}
+          <span className="text-sm capitalize text-muted-foreground">{discipulo.estado}</span>
+        </div>
       </div>
 
       <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
