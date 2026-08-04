@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/useUser";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { FontControls } from "@/components/font-controls";
 import { Menu } from "lucide-react";
 import { adminMenuItems, discipuloMenuItems } from "@/lib/constants/navigation";
 import { isPathActive, BASE_PATH } from "@/lib/constants/paths";
@@ -25,7 +26,7 @@ export function MobileSidebar() {
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
         render={
-          <Button variant="ghost" size="icon" className="lg:hidden">
+          <Button variant="ghost" size="icon" className="h-11 w-11 md:hidden">
             <Menu className="h-5 w-5" />
           </Button>
         }
@@ -37,7 +38,7 @@ export function MobileSidebar() {
             <span className="font-semibold text-lg">Discipulado</span>
           </Link>
         </div>
-        <nav className="space-y-1 p-3">
+        <nav className="space-y-1 p-3 flex-1 overflow-y-auto">
           {menuItems.map((item) => {
             const isActive = isPathActive(pathname, item.href);
             return (
@@ -46,18 +47,21 @@ export function MobileSidebar() {
                 href={item.href}
                 onClick={() => setOpen(false)}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                  "flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors",
                   isActive
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 )}
               >
-                <item.icon className="h-4 w-4" />
+                <item.icon className="h-4 w-4 shrink-0" />
                 {item.label}
               </Link>
             );
           })}
         </nav>
+        <div className="p-3 border-t">
+          <FontControls className="justify-center" />
+        </div>
       </SheetContent>
     </Sheet>
   );
