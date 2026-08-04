@@ -488,10 +488,10 @@ function SeguimientoDetalle({ id }: { id: string }) {
                     <TrendingUp className="h-4 w-4 text-muted-foreground" />
                     <p className="text-sm font-medium">Etapa actual: {etapas.find((e) => e.id === seguimiento.etapa)?.nombre || `Etapa ${seguimiento.etapa}`}</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="w-full flex flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
                     <Label className="text-xs text-muted-foreground">Cambiar etapa</Label>
                     <Select value={String(seguimiento.etapa)} onValueChange={(v) => cambiarEtapa(Number(v))}>
-                      <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="w-full sm:w-56"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         {etapas.map((e) => (
                           <SelectItem key={e.id} value={String(e.id)}>{e.nombre}</SelectItem>
@@ -510,7 +510,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
                         <span className="text-sm text-muted-foreground">Progreso por etapas (1 a {etapas.length})</span>
                         <span className="text-sm font-medium tabular-nums">Etapa {actualIdx + 1}/{etapas.length}</span>
                       </div>
-                      <div className="flex items-start">
+                      <div className="flex items-start overflow-x-auto">
                         {etapas.map((e, i) => {
                           const completada = i < actualIdx;
                           const actual = i === actualIdx;
@@ -693,7 +693,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
                   {observaciones.map((obs) => (
                     <Card key={obs.id}>
                       <CardContent className="py-3">
-                        <p className="text-sm whitespace-pre-wrap">{obs.comentario}</p>
+                        <p className="text-sm whitespace-pre-wrap break-words">{obs.comentario}</p>
                         <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
                           <Badge variant="outline">
                             {obs.perfiles ? `${obs.perfiles.apellido}, ${obs.perfiles.nombre}` : "Usuario"}
@@ -731,11 +731,11 @@ function SeguimientoDetalle({ id }: { id: string }) {
                       />
                       <label
                         htmlFor={`obj-${obj.id}`}
-                        className={cn("flex-1 text-sm cursor-pointer", obj.completado && "line-through text-muted-foreground")}
+                        className={cn("flex-1 min-w-0 text-sm cursor-pointer", obj.completado && "line-through text-muted-foreground")}
                       >
                         <span className="flex flex-wrap items-center gap-2">
                           {obj.es_habito && <Badge variant="secondary">Hábito</Badge>}
-                          <span>{obj.descripcion}</span>
+                          <span className="break-words">{obj.descripcion}</span>
                         </span>
                         {obj.fecha_cumplimiento && (
                           <span className="ml-2 text-xs text-green-600 dark:text-green-400">
@@ -821,13 +821,13 @@ function SeguimientoDetalle({ id }: { id: string }) {
                               <p className="text-xs text-muted-foreground"><MapPin className="inline h-3 w-3 mr-1" />{agenda.lugar}</p>
                             )}
                             {agenda.material_utilizado && (
-                              <p className="text-xs text-muted-foreground">Material: {agenda.material_utilizado}</p>
+                              <p className="text-xs text-muted-foreground break-words">Material: {agenda.material_utilizado}</p>
                             )}
                             {agenda.compromisos && (
-                              <p className="text-xs text-muted-foreground">Compromisos: {agenda.compromisos}</p>
+                              <p className="text-xs text-muted-foreground break-words">Compromisos: {agenda.compromisos}</p>
                             )}
                             {agenda.notas && (
-                              <p className="text-xs text-muted-foreground">Notas: {agenda.notas}</p>
+                              <p className="text-xs text-muted-foreground break-words">Notas: {agenda.notas}</p>
                             )}
                             {agenda.proximo_encuentro && (
                               <p className="text-xs text-muted-foreground">
@@ -887,7 +887,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
             <DialogTitle>{encuentroEditing ? "Editar encuentro" : "Registrar encuentro"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="enc-fecha">Fecha *</Label>
                 <Input id="enc-fecha" type="date" value={encuentroDraft.fecha} onChange={(e) => setEncuentroDraft((p) => ({ ...p, fecha: e.target.value }))} />
