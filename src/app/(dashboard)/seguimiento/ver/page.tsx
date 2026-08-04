@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useCallback, Suspense, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -73,6 +73,9 @@ function SeguimientoDetalle({ id }: { id: string }) {
   const [encuentroDraft, setEncuentroDraft] = useState({ fecha: "", hora: "", lugar: "", tema_tratado: "", material_utilizado: "", compromisos: "", notas: "", proximo_encuentro: "" });
   const [guardandoEncuentro, setGuardandoEncuentro] = useState(false);
 
+  const searchParams = useSearchParams();
+  const abrioEncuentro = useRef(false);
+
   const refresh = useCallback(async () => {
     const [segRes, evalRes, objRes, obsRes, histRes, etapasRes] = await Promise.all([
       supabase
@@ -129,6 +132,13 @@ function SeguimientoDetalle({ id }: { id: string }) {
       }
     })();
   }, [refresh]);
+
+  useEffect(() => {
+    if (!abrioEncuentro.current && searchParams.get("encuentro") === "1") {
+      abrioEncuentro.current = true;
+      setEncuentroOpen(true);
+    }
+  }, [searchParams]);
 
   const registrarHistorial = useCallback(async (tipo: SeguimientoHistorial["tipo"], descripcion: string) => {
     await supabase.from("seguimiento_historial").insert({ seguimiento_id: id, tipo, descripcion });

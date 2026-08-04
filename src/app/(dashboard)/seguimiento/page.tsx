@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Loader2, Search, Pencil, Eye, ArrowUpDown } from "lucide-react";
+import { Plus, Loader2, Search, Pencil, Eye, ArrowUpDown, CalendarPlus } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { SeguimientoForm } from "./seguimiento-form";
@@ -22,19 +22,13 @@ type SeguimientoFila = Seguimiento & {
   discipuladores?: { id: string; nombre: string; apellido: string };
 };
 
-const DIAS_SIN_CONTACTO = 15;
-
-function diasSinEncuentro(fecha: string | null): number {
-  if (!fecha) return Infinity;
-  const t = new Date(fecha.length === 10 ? `${fecha}T12:00:00` : fecha).getTime();
-  return Math.max(0, Math.floor((Date.now() - t) / 86_400_000));
-}
+type EncuentroProximo = { fecha: string; hora?: string; tema_tratado?: string };
 
 export default function SeguimientoPage() {
   const supabase = useMemo(() => createClient(), []);
   const { etapas } = useEtapas();
   const [seguimientos, setSeguimientos] = useState<SeguimientoFila[]>([]);
-  const [ultimaFechaPorDiscipulo, setUltimaFechaPorDiscipulo] = useState<Record<string, string | null>>({});
+  const [proximoEncuentroPorDiscipulo, setProximoEncuentroPorDiscipulo] = useState<Record<string, EncuentroProximo>>({});
   const [discipulos, setDiscipulos] = useState<Array<{ id: string; nombre: string; apellido: string }>>([]);
   const [discipuladores, setDiscipuladores] = useState<Array<{ id: string; nombre: string; apellido: string }>>([]);
   const [loading, setLoading] = useState(true);
@@ -81,16 +75,19 @@ export default function SeguimientoPage() {
     if (ids.length) {
       const { data: agendaData } = await supabase
         .from("agenda")
-        .select("discipulo_id, fecha")
+        .select("discipulo_id, fecha, hora, tema_tratado")
         .in("discipulo_id", ids)
-        .order("fecha", { ascending: false });
-      const mapa: Record<string, string | null> = {};
+        .gte("fecha", new Date().toISOString().split("T")[0])
+        .order("fecha", { ascending: true });
+      const mapa: Record<string, EncuentroProximo> = {};
       for (const a of agendaData || []) {
-        if (a.discipulo_id && mapa[a.discipulo_id] === undefined) mapa[a.discipulo_id] = a.fecha;
+        if (a.discipulo_id && mapa[a.discipulo_id] === undefined) {
+          mapa[a.discipulo_id] = { fecha: a.fecha, hora: a.hora ?? undefined, tema_tratado: a.tema_tratado ?? undefined };
+        }
       }
-      setUltimaFechaPorDiscipulo(mapa);
+      setProximoEncuentroPorDiscipulo(mapa);
     } else {
-      setUltimaFechaPorDiscipulo({});
+      setProximoEncuentroPorDiscipulo({});
     }
     setLoading(false);
   }, [supabase]);
@@ -199,7 +196,7 @@ export default function SeguimientoPage() {
                 <TableHead>Discipulador</TableHead>
                 <TableHead>Etapa</TableHead>
                 <TableHead>Progreso</TableHead>
-                <TableHead>Última actualización</TableHead>
+                <TableHead>Próximo encuentro</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -212,18 +209,13 @@ export default function SeguimientoPage() {
                 </TableRow>
               ) : (
                 filtrados.map((s) => {
-                  const dias = diasSinEncuentro(ultimaFechaPorDiscipulo[s.discipulo_id] ?? null);
+                  const prox = proximoEncuentroPorDiscipulo[s.discipulo_id];
                   return (
                   <TableRow key={s.id}>
-                    <TableCell className="font-medium">
-                      <div className="space-y-1">
-                        <div>{s.discipulos ? `${s.discipulos.apellido}, ${s.discipulos.nombre}` : "—"}</div>
-                        {dias > DIAS_SIN_CONTACTO && (
-                          <Badge variant="destructive">
-                            {dias === Infinity ? "Sin encuentro registrado" : `Sin encuentro hace ${dias} días`}
-                          </Badge>
-                        )}
-                      </div>
+                    <TableCell>
+                      <p className="text-base font-semibold">
+                        {s.discipulos ? `${s.discipulos.apellido}, ${s.discipulos.nombre}` : "—"}
+                      </p>
                     </TableCell>
                     <TableCell>
                       {s.discipuladores ? `${s.discipuladores.apellido}, ${s.discipuladores.nombre}` : "—"}
@@ -242,7 +234,18 @@ export default function SeguimientoPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {format(new Date(s.ultima_actualizacion), "dd/MM/yyyy HH:mm")}
+                      {prox ? (
+                        <div className="space-y-0.5">
+                          <p className="text-sm font-medium">{format(new Date(prox.fecha + "T12:00:00"), "dd/MM/yyyy")}</p>
+                          <p className="text-xs text-muted-foreground">{prox.hora || prox.tema_tratado || "Programado"}</p>
+                        </div>
+                      ) : (
+                        <Link href={`/seguimiento/ver?id=${s.id}&encuentro=1`}>
+                          <Button variant="outline" size="sm">
+                            <CalendarPlus className="mr-1 h-4 w-4" /> Registrar encuentro
+                          </Button>
+                        </Link>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
