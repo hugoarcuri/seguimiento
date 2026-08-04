@@ -301,7 +301,7 @@ export function ImportarDiscipulos({ etapas, onImportado }: { etapas: Etapa[]; o
                 <Textarea rows={8} className="text-sm font-mono" value={texto} onChange={(e) => setTexto(e.target.value)} placeholder={FORMATO_EJEMPLO_TEXTO} />
                 <details className="text-xs text-muted-foreground">
                   <summary className="cursor-pointer">Ver formato de ejemplo</summary>
-                  <pre className="mt-1 p-2 bg-muted rounded-md text-[11px]">{FORMATO_EJEMPLO_TEXTO}</pre>
+                  <pre className="mt-1 p-2 bg-muted rounded-md text-[11px] overflow-x-auto">{FORMATO_EJEMPLO_TEXTO}</pre>
                 </details>
                 <div className="text-xs text-muted-foreground">
                   Columnas: <strong>apellido</strong>*, <strong>nombre</strong>*, teléfono, email, etapa (1-4), estado, sexo (M/F), fecha_nacimiento (AAAA-MM-DD), dirección, ministerio, observaciones
@@ -322,7 +322,7 @@ export function ImportarDiscipulos({ etapas, onImportado }: { etapas: Etapa[]; o
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm font-medium">{filas.length} filas ({validadas.length} válidas, {filas.length - validadas.length} con errores)</p>
               <div className="flex gap-1">
                 <Button variant="outline" size="sm" onClick={() => { setFilas([]); setTexto(""); }}>
@@ -330,7 +330,7 @@ export function ImportarDiscipulos({ etapas, onImportado }: { etapas: Etapa[]; o
                 </Button>
               </div>
             </div>
-            <div className="max-h-64 overflow-y-auto border rounded-lg">
+            <div className="max-h-64 overflow-y-auto overflow-x-auto border rounded-lg">
               <Table>
                 <TableHeader>
                   <TableRow>

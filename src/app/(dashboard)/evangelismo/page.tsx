@@ -192,7 +192,7 @@ export default function EvangelismoPage() {
             <Card key={key} className={cn(meta.bgColor, "border-0")}>
               <CardContent className="p-3 flex items-center gap-3">
                 <Icon className={cn("h-6 w-6", meta.color)} />
-                <div>
+                <div className="min-w-0">
                   <p className="text-lg font-bold">{counts[key as keyof typeof counts]}</p>
                   <p className={cn("text-xs font-medium", meta.color)}>{meta.label}</p>
                 </div>
@@ -220,7 +220,7 @@ export default function EvangelismoPage() {
                     <p className="font-medium">{a.nombre} {a.apellido}</p>
                     <p className="text-xs text-muted-foreground">{msj}</p>
                   </div>
-                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleCambiarEstado(a.id, a.estado === "oracion_salvacion" ? "actos_servicio" : "predicacion_evangelio")}>
+                  <Button size="sm" variant="outline" className="min-h-11 md:min-h-8 text-xs" onClick={() => handleCambiarEstado(a.id, a.estado === "oracion_salvacion" ? "actos_servicio" : "predicacion_evangelio")}>
                     Avanzar <ArrowRight className="h-3 w-3 ml-1" />
                   </Button>
                 </div>
@@ -234,7 +234,7 @@ export default function EvangelismoPage() {
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar persona..." className="pl-8 h-9 text-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input placeholder="Buscar persona..." className="pl-8 h-11 md:h-8 text-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <div className="flex gap-1 bg-muted rounded-lg p-0.5">
           {["lista", "kanban"].map((v) => (
@@ -275,10 +275,10 @@ export default function EvangelismoPage() {
                   <div className="flex items-center gap-1 shrink-0">
                     <div className="relative">
                       <button type="button" onClick={(e) => { e.stopPropagation(); setEstadoDropdownOpen(estadoDropdownOpen === p.id ? null : p.id); }}
-                        className={cn("flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium border transition-colors", meta?.bgColor, meta?.color)}
+                        className={cn("flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium border transition-colors min-w-0", meta?.bgColor, meta?.color)}
                       >
-                        <Icon className="h-3.5 w-3.5" />
-                        {meta?.label}
+                        <Icon className="h-3.5 w-3.5 shrink-0" />
+                        <span className="inline-block truncate max-w-[4.5rem] sm:max-w-none">{meta?.label}</span>
                       </button>
                       {estadoDropdownOpen === p.id && (
                         <div className="absolute right-0 top-full mt-1 z-50 bg-popover border rounded-lg shadow-lg p-1 min-w-[180px]" onClick={(e) => e.stopPropagation()}>
@@ -362,29 +362,29 @@ export default function EvangelismoPage() {
         <DialogContent>
           <DialogHeader><DialogTitle>Nueva persona</DialogTitle><DialogDescription>Agregá una persona para comenzar el acompañamiento</DialogDescription></DialogHeader>
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div className="space-y-1">
                 <Label className="text-xs">Nombre *</Label>
-                <Input className="h-9 text-sm" value={nuevaPersona.nombre} onChange={(e) => setNuevaPersona((p) => ({ ...p, nombre: e.target.value }))} />
+                <Input className="h-11 md:h-8 text-sm" value={nuevaPersona.nombre} onChange={(e) => setNuevaPersona((p) => ({ ...p, nombre: e.target.value }))} />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Apellido *</Label>
-                <Input className="h-9 text-sm" value={nuevaPersona.apellido} onChange={(e) => setNuevaPersona((p) => ({ ...p, apellido: e.target.value }))} />
+                <Input className="h-11 md:h-8 text-sm" value={nuevaPersona.apellido} onChange={(e) => setNuevaPersona((p) => ({ ...p, apellido: e.target.value }))} />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div className="space-y-1">
                 <Label className="text-xs">Teléfono</Label>
-                <Input className="h-9 text-sm" value={nuevaPersona.telefono} onChange={(e) => setNuevaPersona((p) => ({ ...p, telefono: e.target.value }))} />
+                <Input className="h-11 md:h-8 text-sm" value={nuevaPersona.telefono} onChange={(e) => setNuevaPersona((p) => ({ ...p, telefono: e.target.value }))} />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Edad</Label>
-                <Input type="number" className="h-9 text-sm" value={nuevaPersona.edad} onChange={(e) => setNuevaPersona((p) => ({ ...p, edad: e.target.value }))} />
+                <Input type="number" className="h-11 md:h-8 text-sm" value={nuevaPersona.edad} onChange={(e) => setNuevaPersona((p) => ({ ...p, edad: e.target.value }))} />
               </div>
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Discípulo que ora (opcional)</Label>
-              <select className="w-full h-9 rounded-lg border border-input bg-transparent px-3 text-sm" value={nuevaPersona.discipulo_id} onChange={(e) => setNuevaPersona((p) => ({ ...p, discipulo_id: e.target.value }))}>
+              <select className="w-full h-11 md:h-8 rounded-lg border border-input bg-transparent px-3 text-sm" value={nuevaPersona.discipulo_id} onChange={(e) => setNuevaPersona((p) => ({ ...p, discipulo_id: e.target.value }))}>
                 <option value="">Yo mismo (líder)</option>
                 {discipulos.map((d) => <option key={d.id} value={d.id}>{d.nombre} {d.apellido}</option>)}
               </select>
@@ -424,7 +424,7 @@ export default function EvangelismoPage() {
                 </DialogHeader>
                 <div className="space-y-4">
                   {/* INFO */}
-                  <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="grid grid-cols-2 gap-2 text-sm min-w-0 break-words">
                     {p.telefono && <div><span className="text-xs text-muted-foreground">Teléfono:</span> <p>{p.telefono}</p></div>}
                     {p.edad && <div><span className="text-xs text-muted-foreground">Edad:</span> <p>{p.edad} años</p></div>}
                     <div><span className="text-xs text-muted-foreground">Estado:</span> <Badge variant="outline">{meta?.label}</Badge></div>
@@ -550,13 +550,13 @@ export default function EvangelismoPage() {
         <DialogContent>
           <DialogHeader><DialogTitle>Editar persona</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1"><Label className="text-xs">Nombre *</Label><Input className="h-9 text-sm" value={editPersonaForm.nombre} onChange={(e) => setEditPersonaForm((f) => ({ ...f, nombre: e.target.value }))} /></div>
-              <div className="space-y-1"><Label className="text-xs">Apellido *</Label><Input className="h-9 text-sm" value={editPersonaForm.apellido} onChange={(e) => setEditPersonaForm((f) => ({ ...f, apellido: e.target.value }))} /></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="space-y-1"><Label className="text-xs">Nombre *</Label><Input className="h-11 md:h-8 text-sm" value={editPersonaForm.nombre} onChange={(e) => setEditPersonaForm((f) => ({ ...f, nombre: e.target.value }))} /></div>
+              <div className="space-y-1"><Label className="text-xs">Apellido *</Label><Input className="h-11 md:h-8 text-sm" value={editPersonaForm.apellido} onChange={(e) => setEditPersonaForm((f) => ({ ...f, apellido: e.target.value }))} /></div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1"><Label className="text-xs">Teléfono</Label><Input className="h-9 text-sm" value={editPersonaForm.telefono} onChange={(e) => setEditPersonaForm((f) => ({ ...f, telefono: e.target.value }))} /></div>
-              <div className="space-y-1"><Label className="text-xs">Edad</Label><Input type="number" className="h-9 text-sm" value={editPersonaForm.edad} onChange={(e) => setEditPersonaForm((f) => ({ ...f, edad: e.target.value }))} /></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="space-y-1"><Label className="text-xs">Teléfono</Label><Input className="h-11 md:h-8 text-sm" value={editPersonaForm.telefono} onChange={(e) => setEditPersonaForm((f) => ({ ...f, telefono: e.target.value }))} /></div>
+              <div className="space-y-1"><Label className="text-xs">Edad</Label><Input type="number" className="h-11 md:h-8 text-sm" value={editPersonaForm.edad} onChange={(e) => setEditPersonaForm((f) => ({ ...f, edad: e.target.value }))} /></div>
             </div>
             <div className="space-y-1"><Label className="text-xs">Observaciones</Label><Textarea rows={2} className="text-sm" value={editPersonaForm.observaciones} onChange={(e) => setEditPersonaForm((f) => ({ ...f, observaciones: e.target.value }))} /></div>
             <div className="space-y-1"><Label className="text-xs">Estado</Label>

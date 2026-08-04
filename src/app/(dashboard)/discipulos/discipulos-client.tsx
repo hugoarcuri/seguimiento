@@ -114,18 +114,18 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
   };
 
   return (
-    <div className="flex gap-6 h-[calc(100vh-8rem)]">
+    <div className="flex flex-col gap-6 sm:flex-row sm:h-[calc(100vh-8rem)]">
       {/* LEFT PANEL */}
-      <div className="w-[380px] shrink-0 flex flex-col gap-4">
-        <div className="flex items-center justify-between">
+      <div className="w-full sm:w-[380px] sm:shrink-0 flex flex-col gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-xl font-bold">Discípulos</h1>
             <p className="text-xs text-muted-foreground">{filtered.length} de {discipulos.length}</p>
           </div>
-          <div className="flex gap-1">
+          <div className="flex flex-wrap gap-1">
             <Link
               href="/discipulos/nuevo"
-              className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/80 h-8 gap-1 px-2 text-xs font-medium"
+              className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/80 min-h-11 md:min-h-8 gap-1 px-2 text-xs font-medium"
             >
               <UserPlus className="h-3.5 w-3.5" />
               Nuevo
@@ -136,7 +136,7 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
 
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Buscar..." className="pl-9 h-9 text-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input placeholder="Buscar..." className="pl-9 h-11 md:h-8 text-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
 
         <div className="flex flex-wrap gap-1">
@@ -183,7 +183,7 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
                     </p>
                   )}
                 </div>
-                <button type="button" onClick={(e) => { e.stopPropagation(); setDeleteDialog(d.id); }} className="shrink-0 text-muted-foreground/50 hover:text-destructive transition-colors opacity-0 group-hover:opacity-100">
+                <button type="button" onClick={(e) => { e.stopPropagation(); setDeleteDialog(d.id); }} className="shrink-0 text-muted-foreground/50 hover:text-destructive transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </button>

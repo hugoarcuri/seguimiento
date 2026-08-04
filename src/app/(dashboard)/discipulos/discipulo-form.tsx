@@ -28,7 +28,7 @@ interface DiscipuloFormProps {
   isEditing?: boolean;
 }
 
-const inputClass = "h-9";
+const inputClass = "h-11 md:h-8";
 const inputLabelClass = "text-[11px] font-medium text-muted-foreground";
 
 const sexoOptions: Array<{ value: "M" | "F"; label: string }> = [
@@ -65,7 +65,7 @@ function ChipGroup<T extends string>({
             key={opt.value}
             type="button"
             onClick={() => onChange(opt.value)}
-            className={`h-9 px-3 rounded-lg text-xs font-medium transition-colors ${
+            className={`min-h-11 md:min-h-8 px-3 rounded-lg text-xs font-medium transition-colors ${
               active
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "bg-muted text-muted-foreground hover:bg-muted/80"
@@ -323,7 +323,7 @@ export function DiscipuloForm({
           </div>
           <div className="space-y-1">
             <Label className={inputLabelClass}>Marcas espirituales</Label>
-            <div className="flex h-9 flex-wrap items-center gap-6">
+            <div className="flex h-11 md:h-8 flex-wrap items-center gap-6">
               <label className="flex cursor-pointer items-center gap-2 text-sm">
                 <Checkbox
                   checked={bautizado}

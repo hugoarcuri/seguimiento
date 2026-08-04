@@ -65,7 +65,7 @@ export function DiscipuloDetailClient({
       <div className="flex items-center gap-4">
         <Link
           href="/discipulos"
-          className="inline-flex items-center justify-center rounded-lg border border-border bg-background hover:bg-muted size-9"
+          className="inline-flex items-center justify-center rounded-lg border border-border bg-background hover:bg-muted size-11 md:size-9"
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
@@ -107,7 +107,7 @@ export function DiscipuloDetailClient({
         </div>
         <Link
           href={`/discipulos/editar?id=${discipulo.id}`}
-          className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/80 h-9 gap-1.5 px-3 text-sm font-medium shrink-0"
+          className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/80 min-h-11 md:min-h-8 gap-1.5 px-3 text-sm font-medium shrink-0"
         >
           <Edit className="h-4 w-4" />
           Editar
@@ -178,14 +178,14 @@ export function DiscipuloDetailClient({
           <TabsTrigger value="timeline">Historial</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="info" className="space-y-4">
+        <TabsContent value="info" className="w-full min-w-0 space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle>Información Personal</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="grid grid-cols-2 gap-2 text-sm min-w-0 break-words">
                   <span className="text-muted-foreground">Fecha Nac.</span>
                   <span>
                     {discipulo.fecha_nacimiento
@@ -209,7 +209,7 @@ export function DiscipuloDetailClient({
                 <CardTitle>Información Espiritual</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="grid grid-cols-2 gap-2 text-sm min-w-0 break-words">
                   <span className="text-muted-foreground">Conversión</span>
                   <span>
                     {discipulo.fecha_conversion
@@ -251,7 +251,7 @@ export function DiscipuloDetailClient({
           )}
         </TabsContent>
 
-        <TabsContent value="agenda" className="space-y-4">
+        <TabsContent value="agenda" className="w-full min-w-0 space-y-4">
           {agendas.length === 0 ? (
             <Card>
               <CardContent className="py-8 text-center text-muted-foreground">
@@ -290,7 +290,7 @@ export function DiscipuloDetailClient({
           )}
         </TabsContent>
 
-        <TabsContent value="oracion" className="space-y-4">
+        <TabsContent value="oracion" className="w-full min-w-0 space-y-4">
           {oraciones.length === 0 ? (
             <Card>
               <CardContent className="py-8 text-center text-muted-foreground">
@@ -332,7 +332,7 @@ export function DiscipuloDetailClient({
           )}
         </TabsContent>
 
-        <TabsContent value="tareas" className="space-y-4">
+        <TabsContent value="tareas" className="w-full min-w-0 space-y-4">
           {tareas.length === 0 ? (
             <Card>
               <CardContent className="py-8 text-center text-muted-foreground">
@@ -373,7 +373,7 @@ export function DiscipuloDetailClient({
           )}
         </TabsContent>
 
-        <TabsContent value="timeline" className="space-y-4">
+        <TabsContent value="timeline" className="w-full min-w-0 space-y-4">
           {timeline.length === 0 ? (
             <Card>
               <CardContent className="py-8 text-center text-muted-foreground">
