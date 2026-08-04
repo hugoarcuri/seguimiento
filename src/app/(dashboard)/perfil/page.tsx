@@ -78,7 +78,7 @@ export default function PerfilPage() {
 
         <Card className="md:col-span-2">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle>Información Personal</CardTitle>
               {!editando ? (
                 <Button variant="outline" onClick={() => setEditando(true)}>
@@ -127,7 +127,7 @@ export default function PerfilPage() {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
                 <div>
                   <span className="text-muted-foreground">Nombre</span>
                   <p className="font-medium">{user?.nombre}</p>
@@ -138,8 +138,8 @@ export default function PerfilPage() {
                 </div>
                 <div>
                   <span className="text-muted-foreground">Email</span>
-                  <p className="font-medium flex items-center gap-1">
-                    <Mail className="h-3 w-3" />
+                  <p className="font-medium flex min-w-0 items-center gap-1 break-words">
+                    <Mail className="h-3 w-3 shrink-0" />
                     {user?.email}
                   </p>
                 </div>

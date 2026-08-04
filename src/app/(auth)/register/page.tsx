@@ -57,7 +57,7 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-sm">
         <CardHeader className="text-center space-y-2">
           <div className="flex justify-center mb-2">
             <Image src={`${BASE_PATH}/logo.png`} alt="JH" width={48} height={48} className="rounded" />
@@ -67,7 +67,7 @@ export default function RegisterPage() {
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="nombre">Nombre</Label>
                 <Input id="nombre" placeholder="Juan" {...register("nombre")} />

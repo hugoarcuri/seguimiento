@@ -49,13 +49,13 @@ function EtapaEditorRow({
   return (
     <div className="rounded-lg border p-4 space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
             {etapa.id}
           </span>
-          <p className="font-medium">Etapa {index + 1}</p>
+          <p className="truncate font-medium">Etapa {index + 1}</p>
         </div>
-        <div className="flex gap-1">
+        <div className="flex shrink-0 gap-1">
           <Button
             variant="outline"
             size="icon"

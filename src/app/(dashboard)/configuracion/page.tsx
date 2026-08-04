@@ -31,12 +31,12 @@ export default function ConfiguracionPage() {
           <CardContent className="space-y-3">
             <div className="grid grid-cols-2 gap-2 text-sm">
               <span className="text-muted-foreground">Nombre</span>
-              <span>
+              <span className="min-w-0 break-words">
                 {user?.nombre} {user?.apellido}
               </span>
               <span className="text-muted-foreground">Email</span>
-              <span className="flex items-center gap-1">
-                <Mail className="h-3 w-3" />
+              <span className="flex min-w-0 items-center gap-1 break-words">
+                <Mail className="h-3 w-3 shrink-0" />
                 {user?.email}
               </span>
               <span className="text-muted-foreground">Rol</span>
@@ -47,8 +47,8 @@ export default function ConfiguracionPage() {
                 </Badge>
               </span>
               <span className="text-muted-foreground">Miembro desde</span>
-              <span className="flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
+              <span className="flex min-w-0 items-center gap-1">
+                <Calendar className="h-3 w-3 shrink-0" />
                 {user?.created_at
                   ? format(new Date(user.created_at), "dd/MM/yyyy")
                   : "—"}

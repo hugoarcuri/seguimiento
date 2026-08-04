@@ -60,7 +60,7 @@ export default function RestablecerPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-sm">
         <CardHeader className="text-center space-y-2">
           <div className="flex justify-center mb-2">
             <Image src={`${BASE_PATH}/logo.png`} alt="JH" width={48} height={48} className="rounded" />
