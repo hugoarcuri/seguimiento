@@ -228,7 +228,7 @@ export function DashboardClient({
         {stats.map((stat) => (
           <Card key={stat.title} size="sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="truncate text-sm">{stat.title}</CardTitle>
+              <CardTitle className="min-w-0 flex-1 truncate text-sm">{stat.title}</CardTitle>
               <div className={cn("rounded-lg p-2 shrink-0", stat.bg)}>
                 <stat.icon className={cn("h-4 w-4", stat.color)} />
               </div>
@@ -373,7 +373,7 @@ export function DashboardClient({
                   <div className="mb-0.5 flex items-center justify-between gap-2">
                     <span
                       className={cn(
-                        "flex items-center gap-1.5 truncate text-xs font-medium",
+                        "flex min-w-0 items-center gap-1.5 truncate text-xs font-medium",
                         esMeta && "text-amber-600"
                       )}
                     >

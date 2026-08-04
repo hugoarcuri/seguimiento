@@ -217,7 +217,7 @@ export default function TareasPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold">Tareas</h1>
           <p className="text-muted-foreground">{isAdmin ? "Administrá las tareas asignadas a los discípulos" : "Mis tareas asignadas"}</p>
@@ -309,7 +309,7 @@ export default function TareasPage() {
       </Card>
 
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
           <div>
             <h2 className="text-xl font-semibold">Materiales</h2>
             <p className="text-sm text-muted-foreground">Recursos para el discipulado</p>
@@ -364,7 +364,7 @@ export default function TareasPage() {
               <Label htmlFor="mat-titulo">Título</Label>
               <Input id="mat-titulo" value={matForm.titulo} onChange={(e) => setMatForm({ ...matForm, titulo: e.target.value })} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Tipo</Label>
                  <Select onValueChange={(v) => setMatForm({ ...matForm, tipo: v?.toString() ?? "" })} value={matForm.tipo}>
@@ -441,7 +441,7 @@ export default function TareasPage() {
               <Label htmlFor="descripcion">Descripción</Label>
               <Textarea id="descripcion" {...form.register("descripcion")} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Tipo</Label>
                 <Controller
