@@ -24,6 +24,7 @@ import type { Etapa } from "@/types/database";
 
 interface DiscipuloFormProps {
   etapas: Etapa[];
+  discipuladores?: Array<{ id: string; nombre: string; apellido: string }>;
   initialData?: DiscipuloInput & { id?: string };
   isEditing?: boolean;
 }
@@ -81,6 +82,7 @@ function ChipGroup<T extends string>({
 
 export function DiscipuloForm({
   etapas,
+  discipuladores = [],
   initialData,
   isEditing,
 }: DiscipuloFormProps) {
@@ -101,6 +103,7 @@ export function DiscipuloForm({
     defaultValues: initialData
       ? {
           ...initialData,
+          lider_id: initialData.lider_id || "",
           bautizado: initialData.bautizado ?? !!initialData.fecha_bautismo,
           es_miembro: initialData.es_miembro ?? false,
         }
@@ -109,6 +112,7 @@ export function DiscipuloForm({
           estado: "activo",
           bautizado: false,
           es_miembro: false,
+          lider_id: "",
         },
   });
 
@@ -156,6 +160,7 @@ export function DiscipuloForm({
 
     const payload = {
       ...data,
+      lider_id: data.lider_id || null,
       bautizado: data.bautizado ?? false,
       es_miembro: data.es_miembro ?? false,
       avatar_url: data.avatar_url || generarAvatarUrl(data.nombre, data.apellido),
@@ -193,7 +198,7 @@ export function DiscipuloForm({
     } else {
       const { data: newDiscipulo, error } = await supabase
         .from("discipulos")
-        .insert({ ...payload, lider_id: user.id })
+        .insert({ ...payload, lider_id: data.lider_id || user.id })
         .select("id")
         .single();
 
@@ -313,6 +318,25 @@ export function DiscipuloForm({
             </SelectContent>
           </Select>
           {errors.etapa_id && <p className="text-sm text-destructive">{errors.etapa_id.message}</p>}
+        </div>
+
+        {/* DISCIPULADOR */}
+        <div className="space-y-1 pt-2">
+          <Label className={inputLabelClass}>Discipulador</Label>
+          <Select
+            onValueChange={(v) => setValue("lider_id", v?.toString() === "none" ? "" : v?.toString() ?? "", { shouldValidate: true })}
+            defaultValue={String(initialData?.lider_id || "none")}
+          >
+            <SelectTrigger className="w-full sm:w-auto sm:min-w-[15rem] min-h-11 md:min-h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="min-w-[15rem]">
+              <SelectItem value="none">Sin asignar</SelectItem>
+              {discipuladores.map((d) => (
+                <SelectItem key={d.id} value={d.id}>{d.apellido}, {d.nombre}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* VIDA ESPIRITUAL */}

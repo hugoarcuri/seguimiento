@@ -12,9 +12,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Edit, Camera, Loader2, Calendar, Phone, Mail, MapPin } from "lucide-react";
 import { format } from "date-fns";
-import type { Discipulo, Agenda, Oracion, Tarea, Timeline, Etapa } from "@/types/database";
+import type { Discipulo, Agenda, Oracion, Tarea, Timeline, Etapa, Profile } from "@/types/database";
 import { estadoColors, calcularEdad } from "@/lib/utils";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 
@@ -37,8 +37,27 @@ export function DiscipuloDetailClient({
 }: DiscipuloDetailClientProps) {
   const etapaActual = etapas.find((e) => e.id === initialDiscipulo.etapa_id);
   const [discipulo, setDiscipulo] = useState(initialDiscipulo);
+  const [discipulador, setDiscipulador] = useState<Profile | null>(null);
   const [subiendoAvatar, setSubiendoAvatar] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    let cancelado = false;
+    if (!discipulo.lider_id) {
+      setDiscipulador(null);
+      return;
+    }
+    const supabase = createClient();
+    supabase
+      .from("profiles")
+      .select("nombre, apellido")
+      .eq("id", discipulo.lider_id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelado) setDiscipulador(data || null);
+      });
+    return () => { cancelado = true; };
+  }, [discipulo.lider_id]);
 
   const handleSubirAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -198,6 +217,10 @@ export function DiscipuloDetailClient({
                   </span>
                   <span className="text-muted-foreground">Sexo</span>
                   <span>{discipulo.sexo === "M" ? "Masculino" : discipulo.sexo === "F" ? "Femenino" : "—"}</span>
+                  <span className="text-muted-foreground">Discipulador</span>
+                  <span>
+                    {discipulador ? `${discipulador.apellido}, ${discipulador.nombre}` : "—"}
+                  </span>
                   <span className="text-muted-foreground">Ministerio</span>
                   <span>{discipulo.ministerio || "—"}</span>
                   <span className="text-muted-foreground">Dones</span>

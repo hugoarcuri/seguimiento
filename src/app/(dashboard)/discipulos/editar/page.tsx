@@ -11,6 +11,7 @@ function EditarDiscipuloContent() {
   const id = searchParams.get("id");
   const router = useRouter();
   const [etapas, setEtapas] = useState<Etapa[]>([]);
+  const [discipuladores, setDiscipuladores] = useState<Array<{ id: string; nombre: string; apellido: string }>>([]);
   const [discipulo, setDiscipulo] = useState<Discipulo | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -24,13 +25,15 @@ function EditarDiscipuloContent() {
     Promise.all([
       supabase.from("discipulos").select("*").eq("id", id).single(),
       supabase.from("etapas").select("*").order("orden", { ascending: true }),
-    ]).then(([discipuloRes, etapasRes]) => {
+      supabase.from("profiles").select("id, nombre, apellido").or("rol.eq.discipulador,rol.eq.admin").order("apellido", { ascending: true }),
+    ]).then(([discipuloRes, etapasRes, discipuladoresRes]) => {
       if (!discipuloRes.data) {
         router.push("/discipulos");
         return;
       }
       setDiscipulo(discipuloRes.data);
       setEtapas(etapasRes.data || []);
+      setDiscipuladores(discipuladoresRes.data || []);
       setLoading(false);
     }).catch(console.error);
   }, [id, router]);
@@ -48,6 +51,7 @@ function EditarDiscipuloContent() {
       </div>
       <DiscipuloForm
         etapas={etapas}
+        discipuladores={discipuladores}
         initialData={{
           ...discipulo,
           fecha_nacimiento: discipulo.fecha_nacimiento?.split("T")[0],

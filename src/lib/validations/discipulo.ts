@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const discipuloSchema = z.object({
+  lider_id: z.string().optional().nullable(),
   apellido: z.string().min(1, "El apellido es requerido"),
   nombre: z.string().min(1, "El nombre es requerido"),
   fecha_nacimiento: z.string().optional().nullable(),

@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard,
   Users,
+  UserCog,
   CalendarCheck,
   Church,
   Settings,
@@ -20,6 +21,7 @@ export interface NavItem {
 export const adminMenuItems: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/discipulos", label: "Discípulos", icon: Users },
+  { href: "/discipuladores", label: "Discipuladores", icon: UserCog },
   { href: "/tareas", label: "Tareas", icon: ClipboardCheck },
   { href: "/seguimiento", label: "Seguimiento", icon: BookOpen },
   { href: "/evangelismo", label: "Evangelismo", icon: Heart },

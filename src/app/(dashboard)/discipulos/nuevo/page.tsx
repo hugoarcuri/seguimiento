@@ -7,14 +7,19 @@ import type { Etapa } from "@/types/database";
 
 export default function NuevoDiscipuloPage() {
   const [etapas, setEtapas] = useState<Etapa[]>([]);
+  const [discipuladores, setDiscipuladores] = useState<Array<{ id: string; nombre: string; apellido: string }>>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const supabase = createClient();
     (async () => {
       try {
-        const etapasRes = await supabase.from("etapas").select("*").order("orden", { ascending: true });
+        const [etapasRes, discipuladoresRes] = await Promise.all([
+          supabase.from("etapas").select("*").order("orden", { ascending: true }),
+          supabase.from("profiles").select("id, nombre, apellido").or("rol.eq.discipulador,rol.eq.admin").order("apellido", { ascending: true }),
+        ]);
         setEtapas(etapasRes.data || []);
+        setDiscipuladores(discipuladoresRes.data || []);
       } catch (err) {
         console.error(err);
       } finally {
@@ -31,7 +36,7 @@ export default function NuevoDiscipuloPage() {
         <h1 className="text-3xl font-bold">Nuevo Discípulo</h1>
         <p className="text-muted-foreground">Registra un nuevo discípulo en el sistema</p>
       </div>
-      <DiscipuloForm etapas={etapas} />
+      <DiscipuloForm etapas={etapas} discipuladores={discipuladores} />
     </div>
   );
 }
