@@ -366,19 +366,20 @@ export function DashboardClient({ data }: { data: DashboardData }) {
         </Card>
       </div>
 
-      {/* QUIÉN ESTÁ LISTO PARA AVANZAR */}
-      <Card size="sm" className="border-emerald-200 dark:border-emerald-900">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-              Listos para avanzar
-            </CardTitle>
-            <Badge variant="secondary">{totalListos}</Badge>
-          </div>
-          <CardDescription>Progreso 80%+ en su etapa o 30+ días en la etapa de evangelismo</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
+      {/* LISTOS | DISCIPULADORES + ACTIVIDAD */}
+      <div className="grid gap-3 lg:grid-cols-2">
+        <Card size="sm" className="flex min-h-0 flex-col border-emerald-200 dark:border-emerald-900 lg:max-h-[40rem]">
+          <CardHeader className="shrink-0">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                Listos para avanzar
+              </CardTitle>
+              <Badge variant="secondary">{totalListos}</Badge>
+            </div>
+            <CardDescription>Progreso 80%+ en su etapa o 30+ días en la etapa de evangelismo</CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 space-y-2 overflow-y-auto">
           {data.listosAvanzar.length > 0 && (
             <>
               <p className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -438,61 +439,62 @@ export function DashboardClient({ data }: { data: DashboardData }) {
         </CardContent>
       </Card>
 
-      {/* DISCIPULADORES QUE REQUIEREN APOYO */}
-      <Card size="sm">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <HeartHandshake className="h-4 w-4 text-muted-foreground" />
-              Discipuladores que requieren apoyo
-            </CardTitle>
-            <Badge variant="secondary">{data.discipuladores.length}</Badge>
-          </div>
-          <CardDescription>Por cantidad de discípulos en riesgo o sin encuentro reciente</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {data.discipuladores.length === 0 ? (
-            <p className="py-1 text-sm text-muted-foreground">Todos los discipuladores están al día</p>
-          ) : (
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {data.discipuladores.map((d) => (
-                <Link
-                  key={d.id}
-                  href="/discipulos"
-                  className="rounded-lg border p-3 transition-colors hover:border-primary/50 hover:no-underline"
-                >
-                  <p className="truncate text-sm font-medium">{d.nombre} {d.apellido}</p>
-                  <p className="text-xs text-muted-foreground">{d.total} discípulos</p>
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {d.enRiesgo > 0 && (
-                      <Badge variant="destructive" className="px-1.5 text-[10px]">
-                        {d.enRiesgo} en riesgo
-                      </Badge>
-                    )}
-                    {d.sinContacto > 0 && (
-                      <Badge variant="outline" className="px-1.5 text-[10px] text-amber-600 dark:text-amber-400">
-                        {d.sinContacto} sin encuentro
-                      </Badge>
-                    )}
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        <div className="flex min-h-0 flex-col gap-3">
+          {/* DISCIPULADORES QUE REQUIEREN APOYO */}
+          <Card size="sm" className="flex min-h-0 flex-col lg:max-h-[22rem]">
+            <CardHeader className="shrink-0">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <HeartHandshake className="h-4 w-4 text-muted-foreground" />
+                  Discipuladores que requieren apoyo
+                </CardTitle>
+                <Badge variant="secondary">{data.discipuladores.length}</Badge>
+              </div>
+              <CardDescription>Por cantidad de discípulos en riesgo o sin encuentro reciente</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 space-y-2 overflow-y-auto">
+              {data.discipuladores.length === 0 ? (
+                <p className="py-1 text-sm text-muted-foreground">Todos los discipuladores están al día</p>
+              ) : (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {data.discipuladores.map((d) => (
+                    <Link
+                      key={d.id}
+                      href="/discipulos"
+                      className="rounded-lg border p-3 transition-colors hover:border-primary/50 hover:no-underline"
+                    >
+                      <p className="truncate text-sm font-medium">{d.nombre} {d.apellido}</p>
+                      <p className="text-xs text-muted-foreground">{d.total} discípulos</p>
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {d.enRiesgo > 0 && (
+                          <Badge variant="destructive" className="px-1.5 text-[10px]">
+                            {d.enRiesgo} en riesgo
+                          </Badge>
+                        )}
+                        {d.sinContacto > 0 && (
+                          <Badge variant="outline" className="px-1.5 text-[10px] text-amber-600 dark:text-amber-400">
+                            {d.sinContacto} sin encuentro
+                          </Badge>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-      {/* ACTIVIDAD RECIENTE */}
-      <Card size="sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Activity className="h-4 w-4 text-blue-500" />
-            Actividad reciente
-          </CardTitle>
-          <CardDescription>Motivos de oración y avances de evangelismo</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 lg:grid-cols-2">
+          {/* ACTIVIDAD RECIENTE */}
+          <Card size="sm" className="flex min-h-0 flex-col lg:max-h-[24rem]">
+            <CardHeader className="shrink-0">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Activity className="h-4 w-4 text-blue-500" />
+                Actividad reciente
+              </CardTitle>
+              <CardDescription>Motivos de oración y avances de evangelismo</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 overflow-y-auto">
+              <div className="grid gap-4 lg:grid-cols-2">
             {/* MOTIVOS DE ORACIÓN */}
             <div>
               <Link href="/oracion" className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground">
@@ -548,8 +550,10 @@ export function DashboardClient({ data }: { data: DashboardData }) {
               )}
             </div>
           </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+        </div>
+      </div>
     </div>
   );
 }
