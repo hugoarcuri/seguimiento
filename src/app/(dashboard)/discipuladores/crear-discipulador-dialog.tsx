@@ -36,7 +36,7 @@ const labelClass = "text-[11px] font-medium text-muted-foreground";
 interface CrearDiscipuladorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreado: () => void;
+  onCreado?: () => void;
 }
 
 export function CrearDiscipuladorDialog({ open, onOpenChange, onCreado }: CrearDiscipuladorDialogProps) {
@@ -82,7 +82,7 @@ export function CrearDiscipuladorDialog({ open, onOpenChange, onCreado }: CrearD
     toast.success("Discipulador creado exitosamente");
     reset();
     onOpenChange(false);
-    onCreado();
+    onCreado?.();
   };
 
   return (

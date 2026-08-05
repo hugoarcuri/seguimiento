@@ -35,7 +35,7 @@ interface EditarDiscipuladorDialogProps {
   open: boolean;
   discipulador: Profile | null;
   onOpenChange: (open: boolean) => void;
-  onEditado: () => void;
+  onEditado?: () => void;
 }
 
 export function EditarDiscipuladorDialog({ open, discipulador, onOpenChange, onEditado }: EditarDiscipuladorDialogProps) {
@@ -70,7 +70,7 @@ export function EditarDiscipuladorDialog({ open, discipulador, onOpenChange, onE
     toast.success("Discipulador actualizado");
     reset();
     onOpenChange(false);
-    onEditado();
+    onEditado?.();
   };
 
   return (

@@ -22,7 +22,7 @@ export default function DiscipuladoresPage() {
       supabase.from("etapas").select("*").order("orden", { ascending: true }),
     ]);
     setDiscipuladores(discipuladoresRes.data || []);
-    setDiscipulos(discipulosRes.data || []);
+    setDiscipulos((discipulosRes.data as Discipulo[] | null) || []);
     setEtapas(etapasRes.data || []);
   }, []);
 

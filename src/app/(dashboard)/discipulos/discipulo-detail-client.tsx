@@ -37,16 +37,13 @@ export function DiscipuloDetailClient({
 }: DiscipuloDetailClientProps) {
   const etapaActual = etapas.find((e) => e.id === initialDiscipulo.etapa_id);
   const [discipulo, setDiscipulo] = useState(initialDiscipulo);
-  const [discipulador, setDiscipulador] = useState<Profile | null>(null);
+  const [discipulador, setDiscipulador] = useState<Pick<Profile, "nombre" | "apellido"> | null | undefined>(undefined);
   const [subiendoAvatar, setSubiendoAvatar] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let cancelado = false;
-    if (!discipulo.lider_id) {
-      setDiscipulador(null);
-      return;
-    }
+    if (!discipulo.lider_id) return;
     const supabase = createClient();
     supabase
       .from("profiles")
@@ -219,7 +216,11 @@ export function DiscipuloDetailClient({
                   <span>{discipulo.sexo === "M" ? "Masculino" : discipulo.sexo === "F" ? "Femenino" : "—"}</span>
                   <span className="text-muted-foreground">Discipulador</span>
                   <span>
-                    {discipulador ? `${discipulador.apellido}, ${discipulador.nombre}` : "—"}
+                    {discipulo.lider_id
+                      ? discipulador
+                        ? `${discipulador.apellido}, ${discipulador.nombre}`
+                        : "—"
+                      : "Sin asignar"}
                   </span>
                   <span className="text-muted-foreground">Ministerio</span>
                   <span>{discipulo.ministerio || "—"}</span>

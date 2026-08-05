@@ -254,7 +254,7 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
                 </div>
                 {discipulosDe.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-6">
-                    Sin discípulos asignados. Usá "Asignar discípulo" para vincular uno.
+                    Sin discípulos asignados. Usá &quot;Asignar discípulo&quot; para vincular uno.
                   </p>
                 ) : (
                   <div className="space-y-1">
