@@ -15,12 +15,28 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { BASE_PATH } from "@/lib/constants/paths";
+import { GoogleIcon } from "@/components/icons/google-icon";
 
 export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const router = useRouter();
+
+  const handleGoogle = async () => {
+    setLoading(true);
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}${BASE_PATH}/auth/callback`,
+      },
+    });
+    if (error) {
+      toast.error(error.message);
+      setLoading(false);
+    }
+  };
 
   const {
     register,
@@ -67,6 +83,18 @@ export default function RegisterPage() {
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
+            <Button type="button" variant="outline" className="w-full" onClick={handleGoogle} disabled={loading}>
+              <GoogleIcon className="h-4 w-4 mr-2" />
+              Registrarse con Google
+            </Button>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">o</span>
+              </div>
+            </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="nombre">Nombre</Label>

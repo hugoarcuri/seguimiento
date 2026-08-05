@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { GoogleIcon } from "@/components/icons/google-icon";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { BASE_PATH } from "@/lib/constants/paths";
@@ -65,6 +66,20 @@ export default function LoginPage() {
     toast.success("Revisá tu email para restablecer la contraseña");
   };
 
+  const handleGoogle = async () => {
+    setLoading(true);
+    const supabase = createClient();
+    const redirectTo = `${window.location.origin}${BASE_PATH}/auth/callback`;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo },
+    });
+    if (error) {
+      toast.error(error.message);
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
       <Card className="w-full max-w-sm">
@@ -91,6 +106,18 @@ export default function LoginPage() {
         ) : (
           <form onSubmit={handleSubmit(onSubmit)}>
             <CardContent className="space-y-4">
+              <Button type="button" variant="outline" className="w-full" onClick={handleGoogle} disabled={loading}>
+                <GoogleIcon className="h-4 w-4 mr-2" />
+                Continuar con Google
+              </Button>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">o</span>
+                </div>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input id="email" type="email" placeholder="tu@email.com" {...register("email")} />
