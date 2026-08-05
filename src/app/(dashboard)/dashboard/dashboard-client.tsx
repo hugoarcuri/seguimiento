@@ -157,11 +157,11 @@ function Avatar({ persona, className }: { persona: DiscipuloRaw; className?: str
 function Barra({ label, value, className }: { label: string; value: number; className?: string }) {
   return (
     <div>
-      <div className="mb-1 flex items-center justify-between text-xs">
+      <div className="mb-1 flex items-center justify-between text-[11px]">
         <span className="text-muted-foreground">{label}</span>
         <span className="font-semibold tabular-nums">{value}%</span>
       </div>
-      <div className="h-2 overflow-hidden rounded bg-muted">
+      <div className="h-1.5 overflow-hidden rounded bg-muted">
         <div className={cn("h-full rounded", className)} style={{ width: `${Math.min(100, value)}%` }} />
       </div>
     </div>
@@ -214,7 +214,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto max-w-6xl space-y-4">
       {/* HEADER */}
       <div>
         <h1 className="text-2xl font-bold lg:text-xl">Dashboard</h1>
@@ -243,28 +243,29 @@ export function DashboardClient({ data }: { data: DashboardData }) {
         ))}
       </div>
 
-      {/* SALUD REAL DEL DISCIPULADO */}
-      <Card size="sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Activity className="h-4 w-4 text-emerald-500" />
-            Salud real del discipulado
-          </CardTitle>
-          <CardDescription>Retención, madurez, contacto y avance de la iglesia</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-5 lg:grid-cols-2">
-            <div className="space-y-3">
-              <Barra label="Retención (activos)" value={salud.retencionPct} className="bg-blue-500" />
-              <Barra label="Contacto en los últimos 15 días" value={salud.contactoPct} className="bg-emerald-500" />
-              <Barra label="Bautizados" value={salud.bautizadosPct} className="bg-amber-500" />
-              <Barra label="Miembros" value={salud.miembrosPct} className="bg-violet-500" />
-              <Barra label="Oraciones respondidas" value={salud.oracionesRespondidasPct} className="bg-cyan-500" />
-            </div>
-            <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Personas por etapa
-              </p>
+      {/* SALUD + ATENCIÓN URGENTE (50/50) */}
+      <div className="grid gap-3 lg:grid-cols-2">
+        <Card size="sm" className="flex min-h-0 flex-col lg:max-h-[34rem]">
+          <CardHeader className="shrink-0">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Activity className="h-4 w-4 text-emerald-500" />
+              Salud real del discipulado
+            </CardTitle>
+            <CardDescription>Retención, madurez, contacto y avance de la iglesia</CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 overflow-y-auto">
+            <div className="space-y-4">
+              <div className="space-y-2.5">
+                <Barra label="Retención (activos)" value={salud.retencionPct} className="bg-blue-500" />
+                <Barra label="Contacto en los últimos 15 días" value={salud.contactoPct} className="bg-emerald-500" />
+                <Barra label="Bautizados" value={salud.bautizadosPct} className="bg-amber-500" />
+                <Barra label="Miembros" value={salud.miembrosPct} className="bg-violet-500" />
+                <Barra label="Oraciones respondidas" value={salud.oracionesRespondidasPct} className="bg-cyan-500" />
+              </div>
+              <div>
+                <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Personas por etapa
+                </p>
               <div className="space-y-2">
                 {salud.discipulosPorEtapa.map((e, i) => {
                   const esMeta = i === salud.discipulosPorEtapa.length - 1;
@@ -298,19 +299,19 @@ export function DashboardClient({ data }: { data: DashboardData }) {
         </CardContent>
       </Card>
 
-      {/* QUIÉN NECESITA ATENCIÓN URGENTE */}
-      <Card size="sm" className="border-red-200 dark:border-red-900">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <AlertTriangle className="h-4 w-4 text-red-500" />
-              Necesitan atención urgente
-            </CardTitle>
-            <Badge variant="destructive">{data.urgentes.length}</Badge>
-          </div>
-          <CardDescription>Sin seguimiento, progreso bajo, sin encuentro, pendientes o sin discipulador</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
+        {/* QUIÉN NECESITA ATENCIÓN URGENTE */}
+        <Card size="sm" className="flex min-h-0 flex-col border-red-200 dark:border-red-900 lg:max-h-[34rem]">
+          <CardHeader className="shrink-0">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <AlertTriangle className="h-4 w-4 text-red-500" />
+                Necesitan atención urgente
+              </CardTitle>
+              <Badge variant="destructive">{data.urgentes.length}</Badge>
+            </div>
+            <CardDescription>Sin seguimiento, progreso bajo, sin encuentro, pendientes o sin discipulador</CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 space-y-2 overflow-y-auto">
           {data.urgentes.length === 0 ? (
             <p className="py-1 text-sm text-muted-foreground">No hay nadie que requiera atención urgente</p>
           ) : (
@@ -362,7 +363,8 @@ export function DashboardClient({ data }: { data: DashboardData }) {
             </div>
           )}
         </CardContent>
-      </Card>
+        </Card>
+      </div>
 
       {/* QUIÉN ESTÁ LISTO PARA AVANZAR */}
       <Card size="sm" className="border-emerald-200 dark:border-emerald-900">
