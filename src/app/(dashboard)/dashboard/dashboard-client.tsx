@@ -17,6 +17,8 @@ import {
   ArrowRight,
   Sparkles,
 } from "lucide-react";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 export interface DiscipuloRaw {
   id: string;
@@ -45,6 +47,22 @@ export interface OracionVieja {
   id: string;
   pedido: string;
   dias: number;
+}
+
+export interface OracionReciente {
+  id: string;
+  pedido: string;
+  estado: string;
+  fecha: string;
+  discipulo?: string;
+}
+
+export interface EventoReciente {
+  id: string;
+  descripcion: string;
+  tipo: string;
+  fecha: string;
+  persona?: string;
 }
 
 export interface EvangelismoListo {
@@ -97,6 +115,8 @@ export interface DashboardData {
   listosAvanzar: ListoAvanzar[];
   evangelismoListos: EvangelismoListo[];
   discipuladores: DiscipuladorItem[];
+  oracionesRecientes: OracionReciente[];
+  evangelismoRecientes: EventoReciente[];
 }
 
 const avatarColors = [
@@ -162,6 +182,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
       icon: Users,
       color: "text-blue-600",
       bg: "bg-blue-50 dark:bg-blue-950",
+      href: "/discipulos",
     },
     {
       title: `En la meta · ${nombreMeta}`,
@@ -170,6 +191,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
       icon: Trophy,
       color: "text-amber-600",
       bg: "bg-amber-50 dark:bg-amber-950",
+      href: "/discipulos",
     },
     {
       title: "Progreso promedio",
@@ -178,6 +200,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
       icon: Activity,
       color: "text-emerald-600",
       bg: "bg-emerald-50 dark:bg-emerald-950",
+      href: "/seguimiento",
     },
     {
       title: "Tareas cumplidas",
@@ -186,6 +209,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
       icon: ClipboardCheck,
       color: "text-violet-600",
       bg: "bg-violet-50 dark:bg-violet-950",
+      href: "/tareas",
     },
   ];
 
@@ -202,18 +226,20 @@ export function DashboardClient({ data }: { data: DashboardData }) {
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {stats.map((stat) => (
-          <Card key={stat.title} size="sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="min-w-0 flex-1 truncate text-sm">{stat.title}</CardTitle>
-              <div className={cn("rounded-lg p-2 shrink-0", stat.bg)}>
-                <stat.icon className={cn("h-4 w-4", stat.color)} />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold tabular-nums">{stat.value}</div>
-              <p className="text-xs text-muted-foreground">{stat.description}</p>
-            </CardContent>
-          </Card>
+          <Link key={stat.title} href={stat.href} className="group block">
+            <Card size="sm" className="transition-colors group-hover:border-primary/50">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                <CardTitle className="min-w-0 flex-1 truncate text-sm">{stat.title}</CardTitle>
+                <div className={cn("rounded-lg p-2 shrink-0", stat.bg)}>
+                  <stat.icon className={cn("h-4 w-4", stat.color)} />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold tabular-nums">{stat.value}</div>
+                <p className="text-xs text-muted-foreground">{stat.description}</p>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
 
@@ -244,7 +270,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
                   const esMeta = i === salud.discipulosPorEtapa.length - 1;
                   const pct = Math.round((e.cantidad / maxPorEtapa) * 100);
                   return (
-                    <div key={e.id}>
+                    <Link key={e.id} href="/discipulos" className="group block rounded p-1 transition-colors hover:bg-muted/50">
                       <div className="mb-0.5 flex items-center justify-between gap-2">
                         <span
                           className={cn(
@@ -263,7 +289,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
                           style={{ width: `${pct}%` }}
                         />
                       </div>
-                    </div>
+                    </Link>
                   );
                 })}
               </div>
@@ -323,11 +349,15 @@ export function DashboardClient({ data }: { data: DashboardData }) {
                 <Clock className="h-3 w-3" /> Oraciones sin respuesta (30+ días)
               </p>
               {data.oracionesViejas.map((o) => (
-                <div key={o.id} className="flex items-center gap-2 text-xs">
+                <Link
+                  key={o.id}
+                  href="/oracion"
+                  className="flex items-center gap-2 rounded text-xs transition-colors hover:bg-muted/50 hover:no-underline"
+                >
                   <Church className="h-3 w-3 shrink-0 text-muted-foreground" />
                   <span className="min-w-0 flex-1 truncate text-muted-foreground">{o.pedido}</span>
                   <span className="shrink-0 font-medium text-amber-600">{o.dias} días</span>
-                </div>
+                </Link>
               ))}
             </div>
           )}
@@ -424,7 +454,11 @@ export function DashboardClient({ data }: { data: DashboardData }) {
           ) : (
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {data.discipuladores.map((d) => (
-                <div key={d.id} className="rounded-lg border p-3">
+                <Link
+                  key={d.id}
+                  href="/discipulos"
+                  className="rounded-lg border p-3 transition-colors hover:border-primary/50 hover:no-underline"
+                >
                   <p className="truncate text-sm font-medium">{d.nombre} {d.apellido}</p>
                   <p className="text-xs text-muted-foreground">{d.total} discípulos</p>
                   <div className="mt-2 flex flex-wrap gap-1">
@@ -439,10 +473,79 @@ export function DashboardClient({ data }: { data: DashboardData }) {
                       </Badge>
                     )}
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* ACTIVIDAD RECIENTE */}
+      <Card size="sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Activity className="h-4 w-4 text-blue-500" />
+            Actividad reciente
+          </CardTitle>
+          <CardDescription>Motivos de oración y avances de evangelismo</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 lg:grid-cols-2">
+            {/* MOTIVOS DE ORACIÓN */}
+            <div>
+              <Link href="/oracion" className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground">
+                <Church className="h-3.5 w-3.5" /> Motivos de oración
+                <ArrowRight className="h-3 w-3" />
+              </Link>
+              {data.oracionesRecientes.length === 0 ? (
+                <p className="py-1 text-xs text-muted-foreground">Sin motivos recientes</p>
+              ) : (
+                <div className="space-y-2">
+                  {data.oracionesRecientes.map((o) => (
+                    <Link key={o.id} href="/oracion" className="block rounded-lg border p-2.5 transition-colors hover:border-primary/50 hover:no-underline">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="line-clamp-2 text-sm text-foreground">{o.pedido}</p>
+                        {o.estado === "respondida" ? (
+                          <Badge variant="secondary" className="shrink-0 px-1.5 text-[10px]">Respondida</Badge>
+                        ) : o.estado === "en_oracion" ? (
+                          <Badge variant="outline" className="shrink-0 px-1.5 text-[10px] text-blue-600 dark:text-blue-400">En oración</Badge>
+                        ) : (
+                          <Badge variant="outline" className="shrink-0 px-1.5 text-[10px] text-amber-600 dark:text-amber-400">Pendiente</Badge>
+                        )}
+                      </div>
+                      <p className="mt-1 text-[11px] text-muted-foreground">
+                        {o.discipulo ? `${o.discipulo} · ` : ""}
+                        {format(new Date(o.fecha + "T00:00:00"), "dd/MM/yyyy", { locale: es })}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* EVANGELISMO */}
+            <div>
+              <Link href="/evangelismo" className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground">
+                <HeartHandshake className="h-3.5 w-3.5" /> Evangelismo
+                <ArrowRight className="h-3 w-3" />
+              </Link>
+              {data.evangelismoRecientes.length === 0 ? (
+                <p className="py-1 text-xs text-muted-foreground">Sin actividad reciente</p>
+              ) : (
+                <div className="space-y-2">
+                  {data.evangelismoRecientes.map((e) => (
+                    <Link key={e.id} href="/evangelismo" className="block rounded-lg border p-2.5 transition-colors hover:border-primary/50 hover:no-underline">
+                      <p className="line-clamp-2 text-sm text-foreground">{e.descripcion}</p>
+                      <p className="mt-1 text-[11px] text-muted-foreground">
+                        {e.persona ? `${e.persona} · ` : ""}
+                        {format(new Date(e.fecha + "T00:00:00"), "dd/MM/yyyy", { locale: es })}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

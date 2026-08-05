@@ -46,6 +46,7 @@ interface AgendaRaw {
 
 interface OracionRaw {
   id: string;
+  discipulo_id?: string | null;
   pedido: string;
   estado: string;
   fecha: string;
@@ -64,6 +65,14 @@ interface EvangelismoRaw {
   fecha_inicio_estado: string;
 }
 
+interface EventoRaw {
+  id: string;
+  descripcion: string;
+  tipo: string;
+  fecha: string;
+  personas?: Array<{ nombre: string; apellido: string }> | null;
+}
+
 interface RawData {
   discipulos: DiscipuloRaw[];
   perfiles: PerfilRaw[];
@@ -72,6 +81,7 @@ interface RawData {
   oraciones: OracionRaw[];
   tareas: TareaRaw[];
   evangelismo: EvangelismoRaw[];
+  eventos: EventoRaw[];
 }
 
 export default function DashboardPage() {
@@ -86,10 +96,11 @@ export default function DashboardPage() {
       supabase.from("profiles").select("id, nombre, apellido, rol"),
       supabase.from("seguimientos").select("id, discipulo_id, progreso, estado"),
       supabase.from("agenda").select("id, discipulo_id, fecha").order("fecha", { ascending: false }),
-      supabase.from("oraciones").select("id, pedido, estado, fecha"),
+      supabase.from("oraciones").select("id, discipulo_id, pedido, estado, fecha").order("fecha", { ascending: false }),
       supabase.from("tareas").select("id, estado"),
       supabase.from("acompanamiento_evangelistico").select("id, nombre, apellido, estado, fecha_inicio_estado"),
-    ]).then(([discipulosRes, perfilesRes, seguimientosRes, agendaRes, oracionesRes, tareasRes, evRes]) => {
+      supabase.from("eventos_evangelismo").select("id, descripcion, tipo, fecha, personas:persona_id(nombre, apellido)").order("fecha", { ascending: false }).limit(6),
+    ]).then(([discipulosRes, perfilesRes, seguimientosRes, agendaRes, oracionesRes, tareasRes, evRes, eventosRes]) => {
       setRaw({
         discipulos: (discipulosRes.data || []) as DiscipuloRaw[],
         perfiles: (perfilesRes.data || []) as PerfilRaw[],
@@ -98,13 +109,14 @@ export default function DashboardPage() {
         oraciones: (oracionesRes.data || []) as OracionRaw[],
         tareas: (tareasRes.data || []) as TareaRaw[],
         evangelismo: (evRes.data || []) as EvangelismoRaw[],
+        eventos: (eventosRes.data || []) as EventoRaw[],
       });
     }).catch(console.error);
   }, []);
 
   const data = useMemo<DashboardData | null>(() => {
     if (!raw || etapas.length === 0) return null;
-    const { discipulos, perfiles, seguimientos, agenda, oraciones, tareas, evangelismo } = raw;
+    const { discipulos, perfiles, seguimientos, agenda, oraciones, tareas, evangelismo, eventos } = raw;
     const hoy = new Date();
     const diasDesde = (fecha: string) => differenceInCalendarDays(hoy, new Date(fecha + "T00:00:00"));
 
@@ -246,6 +258,26 @@ export default function DashboardPage() {
     }).length;
     const contactoPct = activos.length ? Math.round((conContacto / activos.length) * 100) : 0;
 
+    const discipuloNombre = new Map(discipulos.map((d) => [d.id, d]));
+    const oracionesRecientes = oraciones.slice(0, 4).map((o) => {
+      const d = o.discipulo_id ? discipuloNombre.get(o.discipulo_id) : undefined;
+      return {
+        id: o.id,
+        pedido: o.pedido,
+        estado: o.estado,
+        fecha: o.fecha,
+        discipulo: d ? `${d.apellido}, ${d.nombre}` : undefined,
+      };
+    });
+
+    const evangelismoRecientes = eventos.map((e) => ({
+      id: e.id,
+      descripcion: e.descripcion,
+      tipo: e.tipo,
+      fecha: e.fecha,
+      persona: e.personas?.[0] ? `${e.personas[0].nombre} ${e.personas[0].apellido}` : undefined,
+    }));
+
     return {
       etapaFinal: { id: etapaFinal.id, nombre: etapaFinal.nombre },
       salud: {
@@ -271,6 +303,8 @@ export default function DashboardPage() {
       listosAvanzar,
       evangelismoListos,
       discipuladores,
+      oracionesRecientes,
+      evangelismoRecientes,
     };
   }, [raw, etapas]);
 
