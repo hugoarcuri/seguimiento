@@ -52,26 +52,32 @@ export function CrearDiscipuladorDialog({ open, onOpenChange, onCreado }: CrearD
   const onSubmit = async (data: CrearInput) => {
     setInvoking(true);
     const supabase = createClient();
-    const { error } = await supabase.functions.invoke("create-discipulador", {
-      body: { ...data, telefono: data.telefono || null },
-    });
+    let msg: string | null = null;
+    try {
+      const { error } = await supabase.functions.invoke("create-discipulador", {
+        body: { ...data, telefono: data.telefono || null },
+      });
+      if (error) {
+        if (error instanceof FunctionsHttpError) {
+          try {
+            const body = await error.context.json();
+            msg = body?.error || "Error al crear el discipulador";
+          } catch {
+            msg = "Error al crear el discipulador";
+          }
+        } else {
+          msg = error.message || "Error al crear el discipulador";
+        }
+      }
+    } catch (err) {
+      msg = (err as Error)?.message || "Error al conectar con el servidor";
+    }
     setInvoking(false);
 
-    if (error) {
-      let msg = "Error al crear el discipulador";
-      if (error instanceof FunctionsHttpError) {
-        try {
-          const body = await error.context.json();
-          if (body?.error) msg = body.error;
-        } catch {
-          // cuerpo no legible
-        }
-      } else if (error.message) {
-        msg = error.message;
-      }
-      if (/deploy|fetch|not found|404|not deployed/i.test(msg)) {
+    if (msg) {
+      if (/deploy|fetch|not found|404|not deployed|failed|network|blocked/i.test(msg)) {
         toast.error(
-          "La Edge Function no está desplegada. En la raíz del proyecto ejecutá:\nsupabase functions deploy create-discipulador --project-ref kbyklyueupqjwsvtfcxz"
+          "La Edge Function no está desplegada o no responde. En la raíz del proyecto ejecutá:\nsupabase functions deploy create-discipulador --project-ref kbyklyueupqjwsvtfcxz"
         );
       } else {
         toast.error(msg);
