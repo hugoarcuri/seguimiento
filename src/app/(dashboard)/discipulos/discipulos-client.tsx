@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import type { Discipulo, Etapa, Agenda, Oracion, Tarea, Timeline } from "@/types/database";
 import { ImportarDiscipulos } from "./importar-discipulos";
 import { DiscipuloDetailClient } from "./discipulo-detail-client";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
 const DIAS_CUMPLEANOS = 7;
@@ -63,6 +64,9 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
     timeline: Timeline[];
   } | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const filtered = discipulos.filter((d) => {
     if (etapaFilter !== null && d.etapa_id !== etapaFilter) return false;
@@ -113,6 +117,37 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
     }
   };
 
+  const toggleSeleccion = (id: string) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const todosSeleccionados = filtered.length > 0 && filtered.every((d) => selectedIds.includes(d.id));
+
+  const toggleTodos = () => {
+    const ids = new Set(filtered.map((d) => d.id));
+    setSelectedIds((prev) =>
+      todosSeleccionados ? prev.filter((id) => !ids.has(id)) : [...new Set([...prev, ...ids])]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (!selectedIds.length || bulkDeleting) return;
+    setBulkDeleting(true);
+    const supabase = createClient();
+    const { error } = await supabase.from("discipulos").delete().in("id", selectedIds);
+    setBulkDeleting(false);
+    if (error) {
+      toast.error(error.message.includes("row-level security policy")
+        ? "Solo los administradores pueden eliminar discípulos"
+        : `Error al eliminar: ${error.message}`);
+      return;
+    }
+    toast.success(`${selectedIds.length} discípulo(s) eliminado(s)`);
+    setBulkDeleteOpen(false);
+    setSelectedIds([]);
+    onCambio?.();
+  };
+
   return (
     <div className="flex flex-col gap-6 sm:flex-row sm:h-[calc(100vh-8rem)]">
       {/* LEFT PANEL */}
@@ -123,6 +158,12 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
             <p className="text-xs text-muted-foreground">{filtered.length} de {discipulos.length}</p>
           </div>
           <div className="flex flex-wrap gap-1">
+            {selectedIds.length > 0 && (
+              <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)} className="gap-1 px-2 text-xs font-medium">
+                <Trash2 className="h-3.5 w-3.5" />
+                Eliminar ({selectedIds.length})
+              </Button>
+            )}
             <Link
               href="/discipulos/nuevo"
               className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/80 min-h-11 md:min-h-8 gap-1 px-2 text-xs font-medium"
@@ -151,6 +192,15 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
         </div>
 
         <div className="flex-1 overflow-y-auto space-y-0.5 -mx-1 px-1">
+          <div className="flex items-center justify-between px-1 pb-1">
+            <label className="flex cursor-pointer items-center gap-2 text-sm">
+              <Checkbox checked={todosSeleccionados} onCheckedChange={toggleTodos} aria-label="Seleccionar todos" />
+              Seleccionar todos
+            </label>
+            {selectedIds.length > 0 && (
+              <span className="text-xs text-muted-foreground">{selectedIds.length} seleccionado(s)</span>
+            )}
+          </div>
           {filtered.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">No se encontraron discípulos</p>
           ) : (
@@ -161,12 +211,15 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
                 key={d.id}
                 type="button"
                 onClick={() => { setLoadingDetail(true); setSelectedId(d.id); }}
-                className={cn(
-                  "w-full flex items-center gap-3 p-2 rounded-lg text-left transition-colors group",
-                  selectedId === d.id ? "bg-primary/10" : "hover:bg-muted/50"
-                )}
-              >
-                {d.avatar_url ? (
+                  className={cn(
+                    "w-full flex items-center gap-3 p-2 rounded-lg text-left transition-colors group",
+                    selectedId === d.id ? "bg-primary/10" : "hover:bg-muted/50"
+                  )}
+                >
+                  <span onClick={(e) => e.stopPropagation()} className="shrink-0">
+                    <Checkbox checked={selectedIds.includes(d.id)} onCheckedChange={() => toggleSeleccion(d.id)} aria-label="Seleccionar" />
+                  </span>
+                  {d.avatar_url ? (
                   <img src={d.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
                 ) : (
                   <div className={cn("w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0", getAvatarColor(d.id))}>
@@ -226,6 +279,24 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialog(null)}>Cancelar</Button>
             <Button variant="destructive" onClick={() => deleteDialog && handleDelete(deleteDialog)}>Eliminar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* BULK DELETE DIALOG */}
+      <Dialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Eliminar discípulos</DialogTitle>
+            <DialogDescription>
+              ¿Eliminar {selectedIds.length} discípulo(s) seleccionado(s)? Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkDeleteOpen(false)} disabled={bulkDeleting}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleBulkDelete} disabled={bulkDeleting}>
+              {bulkDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Eliminar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

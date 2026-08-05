@@ -10,7 +10,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Loader2, Search, Pencil, Eye, ArrowUpDown, CalendarPlus } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Plus, Loader2, Search, Pencil, Eye, ArrowUpDown, CalendarPlus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { SeguimientoForm } from "./seguimiento-form";
@@ -41,6 +51,9 @@ export default function SeguimientoPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Seguimiento | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [eliminarOpen, setEliminarOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchData = useCallback(async () => {
     const { data: { user: authUser } } = await supabase.auth.getUser();
@@ -131,6 +144,34 @@ export default function SeguimientoPage() {
       });
   }, [seguimientos, search, etapaFiltro, discipuladorFiltro, orden]);
 
+  const toggleSeleccion = (id: string) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const todosSeleccionados = filtrados.length > 0 && filtrados.every((s) => selectedIds.includes(s.id));
+
+  const toggleTodos = () => {
+    const ids = new Set(filtrados.map((s) => s.id));
+    setSelectedIds((prev) =>
+      todosSeleccionados ? prev.filter((id) => !ids.has(id)) : [...new Set([...prev, ...ids])]
+    );
+  };
+
+  const handleEliminarSeleccionados = async () => {
+    if (!selectedIds.length) return;
+    setDeleting(true);
+    const { error } = await supabase.from("seguimientos").delete().in("id", selectedIds);
+    setDeleting(false);
+    if (error) {
+      toast.error(`Error al eliminar: ${error.message}`);
+      return;
+    }
+    toast.success(`${selectedIds.length} seguimiento(s) eliminado(s)`);
+    setEliminarOpen(false);
+    setSelectedIds([]);
+    fetchData();
+  };
+
   if (loading) return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" /></div>;
 
   return (
@@ -140,6 +181,11 @@ export default function SeguimientoPage() {
           <h1 className="text-3xl font-bold">Seguimiento</h1>
           <p className="text-muted-foreground">Crecimiento espiritual de cada discípulo</p>
         </div>
+        {selectedIds.length > 0 && (
+          <Button variant="destructive" onClick={() => setEliminarOpen(true)}>
+            <Trash2 className="mr-2 h-4 w-4" /> Eliminar ({selectedIds.length})
+          </Button>
+        )}
         <Button onClick={() => { setEditing(null); setDialogOpen(true); }}>
           <Plus className="mr-2 h-4 w-4" /> Nuevo Seguimiento
         </Button>
@@ -191,6 +237,9 @@ export default function SeguimientoPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox checked={todosSeleccionados} onCheckedChange={toggleTodos} aria-label="Seleccionar todos" />
+                </TableHead>
                 <TableHead>Discípulo</TableHead>
                 <TableHead>Discipulador</TableHead>
                 <TableHead>Etapa</TableHead>
@@ -202,7 +251,7 @@ export default function SeguimientoPage() {
             <TableBody>
               {filtrados.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
                     No hay seguimientos registrados
                   </TableCell>
                 </TableRow>
@@ -212,6 +261,9 @@ export default function SeguimientoPage() {
                   const lider = discipuladores.find((p) => p.id === s.discipulos?.lider_id);
                   return (
                   <TableRow key={s.id}>
+                    <TableCell>
+                      <Checkbox checked={selectedIds.includes(s.id)} onCheckedChange={() => toggleSeleccion(s.id)} aria-label="Seleccionar" />
+                    </TableCell>
                     <TableCell>
                       <p className="text-base font-semibold">
                         {s.discipulos ? `${s.discipulos.apellido}, ${s.discipulos.nombre}` : "—"}
@@ -279,6 +331,23 @@ export default function SeguimientoPage() {
         defaultDiscipuladorId={isAdmin ? undefined : currentUserId}
         onValidarUnico={onValidarUnico}
       />
+
+      <Dialog open={eliminarOpen} onOpenChange={setEliminarOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Eliminar seguimientos</DialogTitle>
+            <DialogDescription>
+              ¿Eliminar {selectedIds.length} seguimiento(s) seleccionado(s)? Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEliminarOpen(false)} disabled={deleting}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleEliminarSeleccionados} disabled={deleting}>
+              {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

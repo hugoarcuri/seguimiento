@@ -31,12 +31,14 @@ import {
   Phone,
   Users,
   Link2,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn, estadoColors } from "@/lib/utils";
 import type { Profile, Discipulo, Etapa } from "@/types/database";
 import { CrearDiscipuladorDialog } from "./crear-discipulador-dialog";
 import { EditarDiscipuladorDialog } from "./editar-discipulador-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const avatarColors = [
   "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500", "bg-purple-500",
@@ -69,6 +71,9 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
   const [asignarId, setAsignarId] = useState("");
   const [desvincular, setDesvincular] = useState<Discipulo | null>(null);
   const [busy, setBusy] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const selected = useMemo(
     () => discipuladores.find((p) => p.id === selectedId) || null,
@@ -126,6 +131,36 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
     onCambio?.();
   };
 
+  const toggleSeleccion = (id: string) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const todosSeleccionados = filtered.length > 0 && filtered.every((p) => selectedIds.includes(p.id));
+
+  const toggleTodos = () => {
+    const ids = new Set(filtered.map((p) => p.id));
+    setSelectedIds((prev) =>
+      todosSeleccionados ? prev.filter((id) => !ids.has(id)) : [...new Set([...prev, ...ids])]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (!selectedIds.length || bulkDeleting) return;
+    setBulkDeleting(true);
+    const supabase = createClient();
+    const { error } = await supabase.rpc("eliminar_discipuladores", { p_ids: selectedIds });
+    setBulkDeleting(false);
+    if (error) {
+      toast.error(`Error al eliminar: ${error.message}`);
+      return;
+    }
+    toast.success(`${selectedIds.length} discipulador(es) eliminado(s)`);
+    setBulkDeleteOpen(false);
+    setSelectedIds([]);
+    if (selectedId && selectedIds.includes(selectedId)) setSelectedId(null);
+    onCambio?.();
+  };
+
   return (
     <div className="flex flex-col gap-6 sm:flex-row sm:h-[calc(100vh-8rem)]">
       {/* LEFT PANEL */}
@@ -141,6 +176,13 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
           </Button>
         </div>
 
+        {selectedIds.length > 0 && (
+          <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)} className="gap-1 px-2 text-xs font-medium">
+            <Trash2 className="h-3.5 w-3.5" />
+            Eliminar ({selectedIds.length})
+          </Button>
+        )}
+
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -152,6 +194,15 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
         </div>
 
         <div className="flex-1 overflow-y-auto space-y-0.5 -mx-1 px-1">
+          <div className="flex items-center justify-between px-1 pb-1">
+            <label className="flex cursor-pointer items-center gap-2 text-sm">
+              <Checkbox checked={todosSeleccionados} onCheckedChange={toggleTodos} aria-label="Seleccionar todos" />
+              Seleccionar todos
+            </label>
+            {selectedIds.length > 0 && (
+              <span className="text-xs text-muted-foreground">{selectedIds.length} seleccionado(s)</span>
+            )}
+          </div>
           {filtered.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">No se encontraron discipuladores</p>
           ) : (
@@ -167,6 +218,9 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
                     selectedId === p.id ? "bg-primary/10" : "hover:bg-muted/50"
                   )}
                 >
+                  <span onClick={(e) => e.stopPropagation()} className="shrink-0">
+                    <Checkbox checked={selectedIds.includes(p.id)} onCheckedChange={() => toggleSeleccion(p.id)} aria-label="Seleccionar" />
+                  </span>
                   {p.avatar_url ? (
                     <img src={p.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
                   ) : (
@@ -342,6 +396,25 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
           <DialogFooter>
             <Button variant="outline" onClick={() => setDesvincular(null)} disabled={busy}>Cancelar</Button>
             <Button variant="destructive" onClick={handleDesvincular} disabled={busy}>Desvincular</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* BULK DELETE DIALOG */}
+      <Dialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Eliminar discipuladores</DialogTitle>
+            <DialogDescription>
+              ¿Eliminar {selectedIds.length} discipulador(es) seleccionado(s)? Se desvincularán sus discípulos y se
+              borrarán sus seguimientos, encuentros, oraciones y tareas. Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkDeleteOpen(false)} disabled={bulkDeleting}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleBulkDelete} disabled={bulkDeleting}>
+              {bulkDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Eliminar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
