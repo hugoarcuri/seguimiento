@@ -27,8 +27,6 @@ type SeguimientoFull = Seguimiento & { discipulos?: Discipulo; discipuladores?: 
 export default function ReportesPage() {
   const supabase = useMemo(() => createClient(), []);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState("");
 
   const [discipulos, setDiscipulos] = useState<Discipulo[]>([]);
   const [etapas, setEtapas] = useState<Etapa[]>([]);
@@ -49,10 +47,8 @@ export default function ReportesPage() {
   const fetchData = useCallback(async () => {
     const { data: { user: authUser } } = await supabase.auth.getUser();
     if (!authUser) { setLoading(false); return; }
-    setCurrentUserId(authUser.id);
     const { data: profile } = await supabase.from("profiles").select("rol").eq("id", authUser.id).single();
     const admin = profile?.rol === "admin";
-    setIsAdmin(admin);
 
     let discipulosQuery = supabase.from("discipulos").select("*").order("apellido", { ascending: true });
     if (!admin) discipulosQuery = discipulosQuery.eq("lider_id", authUser.id);
@@ -462,7 +458,7 @@ function ReporteIndividual({ row, etapas, seg, objs, tasks, encs, evaluacion, ob
           <CardContent className="p-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               {CAMPOS_EVALUACION.map((campo) => {
-                const val = decodificarCampoEvaluacion(campo, (evaluacion as any)[campo.key] ?? "");
+                const val = decodificarCampoEvaluacion(campo, (evaluacion as unknown as Record<string, string | null | undefined>)[campo.key] ?? "");
                 const texto = [val.opcion, val.detalle].filter(Boolean).join(" — ");
                 return (
                   <div key={campo.key}>
