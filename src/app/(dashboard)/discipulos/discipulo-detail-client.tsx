@@ -47,7 +47,7 @@ export function DiscipuloDetailClient({
     const supabase = createClient();
     supabase
       .from("profiles")
-      .select("nombre, apellido")
+      .select("*")
       .eq("id", discipulo.lider_id)
       .maybeSingle()
       .then(({ data }) => {

@@ -347,10 +347,10 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
       </div>
 
       {/* CREATE DIALOG */}
-      <CrearDiscipuladorDialog open={crearOpen} onOpenChange={setCrearOpen} onCreado={onCambio} />
+      <CrearDiscipuladorDialog open={crearOpen} onOpenChange={setCrearOpen} onCreado={() => onCambio?.()} />
 
       {/* EDIT DIALOG */}
-      <EditarDiscipuladorDialog open={!!editar} discipulador={editar} onOpenChange={(o) => { if (!o) setEditar(null); }} onEditado={onCambio} />
+      <EditarDiscipuladorDialog open={!!editar} discipulador={editar} onOpenChange={(o) => { if (!o) setEditar(null); }} onEditado={() => onCambio?.()} />
 
       {/* ASSIGN DIALOG */}
       <Dialog open={asignarOpen} onOpenChange={(o) => { if (!busy) setAsignarOpen(o); }}>

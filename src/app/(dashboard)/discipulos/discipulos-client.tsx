@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Search, UserPlus, Loader2, Trash2, Cake } from "lucide-react";
+import { Search, UserPlus, Loader2, Trash2, Cake, Download } from "lucide-react";
 import { toast } from "sonner";
 import type { Discipulo, Etapa, Agenda, Oracion, Tarea, Timeline } from "@/types/database";
 import { ImportarDiscipulos } from "./importar-discipulos";
@@ -138,14 +138,36 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
     setBulkDeleting(false);
     if (error) {
       toast.error(error.message.includes("row-level security policy")
-        ? "Solo los administradores pueden eliminar discípulos"
+        ? "Solo los administradores pueden eliminar disc├¡pulos"
         : `Error al eliminar: ${error.message}`);
       return;
     }
-    toast.success(`${selectedIds.length} discípulo(s) eliminado(s)`);
+    toast.success(`${selectedIds.length} disc├¡pulo(s) eliminado(s)`);
     setBulkDeleteOpen(false);
     setSelectedIds([]);
     onCambio?.();
+  };
+
+  const exportarSeleccionados = () => {
+    const sel = discipulos.filter((d) => selectedIds.includes(d.id));
+    if (sel.length === 0) return;
+    const filas = sel.map((d) => ({
+      Apellido: d.apellido,
+      Nombre: d.nombre,
+      Email: d.email || "",
+      "Teléfono": d.telefono || "",
+      Etapa: etapas.find((e) => e.id === d.etapa_id)?.nombre || "",
+      Estado: d.estado,
+      "Fecha nacimiento": d.fecha_nacimiento || "",
+    }));
+    const csv = [Object.keys(filas[0]).join(";"), ...filas.map((f) => Object.values(f).map((v) => `"${String(v).replace(/"/g, '""')}"`).join(";"))].join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "discipulos.csv";
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast.success(`${sel.length} discípulos exportados`);
   };
 
   return (
@@ -158,6 +180,12 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
             <p className="text-xs text-muted-foreground">{filtered.length} de {discipulos.length}</p>
           </div>
           <div className="flex flex-wrap gap-1">
+            {selectedIds.length > 0 && (
+              <Button variant="outline" size="sm" onClick={exportarSeleccionados} className="gap-1 px-2 text-xs font-medium">
+                <Download className="h-3.5 w-3.5" />
+                Exportar
+              </Button>
+            )}
             {selectedIds.length > 0 && (
               <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)} className="gap-1 px-2 text-xs font-medium">
                 <Trash2 className="h-3.5 w-3.5" />

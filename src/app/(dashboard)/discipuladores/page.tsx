@@ -17,7 +17,7 @@ export default function DiscipuladoresPage() {
       supabase.from("profiles").select("*").eq("rol", "discipulador").order("apellido", { ascending: true }),
       supabase
         .from("discipulos")
-        .select("id, apellido, nombre, avatar_url, etapa_id, estado, lider_id")
+        .select("id, apellido, nombre, avatar_url, etapa_id, estado, lider_id, created_at, updated_at")
         .order("apellido", { ascending: true }),
       supabase.from("etapas").select("*").order("orden", { ascending: true }),
     ]);
