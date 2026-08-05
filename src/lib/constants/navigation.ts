@@ -10,7 +10,6 @@ import {
   ClipboardCheck,
   Heart,
   BookOpen,
-  FileBarChart,
 } from "lucide-react";
 
 export interface NavItem {
@@ -25,7 +24,6 @@ export const adminMenuItems: NavItem[] = [
   { href: "/discipuladores", label: "Discipuladores", icon: UserCog },
   { href: "/tareas", label: "Tareas", icon: ClipboardCheck },
   { href: "/seguimiento", label: "Seguimiento", icon: BookOpen },
-  { href: "/reportes", label: "Reportes", icon: FileBarChart },
   { href: "/evangelismo", label: "Evangelismo", icon: Heart },
   { href: "/agenda", label: "Agenda", icon: CalendarCheck },
   { href: "/oracion", label: "Oración", icon: Church },
@@ -36,7 +34,6 @@ export const discipuloMenuItems: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/tareas", label: "Tareas", icon: ClipboardCheck },
   { href: "/seguimiento", label: "Seguimiento", icon: BookOpen },
-  { href: "/reportes", label: "Reportes", icon: FileBarChart },
   { href: "/evangelismo", label: "Evangelismo", icon: Heart },
   { href: "/oracion", label: "Oración", icon: Church },
   { href: "/perfil", label: "Mi Perfil", icon: User },
