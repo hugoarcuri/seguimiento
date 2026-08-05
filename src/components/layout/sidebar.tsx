@@ -48,6 +48,24 @@ export function Sidebar() {
           <span className={cn("font-semibold text-lg", collapsed && "hidden")}>Discipulado</span>
         </Link>
       </div>
+      <div className="border-b p-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setCollapsed((c) => !c)}
+          title={collapsed ? "Mostrar opciones" : "Ocultar opciones"}
+          className={cn("w-full gap-3", collapsed ? "justify-center px-0" : "justify-start px-3")}
+        >
+          {collapsed ? (
+            <PanelLeft className="h-4 w-4 shrink-0" />
+          ) : (
+            <>
+              <PanelLeftClose className="h-4 w-4 shrink-0" />
+              <span className="text-sm">Ocultar opciones</span>
+            </>
+          )}
+        </Button>
+      </div>
       <ScrollArea className="flex-1 py-4">
         <nav className={cn("space-y-1", collapsed ? "px-2" : "px-2 lg:px-3")}>
           {menuItems.map((item) => {
@@ -72,24 +90,6 @@ export function Sidebar() {
           })}
         </nav>
       </ScrollArea>
-      <div className="border-t p-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setCollapsed((c) => !c)}
-          title={collapsed ? "Mostrar opciones" : "Ocultar opciones"}
-          className={cn("w-full gap-3", collapsed ? "justify-center px-0" : "justify-start px-3")}
-        >
-          {collapsed ? (
-            <PanelLeft className="h-4 w-4 shrink-0" />
-          ) : (
-            <>
-              <PanelLeftClose className="h-4 w-4 shrink-0" />
-              <span className="text-sm">Ocultar opciones</span>
-            </>
-          )}
-        </Button>
-      </div>
     </aside>
   );
 }
