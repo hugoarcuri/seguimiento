@@ -9,6 +9,7 @@ import {
   Trophy,
   Activity,
   ClipboardCheck,
+  Cake,
   AlertTriangle,
   CheckCircle2,
   Church,
@@ -82,6 +83,14 @@ export interface DiscipuladorItem {
   sinContacto: number;
 }
 
+export interface CumpleMesItem {
+  id: string;
+  nombre: string;
+  apellido: string;
+  dia: number;
+  edad: number;
+}
+
 export interface EtapaCount {
   id: number;
   nombre: string;
@@ -117,6 +126,9 @@ export interface DashboardData {
   discipuladores: DiscipuladorItem[];
   oracionesRecientes: OracionReciente[];
   evangelismoRecientes: EventoReciente[];
+  cumpleañosMes: CumpleMesItem[];
+  bautizadosAnio: number;
+  miembrosTotal: number;
 }
 
 const avatarColors = [
@@ -173,6 +185,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
   const nombreMeta = etapaFinal.nombre.replace(/^\d+\.\s*/, "");
   const maxPorEtapa = Math.max(...salud.discipulosPorEtapa.map((e) => e.cantidad), 1);
   const totalListos = data.listosAvanzar.length + data.evangelismoListos.length;
+  const nombreMes = format(new Date(), "MMMM", { locale: es }).replace(/^\w/, (c) => c.toUpperCase());
 
   const stats = [
     {
@@ -243,10 +256,73 @@ export function DashboardClient({ data }: { data: DashboardData }) {
         ))}
       </div>
 
+      {/* CUMPLEAÑOS DEL MES + BAUTIZADOS/MIEMBROS */}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Card size="sm">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Cake className="h-4 w-4 text-pink-500" />
+                Cumpleaños del mes
+              </CardTitle>
+              <Badge variant="secondary">{data.cumpleañosMes.length}</Badge>
+            </div>
+            <CardDescription>Discípulos que cumplen años en {nombreMes}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {data.cumpleañosMes.length === 0 ? (
+              <p className="py-1 text-sm text-muted-foreground">No hay cumpleaños este mes</p>
+            ) : (
+              <div className="grid gap-2 sm:grid-cols-3">
+                {data.cumpleañosMes.map((c) => (
+                  <Link
+                    key={c.id}
+                    href={`/discipulos/ver?id=${c.id}`}
+                    className="flex items-center gap-2.5 rounded-lg border p-2 transition-colors hover:border-primary/50 hover:no-underline"
+                  >
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pink-100 text-sm font-bold text-pink-600 dark:bg-pink-950/50">
+                      {c.dia}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{c.apellido}, {c.nombre}</p>
+                      <p className="text-[11px] text-muted-foreground">Cumple {c.edad} años</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card size="sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Church className="h-4 w-4 text-violet-500" />
+              Bautizados y miembros
+            </CardTitle>
+            <CardDescription>Bautizados en lo que va del año y miembros actuales</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-lg border p-3">
+                <p className="text-xs text-muted-foreground">Bautizados del año</p>
+                <p className="text-2xl font-bold tabular-nums text-amber-600">{data.bautizadosAnio}</p>
+                <p className="text-[11px] text-muted-foreground">{data.salud.bautizadosPct}% del total</p>
+              </div>
+              <div className="rounded-lg border p-3">
+                <p className="text-xs text-muted-foreground">Miembros actuales</p>
+                <p className="text-2xl font-bold tabular-nums text-violet-600">{data.miembrosTotal}</p>
+                <p className="text-[11px] text-muted-foreground">{data.salud.miembrosPct}% del total</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* 3 COLUMNAS: SALUD+ACTIVIDAD | URGENTES | LISTOS+DISCIPULADORES */}
       <div className="grid gap-3 lg:grid-cols-3">
-        <div className="flex min-h-0 flex-col gap-3">
-          <Card size="sm" className="flex min-h-0 flex-col lg:max-h-[26rem]">
+        <div className="flex flex-col gap-3">
+          <Card size="sm">
           <CardHeader className="shrink-0">
             <CardTitle className="flex items-center gap-2 text-base">
               <Activity className="h-4 w-4 text-emerald-500" />
@@ -254,7 +330,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
             </CardTitle>
             <CardDescription>Retención, madurez, contacto y avance de la iglesia</CardDescription>
           </CardHeader>
-          <CardContent className="flex-1 overflow-y-auto">
+          <CardContent>
             <div className="space-y-4">
               <div className="space-y-2.5">
                 <Barra label="Retención (activos)" value={salud.retencionPct} className="bg-blue-500" />
@@ -301,7 +377,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
       </Card>
 
           {/* ACTIVIDAD RECIENTE */}
-          <Card size="sm" className="flex min-h-0 flex-col lg:max-h-[20rem]">
+          <Card size="sm">
             <CardHeader className="shrink-0">
               <CardTitle className="flex items-center gap-2 text-base">
                 <Activity className="h-4 w-4 text-blue-500" />
@@ -309,7 +385,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
               </CardTitle>
               <CardDescription>Motivos de oración y avances de evangelismo</CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 overflow-y-auto">
+            <CardContent>
               <div className="grid gap-4">
             {/* MOTIVOS DE ORACIÓN */}
             <div>
@@ -371,7 +447,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
       </div>
 
         {/* QUIÉN NECESITA ATENCIÓN URGENTE */}
-        <Card size="sm" className="flex min-h-0 flex-col border-red-200 dark:border-red-900 lg:max-h-[46rem]">
+        <Card size="sm" className="border-red-200 dark:border-red-900">
           <CardHeader className="shrink-0">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2 text-base">
@@ -382,7 +458,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
             </div>
             <CardDescription>Sin seguimiento, progreso bajo, sin encuentro, pendientes o sin discipulador</CardDescription>
           </CardHeader>
-          <CardContent className="flex-1 space-y-2 overflow-y-auto">
+          <CardContent className="space-y-2">
           {data.urgentes.length === 0 ? (
             <p className="py-1 text-sm text-muted-foreground">No hay nadie que requiera atención urgente</p>
           ) : (
@@ -437,8 +513,8 @@ export function DashboardClient({ data }: { data: DashboardData }) {
         </Card>
 
       {/* COL 3: LISTOS + DISCIPULADORES */}
-      <div className="flex min-h-0 flex-col gap-3">
-        <Card size="sm" className="flex min-h-0 flex-col border-emerald-200 dark:border-emerald-900 lg:max-h-[24rem]">
+      <div className="flex flex-col gap-3">
+        <Card size="sm" className="border-emerald-200 dark:border-emerald-900">
           <CardHeader className="shrink-0">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2 text-base">
@@ -449,7 +525,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
             </div>
             <CardDescription>Progreso 80%+ en su etapa o 30+ días en la etapa de evangelismo</CardDescription>
           </CardHeader>
-          <CardContent className="flex-1 space-y-2 overflow-y-auto">
+          <CardContent className="space-y-2">
           {data.listosAvanzar.length > 0 && (
             <>
               <p className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -510,7 +586,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
       </Card>
 
           {/* DISCIPULADORES QUE REQUIEREN APOYO */}
-          <Card size="sm" className="flex min-h-0 flex-col lg:max-h-[20rem]">
+          <Card size="sm">
             <CardHeader className="shrink-0">
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-base">
@@ -521,7 +597,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
               </div>
               <CardDescription>Por cantidad de discípulos en riesgo o sin encuentro reciente</CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 space-y-2 overflow-y-auto">
+            <CardContent className="space-y-2">
               {data.discipuladores.length === 0 ? (
                 <p className="py-1 text-sm text-muted-foreground">Todos los discipuladores están al día</p>
               ) : (

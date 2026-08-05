@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { DashboardClient, type DashboardData } from "./dashboard-client";
 import { useEtapas } from "@/hooks/useEtapas";
 import { differenceInCalendarDays } from "date-fns";
+import { calcularEdad } from "@/lib/utils";
 
 const PROGRESO_BAJO = 40;
 const LISTO_AVANZAR = 80;
@@ -22,6 +23,8 @@ interface DiscipuloRaw {
   lider_id?: string | null;
   bautizado?: boolean | null;
   es_miembro?: boolean | null;
+  fecha_nacimiento?: string | null;
+  fecha_bautismo?: string | null;
 }
 
 interface PerfilRaw {
@@ -92,7 +95,7 @@ export default function DashboardPage() {
     const supabase = createClient();
 
     Promise.all([
-      supabase.from("discipulos").select("id, nombre, apellido, avatar_url, etapa_id, estado, lider_id, bautizado, es_miembro"),
+      supabase.from("discipulos").select("id, nombre, apellido, avatar_url, etapa_id, estado, lider_id, bautizado, es_miembro, fecha_nacimiento, fecha_bautismo"),
       supabase.from("profiles").select("id, nombre, apellido, rol"),
       supabase.from("seguimientos").select("id, discipulo_id, progreso, estado"),
       supabase.from("agenda").select("id, discipulo_id, fecha").order("fecha", { ascending: false }),
@@ -278,6 +281,29 @@ export default function DashboardPage() {
       persona: e.personas?.[0] ? `${e.personas[0].nombre} ${e.personas[0].apellido}` : undefined,
     }));
 
+    const mesActual = hoy.getMonth() + 1;
+    const cumpleañosMes = discipulos
+      .map((d) => {
+        if (!d.fecha_nacimiento) return null;
+        const f = new Date(d.fecha_nacimiento + "T00:00:00");
+        if (f.getMonth() + 1 !== mesActual) return null;
+        return {
+          id: d.id,
+          nombre: d.nombre,
+          apellido: d.apellido,
+          dia: f.getDate(),
+          edad: calcularEdad(d.fecha_nacimiento),
+        };
+      })
+      .filter((x): x is { id: string; nombre: string; apellido: string; dia: number; edad: number } => x !== null)
+      .sort((a, b) => a.dia - b.dia);
+
+    const anioActual = hoy.getFullYear();
+    const bautizadosAnio = discipulos.filter(
+      (d) => d.fecha_bautismo && new Date(d.fecha_bautismo + "T00:00:00").getFullYear() === anioActual
+    ).length;
+    const miembrosTotal = discipulos.filter((d) => d.es_miembro).length;
+
     return {
       etapaFinal: { id: etapaFinal.id, nombre: etapaFinal.nombre },
       salud: {
@@ -305,6 +331,9 @@ export default function DashboardPage() {
       discipuladores,
       oracionesRecientes,
       evangelismoRecientes,
+      cumpleañosMes,
+      bautizadosAnio,
+      miembrosTotal,
     };
   }, [raw, etapas]);
 
