@@ -3,10 +3,12 @@
 //
 // Despliegue (desde la raíz del proyecto, con Supabase CLI):
 //   supabase login
-//   supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<service_role_key> --project-ref kbyklyueupqjwsvtfcxz
+//   supabase secrets set SERVICE_ROLE_KEY=<service_role_key> --project-ref kbyklyueupqjwsvtfcxz
 //   supabase functions deploy create-discipulador --project-ref kbyklyueupqjwsvtfcxz
 //
 // El service_role_key se obtiene en: Dashboard del proyecto -> Settings -> API -> service_role.
+// Nota: los nombres de secret que empiezan con SUPABASE_ están reservados por la plataforma,
+// por eso se usa SERVICE_ROLE_KEY.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -25,19 +27,19 @@ function json(body: unknown, status: number): Response {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { status: 204, headers: CORS });
+    return new Response(null, { status: 204, headers: CORS });
   }
   if (req.method !== "POST") {
     return json({ error: "Método no permitido" }, 405);
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const serviceRoleKey = Deno.env.get("SERVICE_ROLE_KEY");
   if (!supabaseUrl || !serviceRoleKey) {
     return json(
       {
         error:
-          "Falta SUPABASE_SERVICE_ROLE_KEY. Configuralo con: supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<service_role_key> --project-ref kbyklyueupqjwsvtfcxz",
+          "Falta SERVICE_ROLE_KEY. Configuralo con: supabase secrets set SERVICE_ROLE_KEY=<service_role_key> --project-ref kbyklyueupqjwsvtfcxz",
       },
       500
     );
