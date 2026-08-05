@@ -18,8 +18,7 @@ import { useEtapas } from "@/hooks/useEtapas";
 import type { Seguimiento } from "@/types/database";
 
 type SeguimientoFila = Seguimiento & {
-  discipulos?: { id: string; nombre: string; apellido: string; estado?: string };
-  discipuladores?: { id: string; nombre: string; apellido: string };
+  discipulos?: { id: string; nombre: string; apellido: string; estado?: string; lider_id?: string | null };
 };
 
 type EncuentroProximo = { fecha: string; hora?: string; tema_tratado?: string };
@@ -61,7 +60,7 @@ export default function SeguimientoPage() {
     const [seguimientosRes, discipulosRes, discipuladoresRes] = await Promise.all([
       supabase
         .from("seguimientos")
-        .select("*, discipulos:discipulo_id(nombre, apellido), discipuladores:discipulador_id(nombre, apellido)")
+        .select("*, discipulos:discipulo_id(nombre, apellido, lider_id)")
         .order("ultima_actualizacion", { ascending: false }),
       discipulosQuery,
       supabase.from("profiles").select("id, nombre, apellido").order("apellido", { ascending: true }),
@@ -119,7 +118,7 @@ export default function SeguimientoPage() {
     return [...seguimientos]
       .filter((s) => {
         if (etapaFiltro && s.etapa !== Number(etapaFiltro)) return false;
-        if (discipuladorFiltro && s.discipulador_id !== discipuladorFiltro) return false;
+        if (discipuladorFiltro && s.discipulos?.lider_id !== discipuladorFiltro) return false;
         if (q) {
           const nombre = `${s.discipulos?.apellido || ""} ${s.discipulos?.nombre || ""}`.toLowerCase();
           if (!nombre.includes(q)) return false;
@@ -210,6 +209,7 @@ export default function SeguimientoPage() {
               ) : (
                 filtrados.map((s) => {
                   const prox = proximoEncuentroPorDiscipulo[s.discipulo_id];
+                  const lider = discipuladores.find((p) => p.id === s.discipulos?.lider_id);
                   return (
                   <TableRow key={s.id}>
                     <TableCell>
@@ -218,7 +218,7 @@ export default function SeguimientoPage() {
                       </p>
                     </TableCell>
                     <TableCell>
-                      {s.discipuladores ? `${s.discipuladores.apellido}, ${s.discipuladores.nombre}` : "—"}
+                      {lider ? `${lider.apellido}, ${lider.nombre}` : "—"}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">{etapas.find((e) => e.id === s.etapa)?.nombre || `Etapa ${s.etapa}`}</Badge>
