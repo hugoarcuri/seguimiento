@@ -32,9 +32,11 @@ import {
   Users,
   Link2,
   Loader2,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn, estadoColors, calcularEdad } from "@/lib/utils";
+import { descargarCSV } from "@/lib/csv";
 import type { Profile, Discipulo, Etapa } from "@/types/database";
 import { CrearDiscipuladorDialog } from "./crear-discipulador-dialog";
 import { EditarDiscipuladorDialog } from "./editar-discipulador-dialog";
@@ -161,6 +163,24 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
     onCambio?.();
   };
 
+  const exportarSeleccionados = () => {
+    const sel = discipuladores.filter((p) => selectedIds.includes(p.id));
+    if (sel.length === 0) return;
+    const filas = sel.map((p) => ({
+      Apellido: p.apellido,
+      Nombre: p.nombre,
+      Email: p.email || "",
+      "Teléfono": p.telefono || "",
+      "Fecha nacimiento": p.fecha_nacimiento || "",
+      "Don espiritual": p.don_espiritual || "",
+      Fortalezas: p.fortalezas || "",
+      Debilidades: p.debilidades || "",
+      "Discípulos": discipulos.filter((d) => d.lider_id === p.id).length,
+    }));
+    descargarCSV("discipuladores.csv", filas);
+    toast.success(`${sel.length} discipulador(es) exportado(s)`);
+  };
+
   return (
     <div className="flex flex-col gap-6 sm:flex-row sm:h-[calc(100vh-8rem)]">
       {/* LEFT PANEL */}
@@ -175,6 +195,13 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
             Nuevo
           </Button>
         </div>
+
+        {selectedIds.length > 0 && (
+          <Button variant="outline" size="sm" onClick={exportarSeleccionados} className="gap-1 px-2 text-xs font-medium">
+            <Download className="h-3.5 w-3.5" />
+            Exportar
+          </Button>
+        )}
 
         {selectedIds.length > 0 && (
           <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)} className="gap-1 px-2 text-xs font-medium">
@@ -210,7 +237,7 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
           ) : (
             filtered.map((p) => {
               const count = discipulos.filter((d) => d.lider_id === p.id).length;
-              return (
+  return (
                 <button
                   key={p.id}
                   type="button"

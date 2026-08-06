@@ -40,10 +40,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Loader2, Pencil, Trash2, CheckCircle2, RotateCcw, Clock, AlertTriangle, BookOpen, FileText, Film, Headphones, Link2, StickyNote } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Plus, Loader2, Pencil, Trash2, CheckCircle2, RotateCcw, Clock, AlertTriangle, BookOpen, FileText, Film, Headphones, Link2, StickyNote, Download } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { descargarCSV } from "@/lib/csv";
 import type { Discipulo, Tarea, Material, Etapa } from "@/types/database";
 
 const tipoLabels: Record<string, string> = {
@@ -88,6 +90,9 @@ export default function TareasPage() {
   const [matForm, setMatForm] = useState({ titulo: "", tipo: "libro", etapa_id: "", url: "", descripcion: "" });
   const [matSubmitting, setMatSubmitting] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const form = useForm<TareaInput>({
     resolver: zodResolver(tareaSchema),
@@ -180,6 +185,52 @@ export default function TareasPage() {
     fetchData();
   };
 
+  const toggleSeleccion = (id: string) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const todosSeleccionados = tareas.length > 0 && tareas.every((t) => selectedIds.includes(t.id));
+
+  const toggleTodos = () => {
+    const ids = new Set(tareas.map((t) => t.id));
+    setSelectedIds((prev) =>
+      todosSeleccionados ? prev.filter((id) => !ids.has(id)) : [...new Set([...prev, ...ids])]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (!selectedIds.length || bulkDeleting) return;
+    setBulkDeleting(true);
+    const { error } = await supabase.from("tareas").delete().in("id", selectedIds);
+    setBulkDeleting(false);
+    if (error) {
+      toast.error(`Error al eliminar: ${error.message}`);
+      return;
+    }
+    toast.success(`${selectedIds.length} tarea(s) eliminada(s)`);
+    setBulkDeleteOpen(false);
+    setSelectedIds([]);
+    fetchData();
+  };
+
+  const exportarSeleccionados = () => {
+    const sel = tareas.filter((t) => selectedIds.includes(t.id));
+    if (sel.length === 0) return;
+    const filas = sel.map((t) => {
+      const discipulo = discipulos.find((d) => d.id === t.discipulo_id);
+      return {
+        Título: t.titulo,
+        "Discípulo": isAdmin ? (discipulo ? `${discipulo.apellido}, ${discipulo.nombre}` : "") : "",
+        Tipo: tipoLabels[t.tipo] || t.tipo,
+        Estado: estadoConfig[t.estado]?.label || t.estado,
+        "Fecha límite": t.fecha_limite ? format(new Date(t.fecha_limite), "dd/MM/yyyy") : "",
+        Completada: t.completed_at ? format(new Date(t.completed_at), "dd/MM/yyyy HH:mm") : "",
+      };
+    });
+    descargarCSV("tareas.csv", filas);
+    toast.success(`${sel.length} tarea(s) exportada(s)`);
+  };
+
   const toggleEstado = async (id: string, estadoActual: string) => {
     const nuevoEstado = estadoActual === "completada" ? "pendiente" : "completada";
     const payload = nuevoEstado === "completada"
@@ -222,11 +273,23 @@ export default function TareasPage() {
           <h1 className="text-3xl font-bold">Tareas</h1>
           <p className="text-muted-foreground">{isAdmin ? "Administrá las tareas asignadas a los discípulos" : "Mis tareas asignadas"}</p>
         </div>
-        {isAdmin && (
-          <Button onClick={openCreate}>
-            <Plus className="mr-2 h-4 w-4" /> Nueva Tarea
-          </Button>
-        )}
+        <div className="flex flex-wrap gap-2">
+          {selectedIds.length > 0 && (
+            <Button variant="outline" onClick={exportarSeleccionados}>
+              <Download className="mr-2 h-4 w-4" /> Exportar
+            </Button>
+          )}
+          {isAdmin && selectedIds.length > 0 && (
+            <Button variant="destructive" onClick={() => setBulkDeleteOpen(true)}>
+              <Trash2 className="mr-2 h-4 w-4" /> Eliminar ({selectedIds.length})
+            </Button>
+          )}
+          {isAdmin && (
+            <Button onClick={openCreate}>
+              <Plus className="mr-2 h-4 w-4" /> Nueva Tarea
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -249,6 +312,11 @@ export default function TareasPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  {tareas.length > 0 && (
+                    <Checkbox checked={todosSeleccionados} onCheckedChange={toggleTodos} aria-label="Seleccionar todos" />
+                  )}
+                </TableHead>
                 <TableHead>Título</TableHead>
                 {isAdmin && <TableHead>Discípulo</TableHead>}
                 <TableHead>Tipo</TableHead>
@@ -261,7 +329,7 @@ export default function TareasPage() {
             <TableBody>
               {tareas.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={isAdmin ? 7 : 6} className="text-center py-8 text-muted-foreground">No hay tareas</TableCell>
+                  <TableCell colSpan={isAdmin ? 8 : 7} className="text-center py-8 text-muted-foreground">No hay tareas</TableCell>
                 </TableRow>
               ) : (
                 tareas.map((tarea) => {
@@ -269,6 +337,9 @@ export default function TareasPage() {
                   const discipulo = discipulos.find((d) => d.id === tarea.discipulo_id);
                   return (
                     <TableRow key={tarea.id}>
+                      <TableCell className="w-10">
+                        <Checkbox checked={selectedIds.includes(tarea.id)} onCheckedChange={() => toggleSeleccion(tarea.id)} aria-label="Seleccionar" title="Seleccionar" />
+                      </TableCell>
                       <TableCell className="font-medium">{tarea.titulo}</TableCell>
                       {isAdmin && <TableCell>{discipulo ? `${discipulo.apellido}, ${discipulo.nombre}` : "—"}</TableCell>}
                       <TableCell><Badge variant="outline">{tipoLabels[tarea.tipo]}</Badge></TableCell>
@@ -484,6 +555,23 @@ export default function TareasPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteId(null)}>Cancelar</Button>
             <Button variant="destructive" onClick={handleDelete}>Eliminar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Eliminar tareas</DialogTitle>
+            <DialogDescription>
+              ¿Eliminar {selectedIds.length} tarea(s) seleccionada(s)? Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkDeleteOpen(false)} disabled={bulkDeleting}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleBulkDelete} disabled={bulkDeleting}>
+              {bulkDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Eliminar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

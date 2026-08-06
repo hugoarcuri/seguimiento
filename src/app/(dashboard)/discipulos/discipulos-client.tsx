@@ -138,11 +138,11 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
     setBulkDeleting(false);
     if (error) {
       toast.error(error.message.includes("row-level security policy")
-        ? "Solo los administradores pueden eliminar disc├¡pulos"
+        ? "Solo los administradores pueden eliminar discípulos"
         : `Error al eliminar: ${error.message}`);
       return;
     }
-    toast.success(`${selectedIds.length} disc├¡pulo(s) eliminado(s)`);
+    toast.success(`${selectedIds.length} discípulo(s) eliminado(s)`);
     setBulkDeleteOpen(false);
     setSelectedIds([]);
     onCambio?.();

@@ -9,10 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, UserPlus, Users, CheckCircle2, AlertTriangle, Clock, ArrowRight, Search, LayoutGrid, List, GripVertical, Pencil, Trash2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Loader2, UserPlus, Users, CheckCircle2, AlertTriangle, Clock, ArrowRight, Search, LayoutGrid, List, GripVertical, Pencil, Trash2, Download } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { descargarCSV } from "@/lib/csv";
 import { getDiscipuloColor } from "@/lib/discipulo-color";
 import { estadosMeta, eventosEvangelismo, actosServicio } from "./tipos-estados";
 import type { PersonaData, EventoData } from "./tipos-estados";
@@ -155,6 +157,62 @@ export default function EvangelismoPage() {
   };
 
   const [showConfirmEliminar, setShowConfirmEliminar] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+
+  const toggleSeleccion = (id: string) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const todosSeleccionados = filteredPersonas.length > 0 && filteredPersonas.every((p) => selectedIds.includes(p.id));
+
+  const toggleTodos = () => {
+    const ids = new Set(filteredPersonas.map((p) => p.id));
+    setSelectedIds((prev) =>
+      todosSeleccionados ? prev.filter((id) => !ids.has(id)) : [...new Set([...prev, ...ids])]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (!selectedIds.length || bulkDeleting) return;
+    setBulkDeleting(true);
+    const { error } = await supabase.from("acompanamiento_evangelistico").delete().in("id", selectedIds);
+    if (!error) {
+      const { data: evData } = await supabase.from("eventos_evangelismo").select("*").order("fecha", { ascending: false });
+      if (evData) setEventos(evData);
+    }
+    setBulkDeleting(false);
+    if (error) {
+      toast.error(`Error al eliminar: ${error.message}`);
+      return;
+    }
+    setPersonas((prev) => prev.filter((p) => !selectedIds.includes(p.id)));
+    setBulkDeleteOpen(false);
+    setSelectedIds([]);
+    setSelectedPersona(null);
+    toast.success(`${selectedIds.length} persona(s) eliminada(s)`);
+  };
+
+  const exportarSeleccionados = () => {
+    const sel = personas.filter((p) => selectedIds.includes(p.id));
+    if (sel.length === 0) return;
+    const filas = sel.map((p) => {
+      const d = discipulos.find((x) => x.id === p.discipulo_id);
+      return {
+        Nombre: p.nombre,
+        Apellido: p.apellido,
+        "Teléfono": p.telefono || "",
+        "Edad": p.edad?.toString() || "",
+        "Estado": estadosMeta[p.estado]?.label || p.estado,
+        "Días en estado": diasEnEstado(p),
+        "Observaciones": p.observaciones || "",
+        "Discípulo que ora": d ? `${d.nombre} ${d.apellido}` : "",
+      };
+    });
+    descargarCSV("evangelismo.csv", filas);
+    toast.success(`${sel.length} persona(s) exportada(s)`);
+  };
 
   const handleEliminarPersona = async (id: string) => {
     setShowConfirmEliminar(id);
@@ -179,9 +237,27 @@ export default function EvangelismoPage() {
           <h1 className="text-xl font-bold">Acompañamiento Evangelístico</h1>
           <p className="text-xs text-muted-foreground">Seguimiento de personas en el proceso de evangelismo</p>
         </div>
-        <Button size="sm" onClick={() => setShowAddDialog(true)}>
-          <UserPlus className="h-4 w-4 mr-1" /> Agregar persona
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {filteredPersonas.length > 0 && (
+            <label className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground">
+              <Checkbox checked={todosSeleccionados} onCheckedChange={toggleTodos} aria-label="Seleccionar todos" />
+              Todos
+            </label>
+          )}
+          {selectedIds.length > 0 && (
+            <Button variant="outline" size="sm" onClick={exportarSeleccionados}>
+              <Download className="h-4 w-4 mr-1" /> Exportar
+            </Button>
+          )}
+          {selectedIds.length > 0 && (
+            <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)}>
+              <Trash2 className="h-4 w-4 mr-1" /> Eliminar ({selectedIds.length})
+            </Button>
+          )}
+          <Button size="sm" onClick={() => setShowAddDialog(true)}>
+            <UserPlus className="h-4 w-4 mr-1" /> Agregar persona
+          </Button>
+        </div>
       </div>
 
       {/* DASHBOARD CARDS */}
@@ -256,6 +332,9 @@ export default function EvangelismoPage() {
             return (
               <Card key={p.id} className="cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => setSelectedPersona(p)}>
                 <CardContent className="p-3 flex items-center gap-3">
+                  <span onClick={(e) => e.stopPropagation()} className="shrink-0 rounded-md p-1 -m-1 hover:bg-primary/10" title="Seleccionar">
+                    <Checkbox checked={selectedIds.includes(p.id)} onCheckedChange={() => toggleSeleccion(p.id)} aria-label="Seleccionar" />
+                  </span>
                   <div className={cn("w-8 h-8 rounded-full flex items-center justify-center", meta?.bgColor)}>
                     <Icon className={cn("h-4 w-4", meta?.color)} />
                   </div>
@@ -335,6 +414,9 @@ export default function EvangelismoPage() {
                         draggable onDragStart={() => handleDragStart(p)} onClick={() => setSelectedPersona(p)}
                       >
                         <div className="flex items-center gap-1">
+                          <span onClick={(e) => e.stopPropagation()} className="shrink-0 p-0.5 -ml-0.5 hover:bg-primary/10 rounded" title="Seleccionar">
+                            <Checkbox checked={selectedIds.includes(p.id)} onCheckedChange={() => toggleSeleccion(p.id)} aria-label="Seleccionar" className="h-3.5 w-3.5" />
+                          </span>
                           <GripVertical className="h-3 w-3 text-muted-foreground shrink-0" />
                           <p className="text-xs font-medium truncate flex-1">{p.nombre} {p.apellido}</p>
                           {(() => { const d = discipulos.find((x) => x.id === p.discipulo_id); if (!d) return null; const c = getDiscipuloColor(d.id); return <span className="text-[9px] px-1 py-0.5 rounded-full hidden sm:inline font-medium" style={{ color: c.fg, backgroundColor: c.bg }}>{d.nombre}</span>; })()}
@@ -587,6 +669,22 @@ export default function EvangelismoPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowConfirmEliminar(null)}>Cancelar</Button>
             <Button variant="destructive" onClick={ejecutarEliminarPersona}>Eliminar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* BULK DELETE DIALOG */}
+      <Dialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Eliminar personas</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            ¿Eliminar {selectedIds.length} persona(s) seleccionada(s)? Esta acción no se puede deshacer.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkDeleteOpen(false)} disabled={bulkDeleting}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleBulkDelete} disabled={bulkDeleting}>
+              {bulkDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Eliminar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

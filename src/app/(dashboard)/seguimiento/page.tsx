@@ -19,10 +19,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Loader2, Search, Pencil, Eye, ArrowUpDown, CalendarPlus, Trash2 } from "lucide-react";
+import { Plus, Loader2, Search, Pencil, Eye, ArrowUpDown, CalendarPlus, Trash2, Download } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { descargarCSV } from "@/lib/csv";
 import { SeguimientoForm } from "./seguimiento-form";
 import { useEtapas } from "@/hooks/useEtapas";
 import type { Seguimiento } from "@/types/database";
@@ -172,6 +173,25 @@ export default function SeguimientoPage() {
     fetchData();
   };
 
+  const exportarSeleccionados = () => {
+    const sel = filtrados.filter((s) => selectedIds.includes(s.id));
+    if (sel.length === 0) return;
+    const filas = sel.map((s) => {
+      const prox = proximoEncuentroPorDiscipulo[s.discipulo_id];
+      const lider = discipuladores.find((p) => p.id === s.discipulos?.lider_id);
+      return {
+        "Discípulo": s.discipulos ? `${s.discipulos.apellido}, ${s.discipulos.nombre}` : "",
+        "Discipulador": lider ? `${lider.apellido}, ${lider.nombre}` : "",
+        "Etapa": etapas.find((e) => e.id === s.etapa)?.nombre || `Etapa ${s.etapa}`,
+        "Progreso": `${s.etapa}/${etapas.length}`,
+        "Próximo encuentro": prox ? format(new Date(prox.fecha + "T12:00:00"), "dd/MM/yyyy") : "",
+        "Última actualización": format(new Date(s.ultima_actualizacion), "dd/MM/yyyy HH:mm"),
+      };
+    });
+    descargarCSV("seguimientos.csv", filas);
+    toast.success(`${sel.length} seguimiento(s) exportado(s)`);
+  };
+
   if (loading) return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" /></div>;
 
   return (
@@ -181,6 +201,11 @@ export default function SeguimientoPage() {
           <h1 className="text-3xl font-bold">Seguimiento</h1>
           <p className="text-muted-foreground">Crecimiento espiritual de cada discípulo</p>
         </div>
+        {selectedIds.length > 0 && (
+          <Button variant="outline" onClick={exportarSeleccionados}>
+            <Download className="mr-2 h-4 w-4" /> Exportar
+          </Button>
+        )}
         {selectedIds.length > 0 && (
           <Button variant="destructive" onClick={() => setEliminarOpen(true)}>
             <Trash2 className="mr-2 h-4 w-4" /> Eliminar ({selectedIds.length})
