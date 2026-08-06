@@ -263,8 +263,8 @@ export default function SeguimientoPage() {
                   const lider = discipuladores.find((p) => p.id === s.discipulos?.lider_id);
                   return (
                   <TableRow key={s.id}>
-                    <TableCell>
-                      <Checkbox checked={selectedIds.includes(s.id)} onCheckedChange={() => toggleSeleccion(s.id)} aria-label="Seleccionar" />
+                    <TableCell className="w-10">
+                      <Checkbox checked={selectedIds.includes(s.id)} onCheckedChange={() => toggleSeleccion(s.id)} aria-label="Seleccionar" title="Seleccionar" />
                     </TableCell>
                     <TableCell>
                       <p className="text-base font-semibold">

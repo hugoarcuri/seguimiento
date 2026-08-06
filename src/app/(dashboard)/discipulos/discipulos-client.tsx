@@ -246,7 +246,7 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
                     selectedId === d.id ? "bg-primary/10" : "hover:bg-muted/50"
                   )}
                 >
-                  <span onClick={(e) => e.stopPropagation()} className="shrink-0">
+                  <span onClick={(e) => e.stopPropagation()} className="shrink-0 rounded-md p-1 -m-1 hover:bg-primary/10" title="Seleccionar">
                     <Checkbox checked={selectedIds.includes(d.id)} onCheckedChange={() => toggleSeleccion(d.id)} aria-label="Seleccionar" />
                   </span>
                   {d.avatar_url ? (
