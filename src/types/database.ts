@@ -8,6 +8,10 @@ export interface Profile {
   rol: UserRole;
   telefono?: string;
   avatar_url?: string;
+  fecha_nacimiento?: string;
+  don_espiritual?: string;
+  fortalezas?: string;
+  debilidades?: string;
   created_at: string;
   updated_at: string;
 }

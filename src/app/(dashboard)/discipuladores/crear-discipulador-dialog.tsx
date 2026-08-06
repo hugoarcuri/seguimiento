@@ -8,7 +8,15 @@ import { z } from "zod";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +27,8 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { calcularEdad } from "@/lib/utils";
+import { OPCIONES_DON_ESPIRITUAL, OPCION_OTRO_DON } from "./discipulador-constants";
 
 const crearSchema = z.object({
   nombre: z.string().min(1, "El nombre es requerido"),
@@ -26,6 +36,11 @@ const crearSchema = z.object({
   email: z.string().email("Email inválido"),
   telefono: z.string().optional(),
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
+  fecha_nacimiento: z.string().optional(),
+  don_espiritual: z.string().optional(),
+  don_espiritual_otro: z.string().optional(),
+  fortalezas: z.string().optional(),
+  debilidades: z.string().optional(),
 });
 
 type CrearInput = z.infer<typeof crearSchema>;
@@ -46,16 +61,34 @@ export function CrearDiscipuladorDialog({ open, onOpenChange, onCreado }: CrearD
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<CrearInput>({ resolver: zodResolver(crearSchema) });
+
+  const fechaNacimiento = watch("fecha_nacimiento");
+  const edad = fechaNacimiento ? calcularEdad(fechaNacimiento) : null;
+  const donEspiritual = watch("don_espiritual");
+  const esDonOtro = donEspiritual === OPCION_OTRO_DON;
 
   const onSubmit = async (data: CrearInput) => {
     setInvoking(true);
     const supabase = createClient();
     let msg: string | null = null;
     try {
+      const donEspiritualFinal =
+        data.don_espiritual === OPCION_OTRO_DON
+          ? data.don_espiritual_otro?.trim() || null
+          : data.don_espiritual || null;
       const { error } = await supabase.functions.invoke("create-discipulador", {
-        body: { ...data, telefono: data.telefono || null },
+        body: {
+          ...data,
+          telefono: data.telefono || null,
+          fecha_nacimiento: data.fecha_nacimiento || null,
+          don_espiritual: donEspiritualFinal,
+          fortalezas: data.fortalezas || null,
+          debilidades: data.debilidades || null,
+        },
       });
       if (error) {
         if (error instanceof FunctionsHttpError) {
@@ -122,6 +155,45 @@ export function CrearDiscipuladorDialog({ open, onOpenChange, onCreado }: CrearD
           <div className="space-y-1">
             <Label htmlFor="crear-password" className={labelClass}>Contraseña *</Label>
             <Input id="crear-password" type="password" className={inputClass} {...register("password")} aria-invalid={!!errors.password} />
+          </div>
+          <div className="border-t pt-4 space-y-4">
+            <p className="text-xs font-medium text-muted-foreground">Datos personales</p>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label htmlFor="crear-fecha-nacimiento" className={labelClass}>Fecha de nacimiento</Label>
+                <Input id="crear-fecha-nacimiento" type="date" className={inputClass} {...register("fecha_nacimiento")} />
+                {edad !== null && <p className="text-xs text-muted-foreground">Edad: {edad} años</p>}
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="crear-don-espiritual" className={labelClass}>Don espiritual</Label>
+                <Select value={donEspiritual || undefined} onValueChange={(v) => setValue("don_espiritual", v?.toString() ?? "")}>
+                  <SelectTrigger id="crear-don-espiritual" className="h-11 md:h-8">
+                    <SelectValue placeholder="Seleccionar don" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {OPCIONES_DON_ESPIRITUAL.map((don) => (
+                      <SelectItem key={don} value={don}>{don}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {esDonOtro && (
+                  <Input
+                    id="crear-don-otro"
+                    className="mt-2 h-11 md:h-8"
+                    placeholder="Escribí el don..."
+                    {...register("don_espiritual_otro")}
+                  />
+                )}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="crear-fortalezas" className={labelClass}>Fortalezas</Label>
+              <Textarea id="crear-fortalezas" rows={3} className="text-sm" placeholder="Fortalezas del discipulador..." {...register("fortalezas")} />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="crear-debilidades" className={labelClass}>Debilidades</Label>
+              <Textarea id="crear-debilidades" rows={3} className="text-sm" placeholder="Debilidades del discipulador..." {...register("debilidades")} />
+            </div>
           </div>
           {(errors.nombre || errors.apellido || errors.email || errors.password) && (
             <p className="text-xs text-destructive">

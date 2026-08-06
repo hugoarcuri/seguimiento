@@ -34,7 +34,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { cn, estadoColors } from "@/lib/utils";
+import { cn, estadoColors, calcularEdad } from "@/lib/utils";
 import type { Profile, Discipulo, Etapa } from "@/types/database";
 import { CrearDiscipuladorDialog } from "./crear-discipulador-dialog";
 import { EditarDiscipuladorDialog } from "./editar-discipulador-dialog";
@@ -298,6 +298,32 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
                 </CardContent>
               </Card>
             </div>
+
+            <Card>
+              <CardContent className="p-4 space-y-3">
+                <h4 className="text-sm font-semibold">Datos personales</h4>
+                <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Edad</p>
+                    <p className="text-sm font-medium">
+                      {selected.fecha_nacimiento ? `${calcularEdad(selected.fecha_nacimiento)} años` : "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Don espiritual</p>
+                    <p className="text-sm font-medium">{selected.don_espiritual || "—"}</p>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Fortalezas</p>
+                  <p className="text-sm font-medium whitespace-pre-line">{selected.fortalezas || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Debilidades</p>
+                  <p className="text-sm font-medium whitespace-pre-line">{selected.debilidades || "—"}</p>
+                </div>
+              </CardContent>
+            </Card>
 
             <Card>
               <CardContent className="p-4 space-y-3">

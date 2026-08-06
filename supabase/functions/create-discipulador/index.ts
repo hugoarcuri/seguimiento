@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const { nombre, apellido, email, telefono, password } = await req.json();
+    const { nombre, apellido, email, telefono, password, fecha_nacimiento, don_espiritual, fortalezas, debilidades } = await req.json();
 
     if (!nombre || !apellido || !email || !password) {
       return json({ error: "Faltan campos obligatorios" }, 400);
@@ -77,6 +77,10 @@ Deno.serve(async (req) => {
         apellido,
         email,
         telefono: telefono || null,
+        fecha_nacimiento: fecha_nacimiento || null,
+        don_espiritual: don_espiritual || null,
+        fortalezas: fortalezas || null,
+        debilidades: debilidades || null,
       })
       .eq("id", userData.user.id);
 
