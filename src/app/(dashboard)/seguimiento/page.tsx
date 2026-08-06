@@ -238,7 +238,9 @@ export default function SeguimientoPage() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-10">
-                  <Checkbox checked={todosSeleccionados} onCheckedChange={toggleTodos} aria-label="Seleccionar todos" />
+                  {filtrados.length > 0 && (
+                    <Checkbox checked={todosSeleccionados} onCheckedChange={toggleTodos} aria-label="Seleccionar todos" />
+                  )}
                 </TableHead>
                 <TableHead>Discípulo</TableHead>
                 <TableHead>Discipulador</TableHead>

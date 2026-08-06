@@ -220,6 +220,7 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
         </div>
 
         <div className="flex-1 overflow-y-auto space-y-0.5 -mx-1 px-1">
+          {filtered.length > 0 && (
           <div className="flex items-center justify-between px-1 pb-1">
             <label className="flex cursor-pointer items-center gap-2 text-sm">
               <Checkbox checked={todosSeleccionados} onCheckedChange={toggleTodos} aria-label="Seleccionar todos" />
@@ -229,6 +230,7 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
               <span className="text-xs text-muted-foreground">{selectedIds.length} seleccionado(s)</span>
             )}
           </div>
+          )}
           {filtered.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">No se encontraron discípulos</p>
           ) : (
