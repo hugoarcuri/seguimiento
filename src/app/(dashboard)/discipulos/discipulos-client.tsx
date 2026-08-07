@@ -18,7 +18,6 @@ import { toast } from "sonner";
 import type { Discipulo, Etapa, Agenda, Oracion, Tarea, Timeline } from "@/types/database";
 import { ImportarDiscipulos } from "./importar-discipulos";
 import { DiscipuloDetailClient } from "./discipulo-detail-client";
-import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
 const DIAS_CUMPLEANOS = 7;
@@ -223,7 +222,13 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
           {filtered.length > 0 && (
           <div className="flex items-center justify-between px-1 pb-1">
             <label className="flex cursor-pointer items-center gap-2 text-sm">
-              <Checkbox checked={todosSeleccionados} onCheckedChange={toggleTodos} aria-label="Seleccionar todos" />
+              <input
+                type="checkbox"
+                checked={todosSeleccionados}
+                onChange={() => toggleTodos()}
+                aria-label="Seleccionar todos"
+                className="size-5 shrink-0 cursor-pointer accent-primary"
+              />
               Seleccionar todos
             </label>
             {selectedIds.length > 0 && (
@@ -255,7 +260,13 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
                   )}
                 >
                   <span onClick={(e) => e.stopPropagation()} className="shrink-0 rounded-md p-1 -m-1 hover:bg-primary/10" title="Seleccionar">
-                    <Checkbox checked={selectedIds.includes(d.id)} onCheckedChange={() => toggleSeleccion(d.id)} aria-label="Seleccionar" />
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(d.id)}
+                      onChange={() => toggleSeleccion(d.id)}
+                      aria-label="Seleccionar"
+                      className="size-5 shrink-0 cursor-pointer accent-primary"
+                    />
                   </span>
                   {d.avatar_url ? (
                   <img src={d.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />

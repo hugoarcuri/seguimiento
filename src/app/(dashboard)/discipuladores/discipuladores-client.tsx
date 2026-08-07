@@ -40,7 +40,6 @@ import { descargarCSV } from "@/lib/csv";
 import type { Profile, Discipulo, Etapa } from "@/types/database";
 import { CrearDiscipuladorDialog } from "./crear-discipulador-dialog";
 import { EditarDiscipuladorDialog } from "./editar-discipulador-dialog";
-import { Checkbox } from "@/components/ui/checkbox";
 
 const avatarColors = [
   "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500", "bg-purple-500",
@@ -224,7 +223,13 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
           {filtered.length > 0 && (
           <div className="flex items-center justify-between px-1 pb-1">
             <label className="flex cursor-pointer items-center gap-2 text-sm">
-              <Checkbox checked={todosSeleccionados} onCheckedChange={toggleTodos} aria-label="Seleccionar todos" />
+              <input
+                type="checkbox"
+                checked={todosSeleccionados}
+                onChange={() => toggleTodos()}
+                aria-label="Seleccionar todos"
+                className="size-5 shrink-0 cursor-pointer accent-primary"
+              />
               Seleccionar todos
             </label>
             {selectedIds.length > 0 && (
@@ -255,7 +260,13 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
                   )}
                 >
                   <span onClick={(e) => e.stopPropagation()} className="shrink-0 rounded-md p-1 -m-1 hover:bg-primary/10" title="Seleccionar">
-                    <Checkbox checked={selectedIds.includes(p.id)} onCheckedChange={() => toggleSeleccion(p.id)} aria-label="Seleccionar" />
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(p.id)}
+                      onChange={() => toggleSeleccion(p.id)}
+                      aria-label="Seleccionar"
+                      className="size-5 shrink-0 cursor-pointer accent-primary"
+                    />
                   </span>
                   {p.avatar_url ? (
                     <img src={p.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
