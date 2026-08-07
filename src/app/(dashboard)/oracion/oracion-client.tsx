@@ -151,7 +151,7 @@ export function OracionClient({ oraciones, setOraciones, discipulos }: OracionCl
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label>Discípulo *</Label>
-                 <Select onValueChange={(v) => setDiscipuloId(v?.toString() ?? "")}>
+                 <Select onValueChange={(v) => setDiscipuloId(v?.toString() ?? "")} items={discipulos.map((d) => ({ value: d.id, label: `${d.apellido}, ${d.nombre}` }))}>
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar discípulo" />
                   </SelectTrigger>

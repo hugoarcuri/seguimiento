@@ -166,7 +166,7 @@ export function CrearDiscipuladorDialog({ open, onOpenChange, onCreado }: CrearD
               </div>
               <div className="space-y-1">
                 <Label htmlFor="crear-don-espiritual" className={labelClass}>Don espiritual</Label>
-                <Select value={donEspiritual || undefined} onValueChange={(v) => setValue("don_espiritual", v?.toString() ?? "")}>
+                <Select value={donEspiritual || undefined} onValueChange={(v) => setValue("don_espiritual", v?.toString() ?? "")} items={OPCIONES_DON_ESPIRITUAL.map((don) => ({ value: don, label: don }))}>
                   <SelectTrigger id="crear-don-espiritual" className="h-11 md:h-8">
                     <SelectValue placeholder="Seleccionar don" />
                   </SelectTrigger>

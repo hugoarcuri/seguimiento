@@ -326,6 +326,10 @@ export function DiscipuloForm({
           <Select
             onValueChange={(v) => setValue("lider_id", v?.toString() === "none" ? "" : v?.toString() ?? "", { shouldValidate: true })}
             defaultValue={String(initialData?.lider_id || "none")}
+            items={[
+              { value: "none", label: "Sin asignar" },
+              ...discipuladores.map((d) => ({ value: d.id, label: `${d.apellido}, ${d.nombre}` })),
+            ]}
           >
             <SelectTrigger className="w-full sm:w-auto sm:min-w-[15rem] min-h-11 md:min-h-8">
               <SelectValue />

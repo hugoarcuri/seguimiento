@@ -139,7 +139,7 @@ export function AgendaClient({
                   control={form.control}
                   name="discipulo_id"
                   render={({ field }) => (
-                    <Select value={field.value || undefined} onValueChange={(value) => field.onChange(value?.toString() ?? "")}>
+                    <Select value={field.value || undefined} onValueChange={(value) => field.onChange(value?.toString() ?? "")} items={discipulos.map((d) => ({ value: d.id, label: `${d.apellido}, ${d.nombre}` }))}>
                       <SelectTrigger>
                         <SelectValue placeholder="Seleccionar discípulo" />
                       </SelectTrigger>

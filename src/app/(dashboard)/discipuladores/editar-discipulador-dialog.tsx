@@ -148,7 +148,7 @@ export function EditarDiscipuladorDialog({ open, discipulador, onOpenChange, onE
               </div>
               <div className="space-y-1">
                 <Label htmlFor="editar-don-espiritual" className={labelClass}>Don espiritual</Label>
-                <Select value={donEspiritual || undefined} onValueChange={(v) => setValue("don_espiritual", v?.toString() ?? "")}>
+                <Select value={donEspiritual || undefined} onValueChange={(v) => setValue("don_espiritual", v?.toString() ?? "")} items={OPCIONES_DON_ESPIRITUAL.map((don) => ({ value: don, label: don }))}>
                   <SelectTrigger id="editar-don-espiritual" className="h-11 md:h-8">
                     <SelectValue placeholder="Seleccionar don" />
                   </SelectTrigger>

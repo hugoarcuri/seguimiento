@@ -438,7 +438,7 @@ export default function TareasPage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Tipo</Label>
-                 <Select onValueChange={(v) => setMatForm({ ...matForm, tipo: v?.toString() ?? "" })} value={matForm.tipo}>
+                 <Select onValueChange={(v) => setMatForm({ ...matForm, tipo: v?.toString() ?? "" })} value={matForm.tipo} items={Object.entries(materialTipoLabel).map(([k, v]) => ({ value: k, label: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {Object.entries(materialTipoLabel).map(([k, v]) => (
@@ -449,7 +449,7 @@ export default function TareasPage() {
               </div>
               <div className="space-y-2">
                 <Label>Etapa</Label>
-                 <Select onValueChange={(v) => setMatForm({ ...matForm, etapa_id: v?.toString() ?? "" })} value={matForm.etapa_id || undefined}>
+                 <Select onValueChange={(v) => setMatForm({ ...matForm, etapa_id: v?.toString() ?? "" })} value={matForm.etapa_id || undefined} items={etapas.map((etapa) => ({ value: String(etapa.id), label: etapa.nombre }))}>
                   <SelectTrigger><SelectValue placeholder="Sin etapa" /></SelectTrigger>
                   <SelectContent>
                     {etapas.map((etapa) => (
@@ -491,7 +491,7 @@ export default function TareasPage() {
                 control={form.control}
                 name="discipulo_id"
                 render={({ field }) => (
-                  <Select value={field.value || undefined} onValueChange={(v) => field.onChange(v?.toString() ?? "")}>
+                  <Select value={field.value || undefined} onValueChange={(v) => field.onChange(v?.toString() ?? "")} items={discipulos.map((d) => ({ value: d.id, label: `${d.apellido}, ${d.nombre}` }))}>
                     <SelectTrigger><SelectValue placeholder="Seleccionar discípulo" /></SelectTrigger>
                     <SelectContent>
                       {discipulos.map((d) => (
@@ -519,7 +519,7 @@ export default function TareasPage() {
                   control={form.control}
                   name="tipo"
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={(v) => field.onChange((v?.toString() ?? "lectura") as TareaInput["tipo"])}>
+                    <Select value={field.value} onValueChange={(v) => field.onChange((v?.toString() ?? "lectura") as TareaInput["tipo"])} items={Object.entries(tipoLabels).map(([k, v]) => ({ value: k, label: v }))}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         {Object.entries(tipoLabels).map(([k, v]) => (

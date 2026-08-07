@@ -490,7 +490,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
                   </div>
                   <div className="w-full flex flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
                     <Label className="text-xs text-muted-foreground">Cambiar etapa</Label>
-                    <Select value={String(seguimiento.etapa)} onValueChange={(v) => cambiarEtapa(Number(v))}>
+                    <Select value={String(seguimiento.etapa)} onValueChange={(v) => cambiarEtapa(Number(v))} items={etapas.map((e) => ({ value: String(e.id), label: e.nombre }))}>
                       <SelectTrigger className="w-full sm:w-56"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         {etapas.map((e) => (

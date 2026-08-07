@@ -227,7 +227,7 @@ export default function SeguimientoPage() {
             </div>
             <div className="w-44 space-y-1">
               <Label className="text-xs text-muted-foreground">Etapa</Label>
-              <Select value={etapaFiltro} onValueChange={(v) => setEtapaFiltro(v?.toString() ?? "")}>
+              <Select value={etapaFiltro} onValueChange={(v) => setEtapaFiltro(v?.toString() ?? "")} items={[{ value: "", label: "Todas" }, ...etapas.map((e) => ({ value: String(e.id), label: e.nombre }))]}>
                 <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Todas</SelectItem>
@@ -239,7 +239,7 @@ export default function SeguimientoPage() {
             </div>
             <div className="w-52 space-y-1">
               <Label className="text-xs text-muted-foreground">Discipulador</Label>
-              <Select value={discipuladorFiltro} onValueChange={(v) => setDiscipuladorFiltro(v?.toString() ?? "")}>
+              <Select value={discipuladorFiltro} onValueChange={(v) => setDiscipuladorFiltro(v?.toString() ?? "")} items={[{ value: "", label: "Todos" }, ...discipuladores.map((p) => ({ value: p.id, label: `${p.apellido}, ${p.nombre}` }))]}>
                 <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Todos</SelectItem>

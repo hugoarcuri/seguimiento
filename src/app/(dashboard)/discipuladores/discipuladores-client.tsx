@@ -435,7 +435,7 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Select value={asignarId || undefined} onValueChange={(v) => setAsignarId(v?.toString() ?? "")}>
+            <Select value={asignarId || undefined} onValueChange={(v) => setAsignarId(v?.toString() ?? "")} items={discipulosDisponibles.map((d) => ({ value: d.id, label: `${d.apellido}, ${d.nombre}` }))}>
               <SelectTrigger><SelectValue placeholder="Seleccionar discípulo" /></SelectTrigger>
               <SelectContent>
                 {discipulosDisponibles.map((d) => (
