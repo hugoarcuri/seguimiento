@@ -69,7 +69,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
   const [encuentroOpen, setEncuentroOpen] = useState(false);
   const [encuentroEditing, setEncuentroEditing] = useState<Agenda | null>(null);
   const [encuentroDelete, setEncuentroDelete] = useState<Agenda | null>(null);
-  const [encuentroDraft, setEncuentroDraft] = useState({ fecha: "", hora: "", lugar: "", tema_tratado: "", material_utilizado: "", compromisos: "", notas: "", proximo_encuentro: "" });
+  const [encuentroDraft, setEncuentroDraft] = useState({ fecha: "", notas: "", proximo_encuentro: "" });
   const [guardandoEncuentro, setGuardandoEncuentro] = useState(false);
 
   const searchParams = useSearchParams();
@@ -275,11 +275,6 @@ function SeguimientoDetalle({ id }: { id: string }) {
     setEncuentroEditing(agenda || null);
     setEncuentroDraft({
       fecha: agenda?.fecha?.split("T")[0] || "",
-      hora: agenda?.hora || "",
-      lugar: agenda?.lugar || "",
-      tema_tratado: agenda?.tema_tratado || "",
-      material_utilizado: agenda?.material_utilizado || "",
-      compromisos: agenda?.compromisos || "",
       notas: agenda?.notas || "",
       proximo_encuentro: agenda?.proximo_encuentro?.slice(0, 16) || "",
     });
@@ -291,18 +286,14 @@ function SeguimientoDetalle({ id }: { id: string }) {
     if (!discipuloId) { toast.error("No se encontró el discípulo"); return; }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { toast.error("Debés iniciar sesión"); return; }
-    if (!encuentroDraft.tema_tratado.trim() || !encuentroDraft.fecha) { toast.error("Completá fecha y tema"); return; }
+    if (!encuentroDraft.fecha) { toast.error("Completá la fecha"); return; }
 
     setGuardandoEncuentro(true);
     const payload = {
       discipulo_id: discipuloId,
       lider_id: user.id,
       fecha: encuentroDraft.fecha,
-      hora: encuentroDraft.hora || null,
-      lugar: encuentroDraft.lugar || null,
-      tema_tratado: encuentroDraft.tema_tratado.trim(),
-      material_utilizado: encuentroDraft.material_utilizado || null,
-      compromisos: encuentroDraft.compromisos || null,
+      tema_tratado: "",
       notas: encuentroDraft.notas || null,
       proximo_encuentro: encuentroDraft.proximo_encuentro || null,
     };
@@ -824,19 +815,8 @@ function SeguimientoDetalle({ id }: { id: string }) {
                         <div className="flex items-center justify-between gap-3">
                           <div className="min-w-0 space-y-1">
                             <div className="flex flex-wrap items-center gap-2">
-                              <p className="text-sm font-medium">{agenda.tema_tratado}</p>
-                              <Badge variant="outline">{format(new Date(agenda.fecha), "dd/MM/yyyy")}</Badge>
-                              {agenda.hora && <Badge variant="secondary">{agenda.hora}</Badge>}
+                              <p className="text-sm font-medium">{format(new Date(agenda.fecha), "dd/MM/yyyy")}</p>
                             </div>
-                            {agenda.lugar && (
-                              <p className="text-xs text-muted-foreground"><MapPin className="inline h-3 w-3 mr-1" />{agenda.lugar}</p>
-                            )}
-                            {agenda.material_utilizado && (
-                              <p className="text-xs text-muted-foreground break-words">Material: {agenda.material_utilizado}</p>
-                            )}
-                            {agenda.compromisos && (
-                              <p className="text-xs text-muted-foreground break-words">Compromisos: {agenda.compromisos}</p>
-                            )}
                             {agenda.notas && (
                               <p className="text-xs text-muted-foreground break-words">Notas: {agenda.notas}</p>
                             )}
@@ -898,31 +878,9 @@ function SeguimientoDetalle({ id }: { id: string }) {
             <DialogTitle>{encuentroEditing ? "Editar encuentro" : "Registrar encuentro"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="enc-fecha">Fecha *</Label>
-                <Input id="enc-fecha" type="date" value={encuentroDraft.fecha} onChange={(e) => setEncuentroDraft((p) => ({ ...p, fecha: e.target.value }))} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="enc-hora">Hora</Label>
-                <Input id="enc-hora" type="time" value={encuentroDraft.hora} onChange={(e) => setEncuentroDraft((p) => ({ ...p, hora: e.target.value }))} />
-              </div>
-            </div>
             <div className="space-y-2">
-              <Label htmlFor="enc-tema">Tema tratado *</Label>
-              <Input id="enc-tema" value={encuentroDraft.tema_tratado} onChange={(e) => setEncuentroDraft((p) => ({ ...p, tema_tratado: e.target.value }))} placeholder="Tema del encuentro" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="enc-lugar">Lugar</Label>
-              <Input id="enc-lugar" value={encuentroDraft.lugar} onChange={(e) => setEncuentroDraft((p) => ({ ...p, lugar: e.target.value }))} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="enc-material">Material utilizado</Label>
-              <Textarea id="enc-material" rows={2} value={encuentroDraft.material_utilizado} onChange={(e) => setEncuentroDraft((p) => ({ ...p, material_utilizado: e.target.value }))} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="enc-compromisos">Compromisos</Label>
-              <Textarea id="enc-compromisos" rows={2} value={encuentroDraft.compromisos} onChange={(e) => setEncuentroDraft((p) => ({ ...p, compromisos: e.target.value }))} />
+              <Label htmlFor="enc-fecha">Fecha *</Label>
+              <Input id="enc-fecha" type="date" value={encuentroDraft.fecha} onChange={(e) => setEncuentroDraft((p) => ({ ...p, fecha: e.target.value }))} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="enc-notas">Notas</Label>
