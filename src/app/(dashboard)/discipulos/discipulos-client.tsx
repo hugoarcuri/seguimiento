@@ -237,12 +237,20 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
             filtered.map((d) => {
               const diasCumple = diasHastaCumple(d.fecha_nacimiento);
               return (
-              <button
+              <div
                 key={d.id}
-                type="button"
+                role="button"
+                tabIndex={0}
                 onClick={() => { setLoadingDetail(true); setSelectedId(d.id); }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setLoadingDetail(true);
+                    setSelectedId(d.id);
+                  }
+                }}
                   className={cn(
-                    "w-full flex items-center gap-3 p-2 rounded-lg text-left transition-colors group",
+                    "w-full flex items-center gap-3 p-2 rounded-lg text-left transition-colors group cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring",
                     selectedId === d.id ? "bg-primary/10" : "hover:bg-muted/50"
                   )}
                 >
@@ -269,7 +277,7 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
                 <button type="button" onClick={(e) => { e.stopPropagation(); setDeleteDialog(d.id); }} className="shrink-0 text-muted-foreground/50 hover:text-destructive transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
-              </button>
+              </div>
               );
             })
           )}

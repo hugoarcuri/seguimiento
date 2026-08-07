@@ -237,13 +237,20 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
           ) : (
             filtered.map((p) => {
               const count = discipulos.filter((d) => d.lider_id === p.id).length;
-  return (
-                <button
+              return (
+                <div
                   key={p.id}
-                  type="button"
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setSelectedId(p.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setSelectedId(p.id);
+                    }
+                  }}
                   className={cn(
-                    "w-full flex items-center gap-3 p-2 rounded-lg text-left transition-colors group",
+                    "w-full flex items-center gap-3 p-2 rounded-lg text-left transition-colors group cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring",
                     selectedId === p.id ? "bg-primary/10" : "hover:bg-muted/50"
                   )}
                 >
@@ -262,7 +269,7 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
                     <p className="text-[11px] text-muted-foreground truncate">{p.email || "Sin email"}</p>
                   </div>
                   <Badge variant="secondary" className="shrink-0">{count}</Badge>
-                </button>
+                </div>
               );
             })
           )}
