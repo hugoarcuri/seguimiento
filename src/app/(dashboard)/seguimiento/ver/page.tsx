@@ -13,7 +13,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   ArrowLeft, Loader2, Save, Plus, Trash2, User, CalendarDays, UserCheck, TrendingUp,
@@ -734,10 +733,12 @@ function SeguimientoDetalle({ id }: { id: string }) {
                 <div className="space-y-2">
                   {objetivosOrdenados.map((obj) => (
                     <div key={obj.id} className="flex items-center gap-3 rounded-lg border p-3">
-                      <Checkbox
+                      <input
+                        type="checkbox"
                         id={`obj-${obj.id}`}
                         checked={obj.completado}
-                        onCheckedChange={() => toggleObjetivo(obj)}
+                        onChange={() => toggleObjetivo(obj)}
+                        className="size-4 shrink-0 cursor-pointer accent-primary"
                       />
                       <label
                         htmlFor={`obj-${obj.id}`}

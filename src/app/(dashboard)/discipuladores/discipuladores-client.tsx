@@ -228,7 +228,7 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
                 checked={todosSeleccionados}
                 onChange={() => toggleTodos()}
                 aria-label="Seleccionar todos"
-                className="size-5 shrink-0 cursor-pointer accent-primary"
+                className="size-4 shrink-0 cursor-pointer accent-primary"
               />
               Seleccionar todos
             </label>
@@ -265,7 +265,7 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
                       checked={selectedIds.includes(p.id)}
                       onChange={() => toggleSeleccion(p.id)}
                       aria-label="Seleccionar"
-                      className="size-5 shrink-0 cursor-pointer accent-primary"
+                      className="size-4 shrink-0 cursor-pointer accent-primary"
                     />
                   </span>
                   {p.avatar_url ? (

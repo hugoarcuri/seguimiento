@@ -227,7 +227,7 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
                 checked={todosSeleccionados}
                 onChange={() => toggleTodos()}
                 aria-label="Seleccionar todos"
-                className="size-5 shrink-0 cursor-pointer accent-primary"
+                className="size-4 shrink-0 cursor-pointer accent-primary"
               />
               Seleccionar todos
             </label>
@@ -265,7 +265,7 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
                       checked={selectedIds.includes(d.id)}
                       onChange={() => toggleSeleccion(d.id)}
                       aria-label="Seleccionar"
-                      className="size-5 shrink-0 cursor-pointer accent-primary"
+                      className="size-4 shrink-0 cursor-pointer accent-primary"
                     />
                   </span>
                   {d.avatar_url ? (

@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -264,7 +263,13 @@ export default function SeguimientoPage() {
               <TableRow>
                 <TableHead className="w-10">
                   {filtrados.length > 0 && (
-                    <Checkbox checked={todosSeleccionados} onCheckedChange={toggleTodos} aria-label="Seleccionar todos" />
+                    <input
+                      type="checkbox"
+                      checked={todosSeleccionados}
+                      onChange={() => toggleTodos()}
+                      aria-label="Seleccionar todos"
+                      className="size-4 shrink-0 cursor-pointer accent-primary"
+                    />
                   )}
                 </TableHead>
                 <TableHead>Discípulo</TableHead>
@@ -289,7 +294,14 @@ export default function SeguimientoPage() {
                   return (
                   <TableRow key={s.id}>
                     <TableCell className="w-10">
-                      <Checkbox checked={selectedIds.includes(s.id)} onCheckedChange={() => toggleSeleccion(s.id)} aria-label="Seleccionar" title="Seleccionar" />
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(s.id)}
+                        onChange={() => toggleSeleccion(s.id)}
+                        aria-label="Seleccionar"
+                        title="Seleccionar"
+                        className="size-4 shrink-0 cursor-pointer accent-primary"
+                      />
                     </TableCell>
                     <TableCell>
                       <p className="text-base font-semibold">
