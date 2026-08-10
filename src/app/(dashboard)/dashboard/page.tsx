@@ -45,6 +45,10 @@ interface AgendaRaw {
   id: string;
   discipulo_id: string;
   fecha: string;
+  hora?: string | null;
+  tema_tratado?: string | null;
+  lugar?: string | null;
+  discipulos?: { nombre: string; apellido: string } | null;
 }
 
 interface OracionRaw {

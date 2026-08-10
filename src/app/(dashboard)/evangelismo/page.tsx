@@ -309,8 +309,8 @@ export default function EvangelismoPage() {
       {/* FILTROS + VIEW TOGGLE */}
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar persona..." className="pl-8 h-11 md:h-8 text-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Persona..." className="pl-8 h-11 md:h-8 text-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <div className="flex gap-1 bg-muted rounded-lg p-0.5">
           {["lista", "kanban"].map((v) => (
