@@ -48,7 +48,7 @@ interface AgendaRaw {
   hora?: string | null;
   tema_tratado?: string | null;
   lugar?: string | null;
-  discipulos?: { nombre: string; apellido: string } | null;
+  discipulos?: { nombre: string; apellido: string }[] | null;
 }
 
 interface OracionRaw {
@@ -102,7 +102,7 @@ export default function DashboardPage() {
       supabase.from("discipulos").select("id, nombre, apellido, avatar_url, etapa_id, estado, lider_id, bautizado, es_miembro, fecha_nacimiento, fecha_bautismo"),
       supabase.from("profiles").select("id, nombre, apellido, rol"),
       supabase.from("seguimientos").select("id, discipulo_id, progreso, estado"),
-      supabase.from("agenda").select("id, discipulo_id, fecha").order("fecha", { ascending: false }),
+      supabase.from("agenda").select("id, discipulo_id, fecha, hora, tema_tratado, discipulos:discipulo_id(nombre, apellido)").order("fecha", { ascending: false }),
       supabase.from("oraciones").select("id, discipulo_id, pedido, estado, fecha").order("fecha", { ascending: false }),
       supabase.from("tareas").select("id, estado"),
       supabase.from("acompanamiento_evangelistico").select("id, nombre, apellido, estado, fecha_inicio_estado"),
@@ -285,6 +285,21 @@ export default function DashboardPage() {
       persona: e.personas?.[0] ? `${e.personas[0].nombre} ${e.personas[0].apellido}` : undefined,
     }));
 
+    const citasAgendadas = agenda
+      .filter((a) => diasDesde(a.fecha) <= 0)
+      .map((a) => {
+        const d = a.discipulos?.[0];
+        return {
+          id: a.id,
+          discipulo: d ? `${d.apellido}, ${d.nombre}` : undefined,
+          fecha: a.fecha,
+          hora: a.hora || undefined,
+          tema: a.tema_tratado || undefined,
+        };
+      })
+      .sort((a, b) => a.fecha.localeCompare(b.fecha))
+      .slice(0, 5);
+
     const mesActual = hoy.getMonth() + 1;
     const cumpleañosMes = discipulos
       .map((d) => {
@@ -335,6 +350,7 @@ export default function DashboardPage() {
       discipuladores,
       oracionesRecientes,
       evangelismoRecientes,
+      citasAgendadas,
       cumpleañosMes,
       bautizadosAnio,
       miembrosTotal,

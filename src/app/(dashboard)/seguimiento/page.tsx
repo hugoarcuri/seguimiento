@@ -28,7 +28,7 @@ import { useEtapas } from "@/hooks/useEtapas";
 import type { Seguimiento } from "@/types/database";
 
 type SeguimientoFila = Seguimiento & {
-  discipulos?: { id: string; nombre: string; apellido: string; estado?: string; lider_id?: string | null };
+  discipulos?: { id: string; nombre: string; apellido: string; avatar_url?: string | null; estado?: string; lider_id?: string | null };
 };
 
 type EncuentroProximo = { fecha: string; hora?: string; tema_tratado?: string };
@@ -53,6 +53,7 @@ export default function SeguimientoPage() {
   const [editing, setEditing] = useState<Seguimiento | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [eliminarOpen, setEliminarOpen] = useState(false);
+  const [eliminarUno, setEliminarUno] = useState<SeguimientoFila | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -73,7 +74,7 @@ export default function SeguimientoPage() {
     const [seguimientosRes, discipulosRes, discipuladoresRes] = await Promise.all([
       supabase
         .from("seguimientos")
-        .select("*, discipulos:discipulo_id(nombre, apellido, lider_id)")
+        .select("*, discipulos:discipulo_id(nombre, apellido, avatar_url, lider_id)")
         .order("ultima_actualizacion", { ascending: false }),
       discipulosQuery,
       supabase.from("profiles").select("id, nombre, apellido").order("apellido", { ascending: true }),
@@ -169,6 +170,21 @@ export default function SeguimientoPage() {
     toast.success(`${selectedIds.length} seguimiento(s) eliminado(s)`);
     setEliminarOpen(false);
     setSelectedIds([]);
+    fetchData();
+  };
+
+  const handleEliminarUno = async () => {
+    if (!eliminarUno) return;
+    setDeleting(true);
+    const { error } = await supabase.from("seguimientos").delete().eq("id", eliminarUno.id);
+    setDeleting(false);
+    if (error) {
+      toast.error(`Error al eliminar: ${error.message}`);
+      return;
+    }
+    const nombre = eliminarUno.discipulos ? `${eliminarUno.discipulos.apellido}, ${eliminarUno.discipulos.nombre}` : "el seguimiento";
+    toast.success(`Seguimiento de ${nombre} eliminado`);
+    setEliminarUno(null);
     fetchData();
   };
 
@@ -304,9 +320,19 @@ export default function SeguimientoPage() {
                       />
                     </TableCell>
                     <TableCell>
-                      <p className="text-base font-semibold">
-                        {s.discipulos ? `${s.discipulos.apellido}, ${s.discipulos.nombre}` : "—"}
-                      </p>
+                      <div className="flex items-center gap-2.5">
+                        {s.discipulos?.avatar_url ? (
+                          <img src={s.discipulos.avatar_url} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
+                        ) : (
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                            {(s.discipulos?.nombre?.[0] || "").toUpperCase()}
+                            {(s.discipulos?.apellido?.[0] || "").toUpperCase()}
+                          </div>
+                        )}
+                        <p className="text-base font-semibold">
+                          {s.discipulos ? `${s.discipulos.apellido}, ${s.discipulos.nombre}` : "—"}
+                        </p>
+                      </div>
                     </TableCell>
                     <TableCell>
                       {lider ? `${lider.apellido}, ${lider.nombre}` : "—"}
@@ -348,6 +374,9 @@ export default function SeguimientoPage() {
                         <Button variant="ghost" size="icon" title="Editar" onClick={() => { setEditing(s); setDialogOpen(true); }}>
                           <Pencil className="h-4 w-4" />
                         </Button>
+                        <Button variant="ghost" size="icon" title="Eliminar" onClick={() => setEliminarUno(s)}>
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -382,6 +411,23 @@ export default function SeguimientoPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setEliminarOpen(false)} disabled={deleting}>Cancelar</Button>
             <Button variant="destructive" onClick={handleEliminarSeleccionados} disabled={deleting}>
+              {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={eliminarUno !== null} onOpenChange={(o) => { if (!o) setEliminarUno(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Eliminar seguimiento</DialogTitle>
+            <DialogDescription>
+              ¿Eliminar el seguimiento de {eliminarUno?.discipulos ? `${eliminarUno.discipulos.apellido}, ${eliminarUno.discipulos.nombre}` : "este discípulo"}? Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEliminarUno(null)} disabled={deleting}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleEliminarUno} disabled={deleting}>
               {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Eliminar
             </Button>
           </DialogFooter>

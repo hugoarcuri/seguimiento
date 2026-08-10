@@ -91,6 +91,14 @@ export interface CumpleMesItem {
   edad: number;
 }
 
+export interface CitaAgendada {
+  id: string;
+  discipulo?: string;
+  fecha: string;
+  hora?: string;
+  tema?: string;
+}
+
 export interface EtapaCount {
   id: number;
   nombre: string;
@@ -126,6 +134,7 @@ export interface DashboardData {
   discipuladores: DiscipuladorItem[];
   oracionesRecientes: OracionReciente[];
   evangelismoRecientes: EventoReciente[];
+  citasAgendadas: CitaAgendada[];
   cumpleañosMes: CumpleMesItem[];
   bautizadosAnio: number;
   miembrosTotal: number;
@@ -319,8 +328,8 @@ export function DashboardClient({ data }: { data: DashboardData }) {
         </Card>
       </div>
 
-      {/* 3 COLUMNAS: SALUD+ACTIVIDAD | URGENTES | LISTOS+DISCIPULADORES */}
-      <div className="grid gap-3 lg:grid-cols-3">
+      {/* 4 COLUMNAS: SALUD | ACTIVIDAD+CITAS | URGENTES | LISTOS+DISCIPULADORES */}
+      <div className="grid gap-3 lg:grid-cols-4">
         <div className="flex flex-col gap-3">
           <Card size="sm">
           <CardHeader className="shrink-0">
@@ -375,8 +384,10 @@ export function DashboardClient({ data }: { data: DashboardData }) {
           </div>
         </CardContent>
       </Card>
+      </div>
 
           {/* ACTIVIDAD RECIENTE */}
+          <div className="flex flex-col gap-3">
           <Card size="sm">
             <CardHeader className="shrink-0">
               <CardTitle className="flex items-center gap-2 text-base">
@@ -442,6 +453,42 @@ export function DashboardClient({ data }: { data: DashboardData }) {
               )}
             </div>
           </div>
+          </CardContent>
+        </Card>
+
+        {/* PRÓXIMAS CITAS */}
+        <Card size="sm">
+          <CardHeader className="shrink-0">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Clock className="h-4 w-4 text-indigo-500" />
+              Próximas citas
+            </CardTitle>
+            <CardDescription>Encuentros agendados para los próximos días</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {data.citasAgendadas.length === 0 ? (
+              <p className="py-1 text-sm text-muted-foreground">Sin citas agendadas próximas</p>
+            ) : (
+              <div className="space-y-2">
+                {data.citasAgendadas.map((c) => (
+                  <Link key={c.id} href="/agenda" className="block rounded-lg border p-2.5 transition-colors hover:border-primary/50 hover:no-underline">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="min-w-0 flex-1 truncate text-sm font-medium">
+                        {c.discipulo || "Discípulo"}
+                      </p>
+                      <span className="shrink-0 text-[11px] font-semibold tabular-nums text-muted-foreground">
+                        {format(new Date(c.fecha + "T00:00:00"), "dd/MM", { locale: es })}
+                      </span>
+                    </div>
+                    {(c.hora || c.tema) && (
+                      <p className="mt-1 line-clamp-1 text-[11px] text-muted-foreground">
+                        {[c.hora, c.tema].filter(Boolean).join(" · ")}
+                      </p>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
