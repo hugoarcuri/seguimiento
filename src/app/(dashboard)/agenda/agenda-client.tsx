@@ -91,7 +91,16 @@ export function AgendaClient({
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const payload = { ...data, lider_id: user.id };
+    const payload = {
+      ...data,
+      lider_id: user.id,
+      hora: data.hora || null,
+      lugar: data.lugar || null,
+      material_utilizado: data.material_utilizado || null,
+      compromisos: data.compromisos || null,
+      notas: data.notas || null,
+      proximo_encuentro: data.proximo_encuentro || null,
+    };
     const { error, data: result } = editing
       ? await supabase.from("agenda").update(payload).eq("id", editing.id).select("*, discipulos:discipulo_id(nombre, apellido)").single()
       : await supabase.from("agenda").insert(payload).select("*, discipulos:discipulo_id(nombre, apellido)").single();
