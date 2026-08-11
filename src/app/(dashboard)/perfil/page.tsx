@@ -7,12 +7,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Shield, Crown, Mail, Calendar, Save, Loader2 } from "lucide-react";
+import { Shield, Crown, Mail, Calendar, Save, Loader2, UserCog } from "lucide-react";
 import { format } from "date-fns";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { ROL_LABELS } from "@/lib/constants/navigation";
+
+const rolIcon = { admin: Crown, discipulador: UserCog, discipulo: Shield } as const;
+
+function RolBadge({ rol }: { rol?: string }) {
+  if (!rol) return null;
+  const Icon = rolIcon[rol as keyof typeof rolIcon] || Shield;
+  return (
+    <Badge variant={rol === "admin" ? "default" : "secondary"} className="mt-1 capitalize gap-1">
+      <Icon className="h-3 w-3" />
+      {ROL_LABELS[rol] || rol}
+    </Badge>
+  );
+}
 
 export default function PerfilPage() {
   const { user, loading } = useUser();
@@ -68,10 +82,7 @@ export default function PerfilPage() {
               <p className="text-xl font-semibold">
                 {user?.nombre} {user?.apellido}
               </p>
-              <Badge variant={user?.rol === "admin" ? "default" : "secondary"} className="mt-1 capitalize">
-                {user?.rol === "admin" ? <Crown className="mr-1 h-3 w-3" /> : <Shield className="mr-1 h-3 w-3" />}
-                {user?.rol === "admin" ? "Administrador" : "Discípulo"}
-              </Badge>
+              <RolBadge rol={user?.rol} />
             </div>
           </CardContent>
         </Card>
@@ -149,7 +160,9 @@ export default function PerfilPage() {
                 </div>
                 <div>
                   <span className="text-muted-foreground">Rol</span>
-                  <p className={"font-medium capitalize " + (user?.rol === "admin" ? "text-primary" : "")}>{user?.rol === "admin" ? "Administrador" : "Discípulo"}</p>
+                  <p className={"font-medium capitalize " + (user?.rol === "admin" ? "text-primary" : "")}>
+                    {user?.rol ? ROL_LABELS[user.rol] || user.rol : "—"}
+                  </p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Miembro desde</span>

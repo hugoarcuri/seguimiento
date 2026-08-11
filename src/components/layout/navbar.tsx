@@ -3,6 +3,7 @@
 import { useUser } from "@/hooks/useUser";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,9 +12,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useTheme } from "next-themes";
-import { Moon, Sun, LogOut, User, Settings } from "lucide-react";
+import { Moon, Sun, LogOut, User, Settings, Crown, Shield, UserCog } from "lucide-react";
 import Link from "next/link";
 import { FontControls } from "@/components/font-controls";
+import { ROL_LABELS } from "@/lib/constants/navigation";
+
+const rolIcon = { admin: Crown, discipulador: UserCog, discipulo: Shield } as const;
 
 export function Navbar() {
   const { user, logout } = useUser();
@@ -56,15 +60,28 @@ export function Navbar() {
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
                 </div>
               </div>
+              {user?.rol && (
+                <div className="px-2 pb-2">
+                  <Badge variant="secondary" className="capitalize gap-1">
+                    {(() => {
+                      const Icon = rolIcon[user.rol as keyof typeof rolIcon] || Shield;
+                      return <Icon className="h-3 w-3" />;
+                    })()}
+                    {ROL_LABELS[user.rol] || user.rol}
+                  </Badge>
+                </div>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem render={<Link href="/perfil" />}>
                 <User className="mr-2 h-4 w-4" />
                 Mi Perfil
               </DropdownMenuItem>
-              <DropdownMenuItem render={<Link href="/configuracion" />}>
-                <Settings className="mr-2 h-4 w-4" />
-                Configuración
-              </DropdownMenuItem>
+              {user?.rol !== "discipulador" && (
+                <DropdownMenuItem render={<Link href="/configuracion" />}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Configuración
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={logout} className="text-destructive">
                 <LogOut className="mr-2 h-4 w-4" />

@@ -6,9 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { UserCog, Shield, Crown, Mail, Calendar, ListTree } from "lucide-react";
 import { format } from "date-fns";
 import { EtapasEditor } from "./etapas-editor";
+import { useRequireRol } from "@/hooks/useRequireRol";
 
 export default function ConfiguracionPage() {
   const { user } = useUser();
+  const { permitido, loading: autorizando } = useRequireRol(["admin", "discipulo"]);
+
+  if (autorizando) return <div className="flex items-center justify-center min-h-[50vh]"><p className="text-muted-foreground">Cargando...</p></div>;
+  if (!permitido) return null;
 
   return (
     <div className="space-y-6">

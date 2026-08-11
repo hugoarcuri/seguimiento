@@ -10,17 +10,20 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { FontControls } from "@/components/font-controls";
 import { Menu } from "lucide-react";
-import { adminMenuItems, discipuloMenuItems } from "@/lib/constants/navigation";
-import { isPathActive, BASE_PATH } from "@/lib/constants/paths";
+import { adminMenuItems, discipuloMenuItems, discipuladorMenuItems } from "@/lib/constants/navigation";
+import { findActiveHref, BASE_PATH } from "@/lib/constants/paths";
 
 export function MobileSidebar() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const { user, loading } = useUser();
 
-  const menuItems = user?.rol === "admin" ? adminMenuItems : discipuloMenuItems;
+  const menuItems =
+    user?.rol === "admin" ? adminMenuItems : user?.rol === "discipulador" ? discipuladorMenuItems : discipuloMenuItems;
 
   if (loading) return null;
+
+  const activeHref = findActiveHref(pathname, menuItems.map((i) => i.href));
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -40,7 +43,7 @@ export function MobileSidebar() {
         </div>
         <nav className="space-y-1 p-3 flex-1 overflow-y-auto">
           {menuItems.map((item) => {
-            const isActive = isPathActive(pathname, item.href);
+            const isActive = activeHref === item.href;
             return (
               <Link
                 key={item.href}

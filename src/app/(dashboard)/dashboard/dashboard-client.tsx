@@ -230,9 +230,13 @@ export function DashboardClient({
     <div className="mx-auto max-w-7xl space-y-4">
       {/* HEADER */}
       <div>
-        <h1 className="text-2xl font-bold lg:text-xl">Dashboard</h1>
+        <h1 className="text-2xl font-bold lg:text-xl">
+          {esDiscipulador ? "Mi dashboard" : "Dashboard Discípulos"}
+        </h1>
         <p className="text-sm text-muted-foreground">
-          El objetivo final es que todas las personas lleguen a {etapaFinal.nombre}
+          {esDiscipulador
+            ? "Seguimiento y avance de tus discípulos asignados"
+            : `El objetivo final es que todas las personas lleguen a ${etapaFinal.nombre}`}
         </p>
       </div>
 
@@ -257,7 +261,7 @@ export function DashboardClient({
       </div>
 
       {/* CUMPLEAÑOS DEL MES + BAUTIZADOS/MIEMBROS */}
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className={cn("grid gap-3", esDiscipulador ? "sm:grid-cols-1" : "sm:grid-cols-2")}>
         <Card size="sm">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
@@ -294,29 +298,31 @@ export function DashboardClient({
           </CardContent>
         </Card>
 
-        <Card size="sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Church className="h-4 w-4 text-violet-500" />
-              Bautizados y miembros
-            </CardTitle>
-            <CardDescription>Bautizados en lo que va del año y miembros actuales</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-lg border p-3">
-                <p className="text-xs text-muted-foreground">Bautizados del año</p>
-                <p className="text-2xl font-bold tabular-nums text-amber-600">{data.bautizadosAnio}</p>
-                <p className="text-[11px] text-muted-foreground">{data.salud.bautizadosPct}% del total</p>
+        {!esDiscipulador && (
+          <Card size="sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Church className="h-4 w-4 text-violet-500" />
+                Bautizados y miembros
+              </CardTitle>
+              <CardDescription>Bautizados en lo que va del año y miembros actuales</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-lg border p-3">
+                  <p className="text-xs text-muted-foreground">Bautizados del año</p>
+                  <p className="text-2xl font-bold tabular-nums text-amber-600">{data.bautizadosAnio}</p>
+                  <p className="text-[11px] text-muted-foreground">{data.salud.bautizadosPct}% del total</p>
+                </div>
+                <div className="rounded-lg border p-3">
+                  <p className="text-xs text-muted-foreground">Miembros actuales</p>
+                  <p className="text-2xl font-bold tabular-nums text-violet-600">{data.miembrosTotal}</p>
+                  <p className="text-[11px] text-muted-foreground">{data.salud.miembrosPct}% del total</p>
+                </div>
               </div>
-              <div className="rounded-lg border p-3">
-                <p className="text-xs text-muted-foreground">Miembros actuales</p>
-                <p className="text-2xl font-bold tabular-nums text-violet-600">{data.miembrosTotal}</p>
-                <p className="text-[11px] text-muted-foreground">{data.salud.miembrosPct}% del total</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* 3 COLUMNAS: ACTIVIDAD+CITAS | URGENTES | LISTOS+DISCIPULADORES */}

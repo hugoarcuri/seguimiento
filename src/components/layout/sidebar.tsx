@@ -9,8 +9,8 @@ import { useUser } from "@/hooks/useUser";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { PanelLeft, PanelLeftClose } from "lucide-react";
-import { adminMenuItems, discipuloMenuItems } from "@/lib/constants/navigation";
-import { isPathActive, BASE_PATH } from "@/lib/constants/paths";
+import { adminMenuItems, discipuloMenuItems, discipuladorMenuItems } from "@/lib/constants/navigation";
+import { findActiveHref, BASE_PATH } from "@/lib/constants/paths";
 
 const STORAGE_KEY = "sidebar-colapsado";
 
@@ -28,9 +28,12 @@ export function Sidebar() {
     localStorage.setItem(STORAGE_KEY, String(collapsed));
   }, [collapsed]);
 
-  const menuItems = user?.rol === "admin" ? adminMenuItems : discipuloMenuItems;
+  const menuItems =
+    user?.rol === "admin" ? adminMenuItems : user?.rol === "discipulador" ? discipuladorMenuItems : discipuloMenuItems;
 
   if (loading) return null;
+
+  const activeHref = findActiveHref(pathname, menuItems.map((i) => i.href));
 
   return (
     <aside
@@ -69,7 +72,7 @@ export function Sidebar() {
       <ScrollArea className="flex-1 py-4">
         <nav className={cn("space-y-1", collapsed ? "px-2" : "px-2 lg:px-3")}>
           {menuItems.map((item) => {
-            const isActive = isPathActive(pathname, item.href);
+            const isActive = activeHref === item.href;
             return (
               <Link
                 key={item.href}

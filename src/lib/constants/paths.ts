@@ -17,3 +17,13 @@ export function isPathActive(pathname: string, href: string): boolean {
   if (limpia === href) return true;
   return limpia.startsWith(href + "/");
 }
+
+/**
+ * Devuelve el href del item de menú activo priorizando el match más
+ * específico (ej. /dashboard/discipuladores en vez de /dashboard).
+ */
+export function findActiveHref(pathname: string, hrefs: string[]): string | null {
+  const matching = hrefs.filter((href) => isPathActive(pathname, href));
+  if (matching.length === 0) return null;
+  return matching.reduce((a, b) => (b.length > a.length ? b : a));
+}

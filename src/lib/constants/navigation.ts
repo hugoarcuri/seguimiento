@@ -18,8 +18,15 @@ export interface NavItem {
   icon: LucideIcon;
 }
 
+export const ROL_LABELS: Record<string, string> = {
+  admin: "Administrador",
+  discipulador: "Discipulador",
+  discipulo: "Discípulo",
+};
+
 export const adminMenuItems: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Dashboard Discípulos", icon: LayoutDashboard },
+  { href: "/dashboard/discipuladores", label: "Dashboard Discipuladores", icon: UserCog },
   { href: "/discipulos", label: "Discípulos", icon: Users },
   { href: "/discipuladores", label: "Discipuladores", icon: UserCog },
   { href: "/tareas", label: "Tareas", icon: ClipboardCheck },
@@ -39,3 +46,20 @@ export const discipuloMenuItems: NavItem[] = [
   { href: "/perfil", label: "Mi Perfil", icon: User },
   { href: "/configuracion", label: "Configuración", icon: Settings },
 ];
+
+export const discipuladorMenuItems: NavItem[] = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/discipulos", label: "Discípulos", icon: Users },
+  { href: "/tareas", label: "Tareas", icon: ClipboardCheck },
+  { href: "/seguimiento", label: "Seguimiento", icon: BookOpen },
+  { href: "/evangelismo", label: "Evangelismo", icon: Heart },
+  { href: "/agenda", label: "Agenda", icon: CalendarCheck },
+  { href: "/oracion", label: "Oración", icon: Church },
+  { href: "/perfil", label: "Mi Perfil", icon: User },
+];
+
+export function getMenuItems(rol?: string): NavItem[] {
+  if (rol === "admin") return adminMenuItems;
+  if (rol === "discipulador") return discipuladorMenuItems;
+  return discipuloMenuItems;
+}
