@@ -175,24 +175,15 @@ function Avatar({ persona, className }: { persona: DiscipuloRaw; className?: str
   );
 }
 
-function Barra({ label, value, className }: { label: string; value: number; className?: string }) {
-  return (
-    <div>
-      <div className="mb-1 flex items-center justify-between text-[11px]">
-        <span className="text-muted-foreground">{label}</span>
-        <span className="font-semibold tabular-nums">{value}%</span>
-      </div>
-      <div className="h-1.5 overflow-hidden rounded bg-muted">
-        <div className={cn("h-full rounded", className)} style={{ width: `${Math.min(100, value)}%` }} />
-      </div>
-    </div>
-  );
-}
-
-export function DashboardClient({ data }: { data: DashboardData }) {
+export function DashboardClient({
+  data,
+  esDiscipulador = false,
+}: {
+  data: DashboardData;
+  esDiscipulador?: boolean;
+}) {
   const { etapaFinal, salud } = data;
   const nombreMeta = etapaFinal.nombre.replace(/^\d+\.\s*/, "");
-  const maxPorEtapa = Math.max(...salud.discipulosPorEtapa.map((e) => e.cantidad), 1);
   const totalListos = data.listosAvanzar.length + data.evangelismoListos.length;
   const nombreMes = format(new Date(), "MMMM", { locale: es }).replace(/^\w/, (c) => c.toUpperCase());
 
@@ -328,66 +319,10 @@ export function DashboardClient({ data }: { data: DashboardData }) {
         </Card>
       </div>
 
-      {/* 4 COLUMNAS: SALUD | ACTIVIDAD+CITAS | URGENTES | LISTOS+DISCIPULADORES */}
-      <div className="grid gap-3 lg:grid-cols-4">
+      {/* 3 COLUMNAS: ACTIVIDAD+CITAS | URGENTES | LISTOS+DISCIPULADORES */}
+      <div className="grid gap-3 lg:grid-cols-3">
+        {/* ACTIVIDAD RECIENTE */}
         <div className="flex flex-col gap-3">
-          <Card size="sm">
-          <CardHeader className="shrink-0">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Activity className="h-4 w-4 text-emerald-500" />
-              Salud real del discipulado
-            </CardTitle>
-            <CardDescription>Retención, madurez, contacto y avance de la iglesia</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="space-y-2.5">
-                <Barra label="Retención (activos)" value={salud.retencionPct} className="bg-blue-500" />
-                <Barra label="Contacto en los últimos 15 días" value={salud.contactoPct} className="bg-emerald-500" />
-                <Barra label="Bautizados" value={salud.bautizadosPct} className="bg-amber-500" />
-                <Barra label="Miembros" value={salud.miembrosPct} className="bg-violet-500" />
-                <Barra label="Oraciones respondidas" value={salud.oracionesRespondidasPct} className="bg-cyan-500" />
-              </div>
-              <div>
-                <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Personas por etapa
-                </p>
-              <div className="space-y-2">
-                {salud.discipulosPorEtapa.map((e, i) => {
-                  const esMeta = i === salud.discipulosPorEtapa.length - 1;
-                  const pct = Math.round((e.cantidad / maxPorEtapa) * 100);
-                  return (
-                    <Link key={e.id} href="/discipulos" className="group block rounded p-1 transition-colors hover:bg-muted/50">
-                      <div className="mb-0.5 flex items-center justify-between gap-2">
-                        <span
-                          className={cn(
-                            "flex min-w-0 items-center gap-1.5 truncate text-xs font-medium",
-                            esMeta && "text-amber-600"
-                          )}
-                        >
-                          {esMeta && <Trophy className="h-3 w-3 shrink-0" />}
-                          {e.nombre}
-                        </span>
-                        <span className="text-sm font-bold tabular-nums shrink-0">{e.cantidad}</span>
-                      </div>
-                      <div className="h-3.5 overflow-hidden rounded bg-muted">
-                        <div
-                          className={cn("h-full rounded", esMeta ? "bg-amber-500" : "bg-primary/80")}
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      </div>
-
-          {/* ACTIVIDAD RECIENTE */}
-          <div className="flex flex-col gap-3">
           <Card size="sm">
             <CardHeader className="shrink-0">
               <CardTitle className="flex items-center gap-2 text-base">
@@ -633,6 +568,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
       </Card>
 
           {/* DISCIPULADORES QUE REQUIEREN APOYO */}
+          {!esDiscipulador && (
           <Card size="sm">
             <CardHeader className="shrink-0">
               <div className="flex items-center justify-between">
@@ -675,6 +611,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
               )}
             </CardContent>
           </Card>
+          )}
         </div>
       </div>
     </div>

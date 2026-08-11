@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { DashboardClient, type DashboardData } from "./dashboard-client";
 import { useEtapas } from "@/hooks/useEtapas";
+import { useUser } from "@/hooks/useUser";
 import { differenceInCalendarDays } from "date-fns";
 import { calcularEdad } from "@/lib/utils";
 
@@ -48,7 +49,7 @@ interface AgendaRaw {
   hora?: string | null;
   tema_tratado?: string | null;
   lugar?: string | null;
-  discipulos?: { nombre: string; apellido: string }[] | null;
+  discipulos?: { nombre: string; apellido: string } | null;
 }
 
 interface OracionRaw {
@@ -93,6 +94,7 @@ interface RawData {
 
 export default function DashboardPage() {
   const { etapas } = useEtapas();
+  const { user } = useUser();
   const [raw, setRaw] = useState<RawData | null>(null);
 
   useEffect(() => {
@@ -112,7 +114,7 @@ export default function DashboardPage() {
         discipulos: (discipulosRes.data || []) as DiscipuloRaw[],
         perfiles: (perfilesRes.data || []) as PerfilRaw[],
         seguimientos: (seguimientosRes.data || []) as SeguimientoRaw[],
-        agenda: (agendaRes.data || []) as AgendaRaw[],
+        agenda: (agendaRes.data || []) as unknown as AgendaRaw[],
         oraciones: (oracionesRes.data || []) as OracionRaw[],
         tareas: (tareasRes.data || []) as TareaRaw[],
         evangelismo: (evRes.data || []) as EvangelismoRaw[],
@@ -288,7 +290,7 @@ export default function DashboardPage() {
     const citasAgendadas = agenda
       .filter((a) => diasDesde(a.fecha) <= 0)
       .map((a) => {
-        const d = a.discipulos?.[0];
+        const d = a.discipulos;
         return {
           id: a.id,
           discipulo: d ? `${d.apellido}, ${d.nombre}` : undefined,
@@ -359,5 +361,5 @@ export default function DashboardPage() {
 
   if (!data) return <div className="flex items-center justify-center min-h-[50vh]"><p className="text-muted-foreground">Cargando...</p></div>;
 
-  return <DashboardClient data={data} />;
+  return <DashboardClient data={data} esDiscipulador={user?.rol === "discipulador"} />;
 }
