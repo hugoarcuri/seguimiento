@@ -31,7 +31,7 @@ type SeguimientoFila = Seguimiento & {
   discipulos?: { id: string; nombre: string; apellido: string; avatar_url?: string | null; estado?: string; lider_id?: string | null };
 };
 
-type EncuentroProximo = { fecha: string; hora?: string; tema_tratado?: string };
+type EncuentroProximo = { fecha: string; hora?: string; tema_tratado?: string; esFuturo: boolean };
 
 export default function SeguimientoPage() {
   const supabase = useMemo(() => createClient(), []);
@@ -90,12 +90,20 @@ export default function SeguimientoPage() {
         .from("agenda")
         .select("discipulo_id, fecha, hora, tema_tratado")
         .in("discipulo_id", ids)
-        .gte("fecha", new Date().toISOString().split("T")[0])
         .order("fecha", { ascending: true });
+      const hoy = new Date().toISOString().split("T")[0];
       const mapa: Record<string, EncuentroProximo> = {};
       for (const a of agendaData || []) {
-        if (a.discipulo_id && mapa[a.discipulo_id] === undefined) {
-          mapa[a.discipulo_id] = { fecha: a.fecha, hora: a.hora ?? undefined, tema_tratado: a.tema_tratado ?? undefined };
+        if (!a.discipulo_id) continue;
+        const esFuturo = a.fecha >= hoy;
+        const item: EncuentroProximo = { fecha: a.fecha, hora: a.hora ?? undefined, tema_tratado: a.tema_tratado ?? undefined, esFuturo };
+        const actual = mapa[a.discipulo_id];
+        if (!actual) {
+          mapa[a.discipulo_id] = item;
+        } else if (actual.esFuturo !== esFuturo) {
+          if (esFuturo) mapa[a.discipulo_id] = item;
+        } else if (actual.esFuturo ? a.fecha < actual.fecha : a.fecha > actual.fecha) {
+          mapa[a.discipulo_id] = item;
         }
       }
       setProximoEncuentroPorDiscipulo(mapa);
@@ -292,8 +300,7 @@ export default function SeguimientoPage() {
                 <TableHead>Discipulador</TableHead>
                 <TableHead>Etapa</TableHead>
                 <TableHead>Progreso</TableHead>
-                <TableHead>Próximo encuentro</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
+                <TableHead>Próximo encuentro</TableHead>                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
