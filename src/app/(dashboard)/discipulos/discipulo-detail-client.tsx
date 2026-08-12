@@ -305,7 +305,6 @@ export function DiscipuloDetailClient({
                   </div>
                   <CardDescription>
                     Inicio: {format(new Date(seguimiento.fecha_inicio), "dd/MM/yyyy")}
-                    {seguimiento.fecha_fin && ` | Fin: ${format(new Date(seguimiento.fecha_fin), "dd/MM/yyyy")}`}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm">
