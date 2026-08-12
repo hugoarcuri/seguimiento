@@ -1,23 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useUser } from "@/hooks/useUser";
+import { cargarRadar, type DiscipuloRadar } from "./radar-data";
 import { DiscipulosClient } from "./discipulos-client";
-import type { Discipulo, Etapa } from "@/types/database";
+import type { Etapa } from "@/types/database";
 
 export default function DiscipulosPage() {
-  const [discipulos, setDiscipulos] = useState<Discipulo[]>([]);
+  const { user } = useUser();
+  const [discipulos, setDiscipulos] = useState<DiscipuloRadar[]>([]);
   const [etapas, setEtapas] = useState<Etapa[]>([]);
   const [loading, setLoading] = useState(true);
 
   const cargarDatos = useCallback(async () => {
-    const supabase = createClient();
-    const [discipulosRes, etapasRes] = await Promise.all([
-      supabase.from("discipulos").select("*").order("created_at", { ascending: false }),
-      supabase.from("etapas").select("*").order("orden", { ascending: true }),
-    ]);
-    setDiscipulos(discipulosRes.data || []);
-    setEtapas(etapasRes.data || []);
+    const { discipulos: lista, etapas: etapasLista } = await cargarRadar();
+    setDiscipulos(lista);
+    setEtapas(etapasLista);
   }, []);
 
   useEffect(() => {
@@ -34,5 +32,12 @@ export default function DiscipulosPage() {
 
   if (loading) return <div className="flex items-center justify-center min-h-[50vh]"><p className="text-muted-foreground">Cargando...</p></div>;
 
-  return <DiscipulosClient discipulos={discipulos} etapas={etapas} onCambio={cargarDatos} />;
+  return (
+    <DiscipulosClient
+      discipulos={discipulos}
+      etapas={etapas}
+      esAdmin={user?.rol === "admin"}
+      onCambio={cargarDatos}
+    />
+  );
 }

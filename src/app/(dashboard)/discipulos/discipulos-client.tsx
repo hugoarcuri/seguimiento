@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -13,16 +15,33 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Search, UserPlus, Loader2, Trash2, Cake, Download } from "lucide-react";
+import {
+  Search,
+  UserPlus,
+  Loader2,
+  Trash2,
+  Download,
+  CalendarPlus,
+  ChevronDown,
+  Cake,
+} from "lucide-react";
 import { toast } from "sonner";
-import type { Discipulo, Etapa, Agenda, Oracion, Tarea, Timeline, Seguimiento } from "@/types/database";
-import { ImportarDiscipulos } from "./importar-discipulos";
-import { DiscipuloDetailClient } from "./discipulo-detail-client";
 import { cn } from "@/lib/utils";
+import {
+  SALUD_CONFIG,
+  ORDEN_SALUD,
+  ACCION_LABEL,
+  UMBRALES_SALUD,
+  type SaludDiscipulo,
+} from "@/lib/discipulo-health";
+import { ImportarDiscipulos } from "./importar-discipulos";
+import { DiscipuloDetailClient, type DetalleDiscipulo } from "./discipulo-detail-client";
+import type { DiscipuloRadar } from "./radar-data";
+import type { Etapa, Seguimiento, SeguimientoEvaluacion, SeguimientoObjetivo } from "@/types/database";
 
 const DIAS_CUMPLEANOS = 7;
 
-function diasHastaCumple(fecha?: string): number | null {
+function diasHastaCumple(fecha?: string | null): number | null {
   if (!fecha) return null;
   const [, mes, dia] = fecha.split("-").map(Number);
   if (!mes || !dia) return null;
@@ -44,92 +63,124 @@ function getAvatarColor(id: string): string {
   return avatarColors[Math.abs(hash) % avatarColors.length];
 }
 
+type Foco = "todos" | "urgentes" | "sin_contacto" | "sin_evaluacion" | "bautismo" | "membresia";
+
 interface DiscipulosClientProps {
-  discipulos: Discipulo[];
+  discipulos: DiscipuloRadar[];
   etapas: Etapa[];
+  esAdmin: boolean;
   onCambio?: () => void;
 }
 
-export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosClientProps) {
+export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: DiscipulosClientProps) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [etapaFilter, setEtapaFilter] = useState<number | null>(null);
-  const [deleteDialog, setDeleteDialog] = useState<string | null>(null);
+  const [foco, setFoco] = useState<Foco>("todos");
+  const [colapsados, setColapsados] = useState<Set<SaludDiscipulo>>(new Set(["bueno", "excelente"]));
+
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [detailData, setDetailData] = useState<{
-    discipulo: Discipulo;
-    agendas: Agenda[];
-    oraciones: Oracion[];
-    tareas: Tarea[];
-    timeline: Timeline[];
-    seguimientos: Seguimiento[];
-  } | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [detalle, setDetalle] = useState<DetalleDiscipulo | null>(null);
+
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [deleteDialog, setDeleteDialog] = useState<string | null>(null);
 
-  const filtered = discipulos.filter((d) => {
-    if (etapaFilter !== null && d.etapa_id !== etapaFilter) return false;
-    return (
-      d.nombre.toLowerCase().includes(search.toLowerCase()) ||
-      d.apellido.toLowerCase().includes(search.toLowerCase()) ||
-      d.email?.toLowerCase().includes(search.toLowerCase())
-    );
-  });
+  const [encuentroDialog, setEncuentroDialog] = useState<DiscipuloRadar | null>(null);
+  const [encuentroDraft, setEncuentroDraft] = useState({ fecha: new Date().toISOString().split("T")[0], hora: "", lugar: "", tema_tratado: "", notas: "" });
+  const [encuentroGuardando, setEncuentroGuardando] = useState(false);
+  const [iniciandoSeg, setIniciandoSeg] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!selectedId) return;
-    let cancelado = false;
+  const discipulosRef = useRef(discipulos);
+  useEffect(() => { discipulosRef.current = discipulos; }, [discipulos]);
+
+  const conteos = useMemo(() => {
+    const n = (pred: (d: DiscipuloRadar) => boolean) => discipulos.filter(pred).length;
+    return {
+      urgentes: n((d) => ["critico", "necesita_ayuda", "sin_seguimiento"].includes(d.salud.salud)),
+      sin_contacto: n((d) => d.salud.alertas.some((a) => a.tipo === "sin_contacto")),
+      sin_evaluacion: n((d) => d.salud.alertas.some((a) => a.tipo === "sin_evaluacion")),
+      bautismo: n((d) => d.salud.alertas.some((a) => a.tipo === "bautismo_pendiente")),
+      membresia: n((d) => d.salud.alertas.some((a) => a.tipo === "membresia_pendiente")),
+    };
+  }, [discipulos]);
+
+  const filtrados = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return discipulos.filter((d) => {
+      if (etapaFilter !== null && d.etapa_id !== etapaFilter) return false;
+      if (q) {
+        const nombre = `${d.apellido} ${d.nombre}`.toLowerCase();
+        const apellido = d.apellido.toLowerCase();
+        const nombreSolo = d.nombre.toLowerCase();
+        if (!(nombre.includes(q) || apellido.includes(q) || nombreSolo.includes(q))) return false;
+      }
+      if (foco === "todos") return true;
+      if (foco === "urgentes") return ["critico", "necesita_ayuda", "sin_seguimiento"].includes(d.salud.salud);
+      return d.salud.alertas.some((a) => a.tipo === foco);
+    });
+  }, [discipulos, search, etapaFilter, foco]);
+
+  const grupos = ORDEN_SALUD
+    .map((salud) => ({ salud, items: filtrados.filter((d) => d.salud.salud === salud) }))
+    .filter((g) => g.items.length > 0);
+
+  const cargarDetalle = async (id: string) => {
+    setLoadingDetail(true);
+    setSelectedId(id);
     const supabase = createClient();
-    Promise.all([
-      supabase.from("discipulos").select("*").eq("id", selectedId).single(),
-      supabase.from("agenda").select("*").eq("discipulo_id", selectedId).order("fecha", { ascending: false }),
-      supabase.from("oraciones").select("*").eq("discipulo_id", selectedId).order("fecha", { ascending: false }),
-      supabase.from("tareas").select("*").eq("discipulo_id", selectedId).order("created_at", { ascending: false }),
-      supabase.from("timeline").select("*").eq("discipulo_id", selectedId).order("created_at", { ascending: false }),
-      supabase.from("seguimientos").select("*").eq("discipulo_id", selectedId).order("created_at", { ascending: false }),
-    ]).then(([dRes, eRes, oRes, tRes, tlRes, segRes]) => {
-      if (cancelado) return;
-      if (!dRes.data) { setLoadingDetail(false); return; }
-      setDetailData({
-        discipulo: dRes.data,
-        agendas: eRes.data || [],
-        oraciones: oRes.data || [],
-        tareas: tRes.data || [],
-        timeline: tlRes.data || [],
-        seguimientos: segRes.data || [],
-      });
-      setLoadingDetail(false);
-    }).catch(() => { if (!cancelado) setLoadingDetail(false); });
-    return () => { cancelado = true; };
-  }, [selectedId]);
+    const [dRes, eRes, oRes, tRes, tlRes, segRes] = await Promise.all([
+      supabase.from("discipulos").select("*").eq("id", id).single(),
+      supabase.from("agenda").select("*").eq("discipulo_id", id).order("fecha", { ascending: false }),
+      supabase.from("oraciones").select("*").eq("discipulo_id", id).order("fecha", { ascending: false }),
+      supabase.from("tareas").select("*").eq("discipulo_id", id).order("created_at", { ascending: false }),
+      supabase.from("timeline").select("*").eq("discipulo_id", id).order("created_at", { ascending: false }),
+      supabase.from("seguimientos").select("*").eq("discipulo_id", id).order("created_at", { ascending: false }),
+    ]);
+    if (!dRes.data) { setLoadingDetail(false); return; }
+    const seguimientos = (segRes.data || []) as Seguimiento[];
+    const seg = seguimientos.find((s) => s.estado === "activo") || seguimientos[0];
+    let evaluacion: SeguimientoEvaluacion | null = null;
+    let objetivos: SeguimientoObjetivo[] = [];
+    if (seg) {
+      const [evRes, objRes] = await Promise.all([
+        supabase.from("seguimiento_evaluaciones").select("*").eq("seguimiento_id", seg.id).maybeSingle(),
+        supabase.from("seguimiento_objetivos").select("*").eq("seguimiento_id", seg.id).order("created_at", { ascending: true }),
+      ]);
+      evaluacion = (evRes.data as SeguimientoEvaluacion) || null;
+      objetivos = (objRes.data as SeguimientoObjetivo[]) || [];
+    }
+    setDetalle({
+      discipulo: dRes.data,
+      etapas,
+      agendas: eRes.data || [],
+      oraciones: oRes.data || [],
+      tareas: tRes.data || [],
+      timeline: tlRes.data || [],
+      seguimientos,
+      evaluacion,
+      objetivos,
+      salud: discipulosRef.current.find((r) => r.id === id)?.salud ?? null,
+      onCambio,
+    });
+    setLoadingDetail(false);
+  };
 
   const handleDelete = async (id: string) => {
     const supabase = createClient();
     const { error } = await supabase.from("discipulos").delete().eq("id", id);
     if (error) {
-      toast.error(error.message === "new row violates row-level security policy for table \"discipulos\""
+      toast.error(error.message === 'new row violates row-level security policy for table "discipulos"'
         ? "Solo los administradores pueden eliminar discípulos"
         : `Error al eliminar: ${error.message}`);
     } else {
       toast.success("Discípulo eliminado");
       setDeleteDialog(null);
-      if (selectedId === id) { setSelectedId(null); }
+      if (selectedId === id) { setSelectedId(null); setDetalle(null); }
       onCambio?.();
     }
-  };
-
-  const toggleSeleccion = (id: string) => {
-    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
-  };
-
-  const todosSeleccionados = filtered.length > 0 && filtered.every((d) => selectedIds.includes(d.id));
-
-  const toggleTodos = () => {
-    const ids = new Set(filtered.map((d) => d.id));
-    setSelectedIds((prev) =>
-      todosSeleccionados ? prev.filter((id) => !ids.has(id)) : [...new Set([...prev, ...ids])]
-    );
   };
 
   const handleBulkDelete = async () => {
@@ -150,17 +201,32 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
     onCambio?.();
   };
 
+  const toggleSeleccion = (id: string) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const todosSeleccionados = filtrados.length > 0 && filtrados.every((d) => selectedIds.includes(d.id));
+
+  const toggleTodos = () => {
+    const ids = new Set(filtrados.map((d) => d.id));
+    setSelectedIds((prev) =>
+      todosSeleccionados ? prev.filter((id) => !ids.has(id)) : [...new Set([...prev, ...ids])]
+    );
+  };
+
   const exportarSeleccionados = () => {
     const sel = discipulos.filter((d) => selectedIds.includes(d.id));
     if (sel.length === 0) return;
     const filas = sel.map((d) => ({
       Apellido: d.apellido,
       Nombre: d.nombre,
-      Email: d.email || "",
-      "Teléfono": d.telefono || "",
-      Etapa: etapas.find((e) => e.id === d.etapa_id)?.nombre || "",
+      Etapa: d.etapa_nombre,
       Estado: d.estado,
-      "Fecha nacimiento": d.fecha_nacimiento || "",
+      "Estado pastoral": SALUD_CONFIG[d.salud.salud].etiqueta,
+      Progreso: d.progreso ?? "",
+      "Días sin reunión": d.diasSinContacto ?? "",
+      "Pedidos de oración": d.oracionesPendientes,
+      "Objetivos pendientes": d.objetivosPendientes,
     }));
     const csv = [Object.keys(filas[0]).join(";"), ...filas.map((f) => Object.values(f).map((v) => `"${String(v).replace(/"/g, '""')}"`).join(";"))].join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
@@ -172,27 +238,104 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
     toast.success(`${sel.length} discípulos exportados`);
   };
 
+  const iniciarSeguimiento = async (d: DiscipuloRadar) => {
+    setIniciandoSeg(d.id);
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase.from("seguimientos").insert({
+      discipulo_id: d.id,
+      discipulador_id: d.lider_id || user?.id || "",
+      etapa: d.etapa_id,
+      estado: "activo",
+      fecha_inicio: new Date().toISOString().split("T")[0],
+      progreso: 0,
+    });
+    setIniciandoSeg(null);
+    if (error) { toast.error("Error al iniciar el seguimiento"); return; }
+    toast.success("Seguimiento iniciado");
+    onCambio?.();
+  };
+
+  const ejecutarAccion = (d: DiscipuloRadar) => {
+    switch (d.salud.accion) {
+      case "agendar_encuentro":
+        setEncuentroDialog(d);
+        setEncuentroDraft({ fecha: new Date().toISOString().split("T")[0], hora: "", lugar: "", tema_tratado: "", notas: "" });
+        return;
+      case "evaluar":
+      case "revisar_objetivos":
+        if (d.seguimiento_id) router.push(`/seguimiento/ver?id=${d.seguimiento_id}`);
+        else iniciarSeguimiento(d);
+        return;
+      case "pastorear_bautismo":
+      case "pastorear_membresia":
+        router.push(`/discipulos/editar?id=${d.id}`);
+        return;
+      case "iniciar_seguimiento":
+        iniciarSeguimiento(d);
+        return;
+      case "celebrar":
+        cargarDetalle(d.id);
+        return;
+    }
+  };
+
+  const guardarEncuentro = async () => {
+    if (!encuentroDialog) return;
+    if (!encuentroDraft.fecha || !encuentroDraft.tema_tratado.trim()) {
+      toast.error("Completá la fecha y el tema");
+      return;
+    }
+    setEncuentroGuardando(true);
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase.from("agenda").insert({
+      discipulo_id: encuentroDialog.id,
+      lider_id: user?.id || encuentroDialog.lider_id || null,
+      fecha: encuentroDraft.fecha,
+      hora: encuentroDraft.hora || null,
+      lugar: encuentroDraft.lugar || null,
+      tema_tratado: encuentroDraft.tema_tratado,
+      notas: encuentroDraft.notas || null,
+    });
+    setEncuentroGuardando(false);
+    if (error) { toast.error("Error al registrar el encuentro"); return; }
+    toast.success("Encuentro registrado");
+    setEncuentroDialog(null);
+    onCambio?.();
+  };
+
+  const chips: { key: Foco; label: string; value: number; cls: string }[] = [
+    { key: "urgentes", label: "Urgentes", value: conteos.urgentes, cls: "text-red-600 dark:text-red-400" },
+    { key: "sin_contacto", label: "Sin reunión", value: conteos.sin_contacto, cls: "text-amber-600 dark:text-amber-400" },
+    { key: "sin_evaluacion", label: "Sin evaluación", value: conteos.sin_evaluacion, cls: "text-amber-600 dark:text-amber-400" },
+    { key: "bautismo", label: "Bautismo", value: conteos.bautismo, cls: "text-blue-600 dark:text-blue-400" },
+    { key: "membresia", label: "Membresía", value: conteos.membresia, cls: "text-blue-600 dark:text-blue-400" },
+  ];
+
   return (
     <div className="flex flex-col gap-6 sm:flex-row sm:h-[calc(100vh-8rem)]">
-      {/* LEFT PANEL */}
-      <div className="w-full sm:w-[380px] sm:shrink-0 flex flex-col gap-4">
+      {/* PANEL IZQUIERDO */}
+      <div className="w-full sm:w-[400px] sm:shrink-0 flex flex-col gap-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-xl font-bold">Discípulos</h1>
-            <p className="text-xs text-muted-foreground">{filtered.length} de {discipulos.length}</p>
+            <p className="text-xs text-muted-foreground">{filtrados.length} de {discipulos.length}</p>
           </div>
           <div className="flex flex-wrap gap-1">
             {selectedIds.length > 0 && (
-              <Button variant="outline" size="sm" onClick={exportarSeleccionados} className="gap-1 px-2 text-xs font-medium">
-                <Download className="h-3.5 w-3.5" />
-                Exportar
-              </Button>
-            )}
-            {selectedIds.length > 0 && (
-              <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)} className="gap-1 px-2 text-xs font-medium">
-                <Trash2 className="h-3.5 w-3.5" />
-                Eliminar ({selectedIds.length})
-              </Button>
+              <>
+                <Button variant="outline" size="sm" onClick={exportarSeleccionados} className="gap-1 px-2 text-xs font-medium">
+                  <Download className="h-3.5 w-3.5" />
+                  Exportar
+                </Button>
+                {esAdmin && (
+                  <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)} className="gap-1 px-2 text-xs font-medium">
+                    <Trash2 className="h-3.5 w-3.5" />
+                    ({selectedIds.length})
+                  </Button>
+                )}
+              </>
             )}
             <Link
               href="/discipulos/nuevo"
@@ -207,7 +350,34 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
 
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Discípulo..." className="pl-9 h-11 md:h-8 text-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input placeholder="Buscar discípulo..." className="pl-9 h-11 md:h-8 text-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
+        </div>
+
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            onClick={() => setFoco("todos")}
+            className={cn(
+              "text-xs rounded-full px-2.5 py-1 font-medium transition-colors inline-flex items-center gap-1.5",
+              foco === "todos" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+            )}
+          >
+            Todos
+          </button>
+          {chips.map((c) => (
+            <button
+              key={c.key}
+              type="button"
+              onClick={() => setFoco(c.key)}
+              className={cn(
+                "text-xs rounded-full px-2.5 py-1 font-medium transition-colors inline-flex items-center gap-1",
+                foco === c.key ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+              )}
+            >
+              {c.label}
+              <span className={cn("tabular-nums", foco === c.key ? "" : c.cls)}>{c.value}</span>
+            </button>
+          ))}
         </div>
 
         <div className="flex flex-wrap gap-1">
@@ -221,9 +391,8 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
           ))}
         </div>
 
-        <div className="flex-1 overflow-y-auto space-y-0.5 -mx-1 px-1">
-          {filtered.length > 0 && (
-          <div className="flex items-center justify-between px-1 pb-1">
+        {filtrados.length > 0 && (
+          <div className="flex items-center justify-between px-1 pb-0.5">
             <label className="flex cursor-pointer items-center gap-2 text-sm">
               <input
                 type="checkbox"
@@ -238,91 +407,142 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
               <span className="text-xs text-muted-foreground">{selectedIds.length} seleccionado(s)</span>
             )}
           </div>
-          )}
-          {filtered.length === 0 ? (
+        )}
+
+        <div className="flex-1 overflow-y-auto -mx-1 px-1 space-y-2">
+          {grupos.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">No se encontraron discípulos</p>
           ) : (
-            filtered.map((d) => {
-              const diasCumple = diasHastaCumple(d.fecha_nacimiento);
+            grupos.map((g) => {
+              const cfg = SALUD_CONFIG[g.salud];
+              const colapsado = colapsados.has(g.salud);
               return (
-              <div
-                key={d.id}
-                role="button"
-                tabIndex={0}
-                onClick={() => { setLoadingDetail(true); setSelectedId(d.id); }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    setLoadingDetail(true);
-                    setSelectedId(d.id);
-                  }
-                }}
-                  className={cn(
-                    "w-full flex items-center gap-3 p-2 rounded-lg text-left transition-colors group cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                    selectedId === d.id ? "bg-primary/10" : "hover:bg-muted/50"
-                  )}
-                >
-                  <span onClick={(e) => e.stopPropagation()} className="shrink-0 rounded-md p-1 -m-1 hover:bg-primary/10" title="Seleccionar">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.includes(d.id)}
-                      onChange={() => toggleSeleccion(d.id)}
-                      aria-label="Seleccionar"
-                      className="size-4 shrink-0 cursor-pointer accent-primary"
-                    />
-                  </span>
-                  {d.avatar_url ? (
-                  <img src={d.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
-                ) : (
-                  <div className={cn("w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0", getAvatarColor(d.id))}>
-                    {d.nombre?.charAt(0)?.toUpperCase()}{d.apellido?.charAt(0)?.toUpperCase()}
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate">{d.apellido}, {d.nombre}</p>
-                  <p className="text-[11px] text-muted-foreground truncate">{etapas.find((e) => e.id === d.etapa_id)?.nombre || "Sin etapa"}</p>
-                  {diasCumple !== null && diasCumple <= DIAS_CUMPLEANOS && (
-                    <p className="text-[11px] font-medium text-amber-600 dark:text-amber-400 truncate flex items-center gap-1">
-                      <Cake className="h-3 w-3 shrink-0" />
-                      {diasCumple === 0 ? "¡Hoy cumple años!" : `Cumple en ${diasCumple} día${diasCumple === 1 ? "" : "s"}`}
-                    </p>
+                <div key={g.salud}>
+                  <button
+                    type="button"
+                    onClick={() => setColapsados((prev) => {
+                      const s = new Set(prev);
+                      if (s.has(g.salud)) s.delete(g.salud); else s.add(g.salud);
+                      return s;
+                    })}
+                    className="w-full flex items-center justify-between px-1 py-1.5 group"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <span className={cn("h-2 w-2 rounded-full", cfg.dot)} />
+                      <span className="text-xs font-semibold uppercase tracking-wide">{cfg.etiqueta}</span>
+                      <span className="text-xs text-muted-foreground tabular-nums">{g.items.length}</span>
+                    </span>
+                    <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", colapsado && "-rotate-90")} />
+                  </button>
+
+                  {!colapsado && (
+                    <div className="space-y-1">
+                      {g.items.map((d) => {
+                        const diasCumple = diasHastaCumple(d.fecha_nacimiento);
+                        const alertasVisibles = d.salud.alertas.filter((a) => a.tipo !== "sin_contacto").slice(0, 2);
+                        return (
+                          <div key={d.id} className={cn("rounded-lg border border-l-2 bg-card shadow-sm", cfg.border, selectedId === d.id && "ring-2 ring-primary/30")}>
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => cargarDetalle(d.id)}
+                              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); cargarDetalle(d.id); } }}
+                              className="w-full flex items-start gap-2 p-2 text-left cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            >
+                              <span onClick={(e) => e.stopPropagation()} className="shrink-0 rounded-md p-1 -m-1 hover:bg-primary/10 pt-0.5" title="Seleccionar">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedIds.includes(d.id)}
+                                  onChange={() => toggleSeleccion(d.id)}
+                                  aria-label="Seleccionar"
+                                  className="size-4 shrink-0 cursor-pointer accent-primary"
+                                />
+                              </span>
+                              {d.avatar_url ? (
+                                <img src={d.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
+                              ) : (
+                                <div className={cn("w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0", getAvatarColor(d.id))}>
+                                  {d.nombre?.charAt(0)?.toUpperCase()}{d.apellido?.charAt(0)?.toUpperCase()}
+                                </div>
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <p className="text-sm font-medium truncate">{d.apellido}, {d.nombre}</p>
+                                  <span className={cn("text-[10px] font-semibold rounded-full px-1.5 py-0.5 shrink-0", cfg.badge)}>{cfg.etiqueta}</span>
+                                </div>
+                                <p className="text-[11px] text-muted-foreground truncate">
+                                  {d.etapa_nombre}
+                                  {d.progreso !== null && <span className="tabular-nums"> · {d.progreso}%</span>}
+                                </p>
+                                {diasCumple !== null && diasCumple <= DIAS_CUMPLEANOS && (
+                                  <p className="text-[11px] font-medium text-amber-600 dark:text-amber-400 truncate flex items-center gap-1">
+                                    <Cake className="h-3 w-3 shrink-0" />
+                                    {diasCumple === 0 ? "¡Hoy cumple años!" : `Cumple en ${diasCumple} día${diasCumple === 1 ? "" : "s"}`}
+                                  </p>
+                                )}
+                                <div className="flex flex-wrap items-center gap-1 mt-1">
+                                  {d.diasSinContacto !== null && d.diasSinContacto >= UMBRALES_SALUD.contactoAlerta && (
+                                    <span className={cn("text-[10px] rounded-full px-1.5 py-0.5 font-medium", d.diasSinContacto >= UMBRALES_SALUD.contactoCritico ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400" : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400")}>
+                                      {d.diasSinContacto}d sin reunión
+                                    </span>
+                                  )}
+                                  {alertasVisibles.map((a) => (
+                                    <span key={a.tipo} className={cn("text-[10px] rounded-full px-1.5 py-0.5 font-medium", a.severidad === "alta" ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400" : a.severidad === "media" ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400" : "bg-muted text-muted-foreground")}>
+                                      {a.mensaje}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                              {esAdmin && (
+                                <button type="button" onClick={(e) => { e.stopPropagation(); setDeleteDialog(d.id); }} className="shrink-0 text-muted-foreground/50 hover:text-destructive transition-colors pt-0.5" aria-label="Eliminar">
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                            </div>
+                            {d.salud.accion !== "celebrar" && (
+                              <div className="px-2 pb-2">
+                                <Button
+                                  size="sm"
+                                  className="h-7 w-full text-xs gap-1"
+                                  disabled={iniciandoSeg === d.id}
+                                  onClick={() => ejecutarAccion(d)}
+                                >
+                                  {iniciandoSeg === d.id && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                                  {ACCION_LABEL[d.salud.accion]}
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
-                <button type="button" onClick={(e) => { e.stopPropagation(); setDeleteDialog(d.id); }} className="shrink-0 text-muted-foreground/50 hover:text-destructive transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
               );
             })
           )}
         </div>
       </div>
 
-      {/* RIGHT PANEL */}
+      {/* PANEL DERECHO */}
       <div className="flex-1 min-w-0 overflow-y-auto">
-        {selectedId && detailData?.discipulo.id === selectedId ? (
-          <DiscipuloDetailClient
-            key={selectedId}
-            discipulo={detailData.discipulo}
-            etapas={etapas}
-            agendas={detailData.agendas}
-            oraciones={detailData.oraciones}
-            tareas={detailData.tareas}
-            timeline={detailData.timeline}
-            seguimientos={detailData.seguimientos}
-          />
+        {selectedId && detalle?.discipulo.id === selectedId ? (
+          <DiscipuloDetailClient key={selectedId} {...detalle} />
         ) : selectedId && loadingDetail ? (
           <div className="flex items-center justify-center h-full">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : (
           <div className="flex items-center justify-center h-full">
-            <p className="text-muted-foreground text-sm">Seleccioná un discípulo para ver su información</p>
+            <div className="text-center space-y-2 max-w-sm">
+              <p className="text-muted-foreground text-sm">Seleccioná un discípulo para ver su panorama pastoral</p>
+              <p className="text-xs text-muted-foreground">Los grupos de color muestran quién necesita tu atención hoy.</p>
+            </div>
           </div>
         )}
       </div>
 
-      {/* DELETE DIALOG */}
+      {/* DIALOG ELIMINAR */}
       <Dialog open={!!deleteDialog} onOpenChange={() => setDeleteDialog(null)}>
         <DialogContent>
           <DialogHeader>
@@ -336,7 +556,7 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
         </DialogContent>
       </Dialog>
 
-      {/* BULK DELETE DIALOG */}
+      {/* DIALOG BORRADO MASIVO */}
       <Dialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
         <DialogContent>
           <DialogHeader>
@@ -349,6 +569,45 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
             <Button variant="outline" onClick={() => setBulkDeleteOpen(false)} disabled={bulkDeleting}>Cancelar</Button>
             <Button variant="destructive" onClick={handleBulkDelete} disabled={bulkDeleting}>
               {bulkDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* DIALOG ENCUENTRO RÁPIDO */}
+      <Dialog open={!!encuentroDialog} onOpenChange={() => setEncuentroDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Registrar encuentro</DialogTitle>
+            <DialogDescription>
+              {encuentroDialog && `Encuentro con ${encuentroDialog.nombre} ${encuentroDialog.apellido}`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-[11px] font-medium text-muted-foreground">Fecha *</Label>
+                <Input type="date" value={encuentroDraft.fecha} onChange={(e) => setEncuentroDraft({ ...encuentroDraft, fecha: e.target.value })} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[11px] font-medium text-muted-foreground">Hora</Label>
+                <Input type="time" value={encuentroDraft.hora} onChange={(e) => setEncuentroDraft({ ...encuentroDraft, hora: e.target.value })} />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[11px] font-medium text-muted-foreground">Tema tratado *</Label>
+              <Input value={encuentroDraft.tema_tratado} onChange={(e) => setEncuentroDraft({ ...encuentroDraft, tema_tratado: e.target.value })} placeholder="Ej.: Continuación de la etapa" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[11px] font-medium text-muted-foreground">Lugar</Label>
+              <Input value={encuentroDraft.lugar} onChange={(e) => setEncuentroDraft({ ...encuentroDraft, lugar: e.target.value })} placeholder="Ej.: Café del centro" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEncuentroDialog(null)}>Cancelar</Button>
+            <Button onClick={guardarEncuentro} disabled={encuentroGuardando} className="gap-1.5">
+              {encuentroGuardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <CalendarPlus className="h-4 w-4" />}
+              Registrar
             </Button>
           </DialogFooter>
         </DialogContent>
