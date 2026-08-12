@@ -175,6 +175,283 @@ function Avatar({ persona, className }: { persona: DiscipuloRaw; className?: str
   );
 }
 
+function UrgentesCard({
+  urgentes,
+  oracionesViejas,
+}: {
+  urgentes: UrgenteItem[];
+  oracionesViejas: OracionVieja[];
+}) {
+  return (
+    <Card size="sm" className="border-red-200 dark:border-red-900">
+      <CardHeader className="shrink-0">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <AlertTriangle className="h-4 w-4 text-red-500" />
+            Necesitan atención urgente
+          </CardTitle>
+          <Badge variant="destructive">{urgentes.length}</Badge>
+        </div>
+        <CardDescription>Sin seguimiento, progreso bajo, sin encuentro, pendientes o sin discipulador</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {urgentes.length === 0 ? (
+          <p className="py-1 text-sm text-muted-foreground">No hay nadie que requiera atención urgente</p>
+        ) : (
+          urgentes.map((u) => (
+            <div
+              key={u.discipulo.id}
+              className="flex items-center gap-2.5 rounded-lg border border-red-200/70 bg-red-50/40 p-2 dark:bg-red-950/20"
+            >
+              <Avatar persona={u.discipulo} />
+              <div className="min-w-0 flex-1">
+                <Link
+                  href={`/discipulos/ver?id=${u.discipulo.id}`}
+                  className="block truncate text-sm font-medium hover:underline"
+                >
+                  {u.discipulo.apellido}, {u.discipulo.nombre}
+                </Link>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {u.razones.map((r) => (
+                    <Badge
+                      key={r}
+                      variant="outline"
+                      className="px-1.5 text-[10px] text-red-600 dark:text-red-400"
+                    >
+                      {r}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+
+        {oracionesViejas.length > 0 && (
+          <div className="mt-2 space-y-1.5 border-t pt-2">
+            <p className="flex items-center gap-1 text-xs font-semibold text-muted-foreground">
+              <Clock className="h-3 w-3" /> Oraciones sin respuesta (30+ días)
+            </p>
+            {oracionesViejas.map((o) => (
+              <Link
+                key={o.id}
+                href="/oracion"
+                className="flex items-center gap-2 rounded text-xs transition-colors hover:bg-muted/50 hover:no-underline"
+              >
+                <Church className="h-3 w-3 shrink-0 text-muted-foreground" />
+                <span className="min-w-0 flex-1 truncate text-muted-foreground">{o.pedido}</span>
+                <span className="shrink-0 font-medium text-amber-600">{o.dias} días</span>
+              </Link>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ListosCard({
+  listosAvanzar,
+  evangelismoListos,
+}: {
+  listosAvanzar: ListoAvanzar[];
+  evangelismoListos: EvangelismoListo[];
+}) {
+  const totalListos = listosAvanzar.length + evangelismoListos.length;
+
+  return (
+    <Card size="sm" className="border-emerald-200 dark:border-emerald-900">
+      <CardHeader className="shrink-0">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+            Listos para avanzar
+          </CardTitle>
+          <Badge variant="secondary">{totalListos}</Badge>
+        </div>
+        <CardDescription>Progreso 80%+ en su etapa o 30+ días en la etapa de evangelismo</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {listosAvanzar.length > 0 && (
+          <>
+            <p className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <Sparkles className="h-3 w-3 text-emerald-500" /> Discípulos ({listosAvanzar.length})
+            </p>
+            {listosAvanzar.map((l) => (
+              <div key={l.discipulo.id} className="flex items-center gap-2.5 rounded-lg border border-emerald-200/70 bg-emerald-50/40 p-2 dark:bg-emerald-950/20">
+                <Avatar persona={l.discipulo} />
+                <div className="min-w-0 flex-1">
+                  <Link
+                    href={`/discipulos/ver?id=${l.discipulo.id}`}
+                    className="block truncate text-sm font-medium hover:underline"
+                  >
+                    {l.discipulo.apellido}, {l.discipulo.nombre}
+                  </Link>
+                  <p className="text-[11px] text-muted-foreground">
+                    {l.progreso}% completado
+                    {l.proximaEtapa && (
+                      <span className="inline-flex items-center gap-1 font-medium text-emerald-600">
+                        <ArrowRight className="h-3 w-3" /> {l.proximaEtapa}
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+
+        {evangelismoListos.length > 0 && (
+          <>
+            <p className="flex items-center gap-1 pt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <HeartHandshake className="h-3 w-3 text-emerald-500" /> Evangelismo ({evangelismoListos.length})
+            </p>
+            {evangelismoListos.map((p) => (
+              <div key={p.id} className="flex items-center gap-2.5 rounded-lg border border-emerald-200/70 bg-emerald-50/40 p-2 dark:bg-emerald-950/20">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50">
+                  <HeartHandshake className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <Link href="/evangelismo" className="block truncate text-sm font-medium hover:underline">
+                    {p.nombre} {p.apellido}
+                  </Link>
+                  <p className="text-[11px] text-muted-foreground">
+                    {p.dias} días en {p.estado === "oracion_salvacion" ? "oración" : p.estado === "actos_servicio" ? "actos de servicio" : "evangelio"}
+                  </p>
+                </div>
+                <ArrowRight className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+              </div>
+            ))}
+          </>
+        )}
+
+        {totalListos === 0 && (
+          <p className="py-1 text-sm text-muted-foreground">No hay nadie listo para avanzar ahora mismo</p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function CitasCard({ citas }: { citas: CitaAgendada[] }) {
+  return (
+    <Card size="sm">
+      <CardHeader className="shrink-0">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Clock className="h-4 w-4 text-indigo-500" />
+          Próximas citas
+        </CardTitle>
+        <CardDescription>Encuentros agendados para los próximos días</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {citas.length === 0 ? (
+          <p className="py-1 text-sm text-muted-foreground">Sin citas agendadas próximas</p>
+        ) : (
+          <div className="space-y-2">
+            {citas.map((c) => (
+              <Link key={c.id} href="/agenda" className="block rounded-lg border p-2.5 transition-colors hover:border-primary/50 hover:no-underline">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="min-w-0 flex-1 truncate text-sm font-medium">
+                    {c.discipulo || "Discípulo"}
+                  </p>
+                  <span className="shrink-0 text-[11px] font-semibold tabular-nums text-muted-foreground">
+                    {format(new Date(c.fecha + "T00:00:00"), "dd/MM", { locale: es })}
+                  </span>
+                </div>
+                {(c.hora || c.tema) && (
+                  <p className="mt-1 line-clamp-1 text-[11px] text-muted-foreground">
+                    {[c.hora, c.tema].filter(Boolean).join(" · ")}
+                  </p>
+                )}
+              </Link>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function DashboardDiscipulador({ data }: { data: DashboardData }) {
+  const stats = [
+    {
+      title: "Mis discípulos activos",
+      value: data.salud.activos,
+      description: `${data.salud.totalDiscipulos} asignados en total`,
+      icon: Users,
+      color: "text-blue-600",
+      bg: "bg-blue-50 dark:bg-blue-950",
+      href: "/discipulos",
+    },
+    {
+      title: "Requieren atención",
+      value: data.urgentes.length,
+      description: "progreso bajo o sin encuentro reciente",
+      icon: AlertTriangle,
+      color: "text-red-600",
+      bg: "bg-red-50 dark:bg-red-950",
+      href: "/discipulos",
+    },
+    {
+      title: "Listos para avanzar",
+      value: data.listosAvanzar.length,
+      description: "progreso 80%+ en su etapa",
+      icon: CheckCircle2,
+      color: "text-emerald-600",
+      bg: "bg-emerald-50 dark:bg-emerald-950",
+      href: "/seguimiento",
+    },
+    {
+      title: "Próximas citas",
+      value: data.citasAgendadas.length,
+      description: "encuentros agendados próximos",
+      icon: Clock,
+      color: "text-indigo-600",
+      bg: "bg-indigo-50 dark:bg-indigo-950",
+      href: "/agenda",
+    },
+  ];
+
+  return (
+    <div className="w-full space-y-4">
+      {/* HEADER */}
+      <div>
+        <h1 className="text-2xl font-bold lg:text-xl">Mi dashboard</h1>
+        <p className="text-sm text-muted-foreground">
+          Seguimiento y avance de tus discípulos asignados
+        </p>
+      </div>
+
+      {/* KPIs */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {stats.map((stat) => (
+          <Link key={stat.title} href={stat.href} className="group block">
+            <Card size="sm" className="transition-colors group-hover:border-primary/50">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                <CardTitle className="min-w-0 flex-1 truncate text-sm">{stat.title}</CardTitle>
+                <div className={cn("rounded-lg p-2 shrink-0", stat.bg)}>
+                  <stat.icon className={cn("h-4 w-4", stat.color)} />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold tabular-nums">{stat.value}</div>
+                <p className="text-xs text-muted-foreground">{stat.description}</p>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
+      </div>
+
+      {/* ACCIONABLE */}
+      <div className="grid gap-3 lg:grid-cols-3">
+        <UrgentesCard urgentes={data.urgentes} oracionesViejas={[]} />
+        <ListosCard listosAvanzar={data.listosAvanzar} evangelismoListos={[]} />
+        <CitasCard citas={data.citasAgendadas} />
+      </div>
+    </div>
+  );
+}
+
 export function DashboardClient({
   data,
   esDiscipulador = false,
@@ -182,9 +459,10 @@ export function DashboardClient({
   data: DashboardData;
   esDiscipulador?: boolean;
 }) {
+  if (esDiscipulador) return <DashboardDiscipulador data={data} />;
+
   const { etapaFinal, salud } = data;
   const nombreMeta = etapaFinal.nombre.replace(/^\d+\.\s*/, "");
-  const totalListos = data.listosAvanzar.length + data.evangelismoListos.length;
   const nombreMes = format(new Date(), "MMMM", { locale: es }).replace(/^\w/, (c) => c.toUpperCase());
 
   const stats = [
@@ -230,13 +508,9 @@ export function DashboardClient({
     <div className="w-full space-y-4">
       {/* HEADER */}
       <div>
-        <h1 className="text-2xl font-bold lg:text-xl">
-          {esDiscipulador ? "Mi dashboard" : "Dashboard Discípulos"}
-        </h1>
+        <h1 className="text-2xl font-bold lg:text-xl">Dashboard Discípulos</h1>
         <p className="text-sm text-muted-foreground">
-          {esDiscipulador
-            ? "Seguimiento y avance de tus discípulos asignados"
-            : `El objetivo final es que todas las personas lleguen a ${etapaFinal.nombre}`}
+          El objetivo final es que todas las personas lleguen a {etapaFinal.nombre}
         </p>
       </div>
 
@@ -261,7 +535,7 @@ export function DashboardClient({
       </div>
 
       {/* CUMPLEAÑOS DEL MES + BAUTIZADOS/MIEMBROS */}
-      <div className={cn("grid gap-3", esDiscipulador ? "sm:grid-cols-1" : "sm:grid-cols-2")}>
+      <div className="grid gap-3 sm:grid-cols-2">
         <Card size="sm">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
@@ -298,31 +572,29 @@ export function DashboardClient({
           </CardContent>
         </Card>
 
-        {!esDiscipulador && (
-          <Card size="sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Church className="h-4 w-4 text-violet-500" />
-                Bautizados y miembros
-              </CardTitle>
-              <CardDescription>Bautizados en lo que va del año y miembros actuales</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-lg border p-3">
-                  <p className="text-xs text-muted-foreground">Bautizados del año</p>
-                  <p className="text-2xl font-bold tabular-nums text-amber-600">{data.bautizadosAnio}</p>
-                  <p className="text-[11px] text-muted-foreground">{data.salud.bautizadosPct}% del total</p>
-                </div>
-                <div className="rounded-lg border p-3">
-                  <p className="text-xs text-muted-foreground">Miembros actuales</p>
-                  <p className="text-2xl font-bold tabular-nums text-violet-600">{data.miembrosTotal}</p>
-                  <p className="text-[11px] text-muted-foreground">{data.salud.miembrosPct}% del total</p>
-                </div>
+        <Card size="sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Church className="h-4 w-4 text-violet-500" />
+              Bautizados y miembros
+            </CardTitle>
+            <CardDescription>Bautizados en lo que va del año y miembros actuales</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-lg border p-3">
+                <p className="text-xs text-muted-foreground">Bautizados del año</p>
+                <p className="text-2xl font-bold tabular-nums text-amber-600">{data.bautizadosAnio}</p>
+                <p className="text-[11px] text-muted-foreground">{data.salud.bautizadosPct}% del total</p>
               </div>
-            </CardContent>
-          </Card>
-        )}
+              <div className="rounded-lg border p-3">
+                <p className="text-xs text-muted-foreground">Miembros actuales</p>
+                <p className="text-2xl font-bold tabular-nums text-violet-600">{data.miembrosTotal}</p>
+                <p className="text-[11px] text-muted-foreground">{data.salud.miembrosPct}% del total</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* 3 COLUMNAS: ACTIVIDAD+CITAS | URGENTES | LISTOS+DISCIPULADORES */}
@@ -398,183 +670,17 @@ export function DashboardClient({
         </Card>
 
         {/* PRÓXIMAS CITAS */}
-        <Card size="sm">
-          <CardHeader className="shrink-0">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Clock className="h-4 w-4 text-indigo-500" />
-              Próximas citas
-            </CardTitle>
-            <CardDescription>Encuentros agendados para los próximos días</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {data.citasAgendadas.length === 0 ? (
-              <p className="py-1 text-sm text-muted-foreground">Sin citas agendadas próximas</p>
-            ) : (
-              <div className="space-y-2">
-                {data.citasAgendadas.map((c) => (
-                  <Link key={c.id} href="/agenda" className="block rounded-lg border p-2.5 transition-colors hover:border-primary/50 hover:no-underline">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="min-w-0 flex-1 truncate text-sm font-medium">
-                        {c.discipulo || "Discípulo"}
-                      </p>
-                      <span className="shrink-0 text-[11px] font-semibold tabular-nums text-muted-foreground">
-                        {format(new Date(c.fecha + "T00:00:00"), "dd/MM", { locale: es })}
-                      </span>
-                    </div>
-                    {(c.hora || c.tema) && (
-                      <p className="mt-1 line-clamp-1 text-[11px] text-muted-foreground">
-                        {[c.hora, c.tema].filter(Boolean).join(" · ")}
-                      </p>
-                    )}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <CitasCard citas={data.citasAgendadas} />
       </div>
 
         {/* QUIÉN NECESITA ATENCIÓN URGENTE */}
-        <Card size="sm" className="border-red-200 dark:border-red-900">
-          <CardHeader className="shrink-0">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <AlertTriangle className="h-4 w-4 text-red-500" />
-                Necesitan atención urgente
-              </CardTitle>
-              <Badge variant="destructive">{data.urgentes.length}</Badge>
-            </div>
-            <CardDescription>Sin seguimiento, progreso bajo, sin encuentro, pendientes o sin discipulador</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-          {data.urgentes.length === 0 ? (
-            <p className="py-1 text-sm text-muted-foreground">No hay nadie que requiera atención urgente</p>
-          ) : (
-            data.urgentes.map((u) => (
-              <div
-                key={u.discipulo.id}
-                className="flex items-center gap-2.5 rounded-lg border border-red-200/70 bg-red-50/40 p-2 dark:bg-red-950/20"
-              >
-                <Avatar persona={u.discipulo} />
-                <div className="min-w-0 flex-1">
-                  <Link
-                    href={`/discipulos/ver?id=${u.discipulo.id}`}
-                    className="block truncate text-sm font-medium hover:underline"
-                  >
-                    {u.discipulo.apellido}, {u.discipulo.nombre}
-                  </Link>
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    {u.razones.map((r) => (
-                      <Badge
-                        key={r}
-                        variant="outline"
-                        className="px-1.5 text-[10px] text-red-600 dark:text-red-400"
-                      >
-                        {r}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-
-          {data.oracionesViejas.length > 0 && (
-            <div className="mt-2 space-y-1.5 border-t pt-2">
-              <p className="flex items-center gap-1 text-xs font-semibold text-muted-foreground">
-                <Clock className="h-3 w-3" /> Oraciones sin respuesta (30+ días)
-              </p>
-              {data.oracionesViejas.map((o) => (
-                <Link
-                  key={o.id}
-                  href="/oracion"
-                  className="flex items-center gap-2 rounded text-xs transition-colors hover:bg-muted/50 hover:no-underline"
-                >
-                  <Church className="h-3 w-3 shrink-0 text-muted-foreground" />
-                  <span className="min-w-0 flex-1 truncate text-muted-foreground">{o.pedido}</span>
-                  <span className="shrink-0 font-medium text-amber-600">{o.dias} días</span>
-                </Link>
-              ))}
-            </div>
-          )}
-        </CardContent>
-        </Card>
+        <UrgentesCard urgentes={data.urgentes} oracionesViejas={data.oracionesViejas} />
 
       {/* COL 3: LISTOS + DISCIPULADORES */}
       <div className="flex flex-col gap-3">
-        <Card size="sm" className="border-emerald-200 dark:border-emerald-900">
-          <CardHeader className="shrink-0">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                Listos para avanzar
-              </CardTitle>
-              <Badge variant="secondary">{totalListos}</Badge>
-            </div>
-            <CardDescription>Progreso 80%+ en su etapa o 30+ días en la etapa de evangelismo</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-          {data.listosAvanzar.length > 0 && (
-            <>
-              <p className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                <Sparkles className="h-3 w-3 text-emerald-500" /> Discípulos ({data.listosAvanzar.length})
-              </p>
-              {data.listosAvanzar.map((l) => (
-                <div key={l.discipulo.id} className="flex items-center gap-2.5 rounded-lg border border-emerald-200/70 bg-emerald-50/40 p-2 dark:bg-emerald-950/20">
-                  <Avatar persona={l.discipulo} />
-                  <div className="min-w-0 flex-1">
-                    <Link
-                      href={`/discipulos/ver?id=${l.discipulo.id}`}
-                      className="block truncate text-sm font-medium hover:underline"
-                    >
-                      {l.discipulo.apellido}, {l.discipulo.nombre}
-                    </Link>
-                    <p className="text-[11px] text-muted-foreground">
-                      {l.progreso}% completado
-                      {l.proximaEtapa && (
-                        <span className="inline-flex items-center gap-1 font-medium text-emerald-600">
-                          <ArrowRight className="h-3 w-3" /> {l.proximaEtapa}
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </>
-          )}
-
-          {data.evangelismoListos.length > 0 && (
-            <>
-              <p className="flex items-center gap-1 pt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                <HeartHandshake className="h-3 w-3 text-emerald-500" /> Evangelismo ({data.evangelismoListos.length})
-              </p>
-              {data.evangelismoListos.map((p) => (
-                <div key={p.id} className="flex items-center gap-2.5 rounded-lg border border-emerald-200/70 bg-emerald-50/40 p-2 dark:bg-emerald-950/20">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50">
-                    <HeartHandshake className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <Link href="/evangelismo" className="block truncate text-sm font-medium hover:underline">
-                      {p.nombre} {p.apellido}
-                    </Link>
-                    <p className="text-[11px] text-muted-foreground">
-                      {p.dias} días en {p.estado === "oracion_salvacion" ? "oración" : p.estado === "actos_servicio" ? "actos de servicio" : "evangelio"}
-                    </p>
-                  </div>
-                  <ArrowRight className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
-                </div>
-              ))}
-            </>
-          )}
-
-          {totalListos === 0 && (
-            <p className="py-1 text-sm text-muted-foreground">No hay nadie listo para avanzar ahora mismo</p>
-          )}
-        </CardContent>
-      </Card>
+        <ListosCard listosAvanzar={data.listosAvanzar} evangelismoListos={data.evangelismoListos} />
 
           {/* DISCIPULADORES QUE REQUIEREN APOYO */}
-          {!esDiscipulador && (
           <Card size="sm">
             <CardHeader className="shrink-0">
               <div className="flex items-center justify-between">
@@ -617,7 +723,6 @@ export function DashboardClient({
               )}
             </CardContent>
           </Card>
-          )}
         </div>
       </div>
     </div>

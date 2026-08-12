@@ -129,10 +129,19 @@ export default function DashboardPage() {
     const hoy = new Date();
     const diasDesde = (fecha: string) => differenceInCalendarDays(hoy, new Date(fecha + "T00:00:00"));
 
-    const activos = discipulos.filter((d) => d.estado === "activo");
-    const pausados = discipulos.filter((d) => d.estado === "pausado").length;
-    const retirados = discipulos.filter((d) => d.estado === "retirado").length;
-    const totalDiscipulos = discipulos.length;
+    const esDiscipulador = user?.rol === "discipulador";
+    const misDiscipulosIds = new Set(
+      esDiscipulador ? discipulos.filter((d) => d.lider_id === user?.id).map((d) => d.id) : []
+    );
+    const discipulosVisibles = esDiscipulador ? discipulos.filter((d) => misDiscipulosIds.has(d.id)) : discipulos;
+    const seguimientosVisibles = esDiscipulador ? seguimientos.filter((s) => misDiscipulosIds.has(s.discipulo_id)) : seguimientos;
+    const agendaVisibles = esDiscipulador ? agenda.filter((a) => misDiscipulosIds.has(a.discipulo_id)) : agenda;
+    const oracionesVisibles = esDiscipulador ? oraciones.filter((o) => o.discipulo_id && misDiscipulosIds.has(o.discipulo_id)) : oraciones;
+
+    const activos = discipulosVisibles.filter((d) => d.estado === "activo");
+    const pausados = discipulosVisibles.filter((d) => d.estado === "pausado").length;
+    const retirados = discipulosVisibles.filter((d) => d.estado === "retirado").length;
+    const totalDiscipulos = discipulosVisibles.length;
     const retencionPct = totalDiscipulos ? Math.round((activos.length / totalDiscipulos) * 100) : 0;
 
     const etapaFinal = etapas[etapas.length - 1];
@@ -142,23 +151,23 @@ export default function DashboardPage() {
     const discipulosPorEtapa = etapas.map((e) => ({
       id: e.id,
       nombre: e.nombre,
-      cantidad: discipulos.filter((d) => d.etapa_id === e.id).length,
+      cantidad: discipulosVisibles.filter((d) => d.etapa_id === e.id).length,
     }));
 
     const segPorDiscipulo = new Map<string, SeguimientoRaw>();
-    for (const s of seguimientos) {
+    for (const s of seguimientosVisibles) {
       const existente = segPorDiscipulo.get(s.discipulo_id);
       if (!existente || (s.estado === "activo" && existente.estado !== "activo")) {
         segPorDiscipulo.set(s.discipulo_id, s);
       }
     }
-    const segActivos = seguimientos.filter((s) => s.estado === "activo");
+    const segActivos = seguimientosVisibles.filter((s) => s.estado === "activo");
     const promedioProgreso = segActivos.length
       ? Math.round(segActivos.reduce((acc, s) => acc + s.progreso, 0) / segActivos.length)
       : 0;
 
     const ultimoEncuentro = new Map<string, string>();
-    for (const a of agenda) {
+    for (const a of agendaVisibles) {
       if (!ultimoEncuentro.has(a.discipulo_id)) ultimoEncuentro.set(a.discipulo_id, a.fecha);
     }
     const diasSinContacto = (id: string): number | null => {
@@ -188,7 +197,7 @@ export default function DashboardPage() {
 
     const urgentes = urgentesFull.slice(0, 8);
 
-    const oracionesViejas = oraciones
+    const oracionesViejas = oracionesVisibles
       .filter((o) => o.estado !== "respondida")
       .map((o) => ({ id: o.id, pedido: o.pedido, dias: diasDesde(o.fecha) }))
       .filter((o) => o.dias >= ORACION_VEJEZ_DIAS)
@@ -254,12 +263,12 @@ export default function DashboardPage() {
     const tareasCumplimientoPct = tareasTotal ? Math.round((tareasCompletadas / tareasTotal) * 100) : 0;
     const tareasVencidas = tareas.filter((t) => t.estado === "vencida").length;
 
-    const bautizadosPct = totalDiscipulos ? Math.round((discipulos.filter((d) => d.bautizado).length / totalDiscipulos) * 100) : 0;
-    const miembrosPct = totalDiscipulos ? Math.round((discipulos.filter((d) => d.es_miembro).length / totalDiscipulos) * 100) : 0;
+    const bautizadosPct = totalDiscipulos ? Math.round((discipulosVisibles.filter((d) => d.bautizado).length / totalDiscipulos) * 100) : 0;
+    const miembrosPct = totalDiscipulos ? Math.round((discipulosVisibles.filter((d) => d.es_miembro).length / totalDiscipulos) * 100) : 0;
 
-    const oracionesRespondidas = oraciones.filter((o) => o.estado === "respondida").length;
-    const oracionesRespondidasPct = oraciones.length ? Math.round((oracionesRespondidas / oraciones.length) * 100) : 0;
-    const oracionesPendientes = oraciones.filter((o) => o.estado !== "respondida").length;
+    const oracionesRespondidas = oracionesVisibles.filter((o) => o.estado === "respondida").length;
+    const oracionesRespondidasPct = oracionesVisibles.length ? Math.round((oracionesRespondidas / oracionesVisibles.length) * 100) : 0;
+    const oracionesPendientes = oracionesVisibles.filter((o) => o.estado !== "respondida").length;
 
     const conContacto = activos.filter((d) => {
       const ds = diasSinContacto(d.id);
@@ -267,8 +276,8 @@ export default function DashboardPage() {
     }).length;
     const contactoPct = activos.length ? Math.round((conContacto / activos.length) * 100) : 0;
 
-    const discipuloNombre = new Map(discipulos.map((d) => [d.id, d]));
-    const oracionesRecientes = oraciones.slice(0, 4).map((o) => {
+    const discipuloNombre = new Map(discipulosVisibles.map((d) => [d.id, d]));
+    const oracionesRecientes = oracionesVisibles.slice(0, 4).map((o) => {
       const d = o.discipulo_id ? discipuloNombre.get(o.discipulo_id) : undefined;
       return {
         id: o.id,
@@ -287,7 +296,7 @@ export default function DashboardPage() {
       persona: e.personas?.[0] ? `${e.personas[0].nombre} ${e.personas[0].apellido}` : undefined,
     }));
 
-    const citasAgendadas = agenda
+    const citasAgendadas = agendaVisibles
       .filter((a) => diasDesde(a.fecha) <= 0)
       .map((a) => {
         const d = a.discipulos;
@@ -303,7 +312,7 @@ export default function DashboardPage() {
       .slice(0, 5);
 
     const mesActual = hoy.getMonth() + 1;
-    const cumpleañosMes = discipulos
+    const cumpleañosMes = discipulosVisibles
       .map((d) => {
         if (!d.fecha_nacimiento) return null;
         const f = new Date(d.fecha_nacimiento + "T00:00:00");
@@ -320,10 +329,10 @@ export default function DashboardPage() {
       .sort((a, b) => a.dia - b.dia);
 
     const anioActual = hoy.getFullYear();
-    const bautizadosAnio = discipulos.filter(
+    const bautizadosAnio = discipulosVisibles.filter(
       (d) => d.fecha_bautismo && new Date(d.fecha_bautismo + "T00:00:00").getFullYear() === anioActual
     ).length;
-    const miembrosTotal = discipulos.filter((d) => d.es_miembro).length;
+    const miembrosTotal = discipulosVisibles.filter((d) => d.es_miembro).length;
 
     return {
       etapaFinal: { id: etapaFinal.id, nombre: etapaFinal.nombre },
@@ -357,7 +366,7 @@ export default function DashboardPage() {
       bautizadosAnio,
       miembrosTotal,
     };
-  }, [raw, etapas]);
+  }, [raw, etapas, user]);
 
   if (!data) return <div className="flex items-center justify-center min-h-[50vh]"><p className="text-muted-foreground">Cargando...</p></div>;
 
