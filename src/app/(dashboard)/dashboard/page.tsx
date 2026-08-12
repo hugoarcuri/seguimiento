@@ -2,17 +2,35 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { DashboardClient, type DashboardData } from "./dashboard-client";
+import { DashboardClient, type DashboardData, type ActividadItem, type EstadoDiscipulo } from "./dashboard-client";
 import { useEtapas } from "@/hooks/useEtapas";
 import { useUser } from "@/hooks/useUser";
-import { differenceInCalendarDays } from "date-fns";
-import { calcularEdad } from "@/lib/utils";
+import { differenceInCalendarDays, format } from "date-fns";
+import { es } from "date-fns/locale";
+import {
+  DEFAULT_PERIODO,
+  DIAS_POR_PERIODO,
+  PROGRESO_BAJO,
+  SIN_CONTACTO_DIAS,
+  type Periodo,
+} from "./discipuladores/constants";
 
-const PROGRESO_BAJO = 40;
-const LISTO_AVANZAR = 80;
-const SIN_CONTACTO_DIAS = 15;
-const ORACION_VEJEZ_DIAS = 30;
-const EVANGELISMO_LISTO_DIAS = 30;
+const BUCKET_DIAS: Record<Periodo, number> = {
+  "7d": 1,
+  "30d": 1,
+  "90d": 7,
+  todo: 30,
+};
+
+const ESTADO_RANK: Record<EstadoDiscipulo, number> = {
+  critico: 0,
+  necesita_ayuda: 1,
+  en_riesgo: 2,
+  bueno: 3,
+  excelente: 4,
+};
+
+const ESTADOS_PROBLEMA: EstadoDiscipulo[] = ["en_riesgo", "necesita_ayuda", "critico"];
 
 interface DiscipuloRaw {
   id: string;
@@ -24,20 +42,20 @@ interface DiscipuloRaw {
   lider_id?: string | null;
   bautizado?: boolean | null;
   es_miembro?: boolean | null;
-  fecha_nacimiento?: string | null;
-  fecha_bautismo?: string | null;
+  created_at: string;
 }
 
 interface PerfilRaw {
   id: string;
   nombre: string;
   apellido: string;
-  rol: string;
 }
 
 interface SeguimientoRaw {
   id: string;
   discipulo_id: string;
+  discipulador_id: string;
+  etapa: number;
   progreso: number;
   estado: string;
 }
@@ -45,40 +63,29 @@ interface SeguimientoRaw {
 interface AgendaRaw {
   id: string;
   discipulo_id: string;
+  lider_id: string;
   fecha: string;
   hora?: string | null;
   tema_tratado?: string | null;
-  lugar?: string | null;
-  discipulos?: { nombre: string; apellido: string } | null;
 }
 
-interface OracionRaw {
+interface ObjetivoRaw {
   id: string;
-  discipulo_id?: string | null;
-  pedido: string;
-  estado: string;
-  fecha: string;
+  seguimiento_id: string;
+  descripcion: string;
+  completado: boolean;
+  fecha_cumplimiento?: string | null;
+  created_at: string;
 }
 
 interface TareaRaw {
   id: string;
+  discipulo_id: string;
+  lider_id: string;
+  titulo: string;
   estado: string;
-}
-
-interface EvangelismoRaw {
-  id: string;
-  nombre: string;
-  apellido: string;
-  estado: string;
-  fecha_inicio_estado: string;
-}
-
-interface EventoRaw {
-  id: string;
-  descripcion: string;
-  tipo: string;
-  fecha: string;
-  personas?: Array<{ nombre: string; apellido: string }> | null;
+  completed_at?: string | null;
+  created_at: string;
 }
 
 interface RawData {
@@ -86,73 +93,92 @@ interface RawData {
   perfiles: PerfilRaw[];
   seguimientos: SeguimientoRaw[];
   agenda: AgendaRaw[];
-  oraciones: OracionRaw[];
+  objetivos: ObjetivoRaw[];
   tareas: TareaRaw[];
-  evangelismo: EvangelismoRaw[];
-  eventos: EventoRaw[];
 }
 
 export default function DashboardPage() {
   const { etapas } = useEtapas();
   const { user } = useUser();
+  const [periodo, setPeriodo] = useState<Periodo>(DEFAULT_PERIODO);
   const [raw, setRaw] = useState<RawData | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
 
     Promise.all([
-      supabase.from("discipulos").select("id, nombre, apellido, avatar_url, etapa_id, estado, lider_id, bautizado, es_miembro, fecha_nacimiento, fecha_bautismo"),
-      supabase.from("profiles").select("id, nombre, apellido, rol"),
-      supabase.from("seguimientos").select("id, discipulo_id, progreso, estado"),
-      supabase.from("agenda").select("id, discipulo_id, fecha, hora, tema_tratado, discipulos:discipulo_id(nombre, apellido)").order("fecha", { ascending: false }),
-      supabase.from("oraciones").select("id, discipulo_id, pedido, estado, fecha").order("fecha", { ascending: false }),
-      supabase.from("tareas").select("id, estado"),
-      supabase.from("acompanamiento_evangelistico").select("id, nombre, apellido, estado, fecha_inicio_estado"),
-      supabase.from("eventos_evangelismo").select("id, descripcion, tipo, fecha, personas:persona_id(nombre, apellido)").order("fecha", { ascending: false }).limit(6),
-    ]).then(([discipulosRes, perfilesRes, seguimientosRes, agendaRes, oracionesRes, tareasRes, evRes, eventosRes]) => {
+      supabase.from("discipulos").select("id, nombre, apellido, avatar_url, etapa_id, estado, lider_id, bautizado, es_miembro, created_at"),
+      supabase.from("profiles").select("id, nombre, apellido"),
+      supabase.from("seguimientos").select("id, discipulo_id, discipulador_id, etapa, progreso, estado"),
+      supabase.from("agenda").select("id, discipulo_id, lider_id, fecha, hora, tema_tratado"),
+      supabase.from("seguimiento_objetivos").select("id, seguimiento_id, descripcion, completado, fecha_cumplimiento, created_at"),
+      supabase.from("tareas").select("id, discipulo_id, lider_id, titulo, estado, completed_at, created_at"),
+    ]).then(([discipulosRes, perfilesRes, seguimientosRes, agendaRes, objetivosRes, tareasRes]) => {
       setRaw({
         discipulos: (discipulosRes.data || []) as DiscipuloRaw[],
         perfiles: (perfilesRes.data || []) as PerfilRaw[],
         seguimientos: (seguimientosRes.data || []) as SeguimientoRaw[],
-        agenda: (agendaRes.data || []) as unknown as AgendaRaw[],
-        oraciones: (oracionesRes.data || []) as OracionRaw[],
+        agenda: (agendaRes.data || []) as AgendaRaw[],
+        objetivos: (objetivosRes.data || []) as ObjetivoRaw[],
         tareas: (tareasRes.data || []) as TareaRaw[],
-        evangelismo: (evRes.data || []) as EvangelismoRaw[],
-        eventos: (eventosRes.data || []) as EventoRaw[],
       });
     }).catch(console.error);
   }, []);
 
   const data = useMemo<DashboardData | null>(() => {
     if (!raw || etapas.length === 0) return null;
-    const { discipulos, perfiles, seguimientos, agenda, oraciones, tareas, evangelismo, eventos } = raw;
+    const { discipulos, perfiles, seguimientos, agenda, objetivos, tareas } = raw;
+
     const hoy = new Date();
-    const diasDesde = (fecha: string) => differenceInCalendarDays(hoy, new Date(fecha + "T00:00:00"));
+    hoy.setHours(0, 0, 0, 0);
+    const hoyISO = hoy.toISOString().slice(0, 10);
 
     const esDiscipulador = user?.rol === "discipulador";
-    const misDiscipulosIds = new Set(
+    const misIds = new Set(
       esDiscipulador ? discipulos.filter((d) => d.lider_id === user?.id).map((d) => d.id) : []
     );
-    const discipulosVisibles = esDiscipulador ? discipulos.filter((d) => misDiscipulosIds.has(d.id)) : discipulos;
-    const seguimientosVisibles = esDiscipulador ? seguimientos.filter((s) => misDiscipulosIds.has(s.discipulo_id)) : seguimientos;
-    const agendaVisibles = esDiscipulador ? agenda.filter((a) => misDiscipulosIds.has(a.discipulo_id)) : agenda;
-    const oracionesVisibles = esDiscipulador ? oraciones.filter((o) => o.discipulo_id && misDiscipulosIds.has(o.discipulo_id)) : oraciones;
+    const discipulosVisibles = esDiscipulador ? discipulos.filter((d) => misIds.has(d.id)) : discipulos;
+    const visibles = <T extends { discipulo_id: string }>(arr: T[]): T[] =>
+      esDiscipulador ? arr.filter((x) => misIds.has(x.discipulo_id)) : arr;
+    const seguimientosVisibles = visibles(seguimientos);
+    const agendaVisibles = visibles(agenda);
+    const tareasVisibles = visibles(tareas);
 
-    const activos = discipulosVisibles.filter((d) => d.estado === "activo");
-    const pausados = discipulosVisibles.filter((d) => d.estado === "pausado").length;
-    const retirados = discipulosVisibles.filter((d) => d.estado === "retirado").length;
-    const totalDiscipulos = discipulosVisibles.length;
-    const retencionPct = totalDiscipulos ? Math.round((activos.length / totalDiscipulos) * 100) : 0;
+    const segVisiblesIds = new Set(seguimientosVisibles.map((s) => s.id));
+    const objetivosPorSeg = new Map<string, ObjetivoRaw[]>();
+    for (const o of objetivos) {
+      if (!segVisiblesIds.has(o.seguimiento_id)) continue;
+      const arr = objetivosPorSeg.get(o.seguimiento_id) || [];
+      arr.push(o);
+      objetivosPorSeg.set(o.seguimiento_id, arr);
+    }
 
-    const etapaFinal = etapas[etapas.length - 1];
-    const enEtapaFinal = activos.filter((d) => d.etapa_id === etapaFinal.id).length;
-    const metaPct = activos.length ? Math.round((enEtapaFinal / activos.length) * 100) : 0;
+    const dias = DIAS_POR_PERIODO[periodo];
+    let inicio: Date;
+    if (Number.isFinite(dias)) {
+      inicio = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - dias);
+    } else {
+      const fechas = [
+        ...discipulosVisibles.map((d) => new Date(d.created_at)),
+        ...agendaVisibles.map((a) => new Date(a.fecha + "T00:00:00")),
+      ];
+      inicio = fechas.length ? new Date(Math.min(...fechas.map((f) => f.getTime()))) : new Date(hoy.getTime() - 180 * 86400000);
+    }
 
-    const discipulosPorEtapa = etapas.map((e) => ({
-      id: e.id,
-      nombre: e.nombre,
-      cantidad: discipulosVisibles.filter((d) => d.etapa_id === e.id).length,
-    }));
+    const enPeriodoFecha = (fecha: string): boolean => {
+      const f = new Date(fecha + "T00:00:00");
+      return f >= inicio && f <= hoy;
+    };
+    const enPeriodoDate = (d: Date): boolean => d >= inicio && d <= hoy;
+    const diasDesde = (fecha: string) => differenceInCalendarDays(hoy, new Date(fecha + "T00:00:00"));
+
+    let semanasObjetivo: number;
+    if (Number.isFinite(dias)) {
+      semanasObjetivo = Math.max(1, Math.ceil(dias / 7));
+    } else {
+      const diasTotales = Math.max(1, differenceInCalendarDays(hoy, inicio));
+      semanasObjetivo = Math.max(1, Math.ceil(diasTotales / 7));
+    }
 
     const segPorDiscipulo = new Map<string, SeguimientoRaw>();
     for (const s of seguimientosVisibles) {
@@ -161,214 +187,292 @@ export default function DashboardPage() {
         segPorDiscipulo.set(s.discipulo_id, s);
       }
     }
-    const segActivos = seguimientosVisibles.filter((s) => s.estado === "activo");
-    const promedioProgreso = segActivos.length
-      ? Math.round(segActivos.reduce((acc, s) => acc + s.progreso, 0) / segActivos.length)
-      : 0;
+    const segDiscipuloId = new Map(seguimientosVisibles.map((s) => [s.id, s.discipulo_id]));
 
     const ultimoEncuentro = new Map<string, string>();
+    const reunionesEnPeriodo = new Map<string, number>();
     for (const a of agendaVisibles) {
+      if (a.fecha > hoyISO) continue;
       if (!ultimoEncuentro.has(a.discipulo_id)) ultimoEncuentro.set(a.discipulo_id, a.fecha);
+      if (enPeriodoFecha(a.fecha)) {
+        reunionesEnPeriodo.set(a.discipulo_id, (reunionesEnPeriodo.get(a.discipulo_id) || 0) + 1);
+      }
     }
-    const diasSinContacto = (id: string): number | null => {
-      const f = ultimoEncuentro.get(id);
-      if (!f) return null;
-      return diasDesde(f);
+
+    const perfilPorId = new Map(perfiles.map((p) => [p.id, p]));
+    const nombreLider = (id?: string | null): string => {
+      const p = id ? perfilPorId.get(id) : undefined;
+      return p ? `${p.nombre} ${p.apellido}` : "Sin discipulador";
     };
 
-    const urgentesFull = activos
+    const activos = discipulosVisibles.filter((d) => d.estado === "activo");
+    const pausados = discipulosVisibles.filter((d) => d.estado === "pausado").length;
+    const retirados = discipulosVisibles.filter((d) => d.estado === "retirado").length;
+
+    const progresoEnFecha = (objs: ObjetivoRaw[], fin: Date): number | null => {
+      const finISO = fin.toISOString().slice(0, 10);
+      const hasta = objs.filter((o) => (o.created_at || "").slice(0, 10) <= finISO);
+      if (hasta.length === 0) return null;
+      const cumplidos = hasta.filter(
+        (o) => o.completado && o.fecha_cumplimiento && o.fecha_cumplimiento <= finISO
+      ).length;
+      return Math.round((cumplidos / hasta.length) * 100);
+    };
+
+    const peor = (a: EstadoDiscipulo, b: EstadoDiscipulo): EstadoDiscipulo =>
+      ESTADO_RANK[a] <= ESTADO_RANK[b] ? a : b;
+
+    const calcularEstado = (
+      progreso: number | null,
+      reunionPct: number | null,
+      diasSinContacto: number | null,
+      sinSeguimiento: boolean
+    ): EstadoDiscipulo => {
+      let estado: EstadoDiscipulo;
+      if (progreso === null) {
+        estado = "necesita_ayuda";
+      } else {
+        const r = reunionPct ?? 0;
+        if (progreso < 20) estado = "critico";
+        else if (progreso < 40 || r < 40) estado = "necesita_ayuda";
+        else if (progreso < 60 || r < 60) estado = "en_riesgo";
+        else if (progreso < 80 || r < 80) estado = "bueno";
+        else estado = "excelente";
+      }
+      if (sinSeguimiento) estado = peor(estado, "necesita_ayuda");
+      if (diasSinContacto !== null) {
+        if (diasSinContacto >= 45) estado = peor(estado, "critico");
+        else if (diasSinContacto >= 30) estado = peor(estado, "necesita_ayuda");
+        else if (diasSinContacto >= SIN_CONTACTO_DIAS) estado = peor(estado, "en_riesgo");
+      }
+      return estado;
+    };
+
+    const etapaNombre = (id: number): string =>
+      etapas.find((e) => e.id === id)?.nombre.replace(/^\d+\.\s*/, "") || `Etapa ${id}`;
+
+    const tabla = activos
       .map((d) => {
-        const razones: string[] = [];
         const seg = segPorDiscipulo.get(d.id);
+        const progreso = seg && seg.estado === "activo" && seg.progreso != null ? seg.progreso : null;
+        const reuniones = reunionesEnPeriodo.get(d.id) || 0;
+        const reunionPct = Math.min(100, Math.round((reuniones / semanasObjetivo) * 100));
+        const ultima = ultimoEncuentro.get(d.id) ?? null;
+        const diasSinContacto = ultima ? diasDesde(ultima) : null;
+        const estado = calcularEstado(progreso, reunionPct, diasSinContacto, !seg);
+
+        const razones: string[] = [];
         if (!seg) razones.push("Sin seguimiento activo");
-        else if (seg.progreso < PROGRESO_BAJO) razones.push(`Progreso bajo (${seg.progreso}%)`);
-        const dias = diasSinContacto(d.id);
-        if (dias === null) razones.push("Sin encuentros registrados");
-        else if (dias >= SIN_CONTACTO_DIAS) razones.push(`Sin encuentro (${dias} días)`);
+        else if (progreso !== null && progreso < PROGRESO_BAJO) razones.push(`Progreso bajo (${progreso}%)`);
+        if (diasSinContacto === null) razones.push("Sin reuniones registradas");
+        else if (diasSinContacto >= SIN_CONTACTO_DIAS) razones.push(`Sin reunión (${diasSinContacto} días)`);
         if (d.etapa_id >= 2) {
           if (!d.bautizado) razones.push("Pendiente bautismo");
           if (!d.es_miembro) razones.push("Pendiente membresía");
         }
         if (!d.lider_id) razones.push("Sin discipulador asignado");
-        return { discipulo: d, razones };
-      })
-      .filter((x) => x.razones.length > 0)
-      .sort((a, b) => b.razones.length - a.razones.length);
 
-    const urgentes = urgentesFull.slice(0, 8);
-
-    const oracionesViejas = oracionesVisibles
-      .filter((o) => o.estado !== "respondida")
-      .map((o) => ({ id: o.id, pedido: o.pedido, dias: diasDesde(o.fecha) }))
-      .filter((o) => o.dias >= ORACION_VEJEZ_DIAS)
-      .sort((a, b) => b.dias - a.dias)
-      .slice(0, 4);
-
-    const listosAvanzar = activos
-      .map((d) => ({ discipulo: d, seg: segPorDiscipulo.get(d.id) }))
-      .filter((x): x is { discipulo: DiscipuloRaw; seg: SeguimientoRaw } =>
-        x.seg !== undefined && x.seg.estado === "activo" && x.seg.progreso >= LISTO_AVANZAR && x.discipulo.etapa_id !== etapaFinal.id
-      )
-      .map(({ discipulo, seg }) => {
-        const idx = etapas.findIndex((e) => e.id === discipulo.etapa_id);
-        const prox = idx >= 0 && idx < etapas.length - 1 ? etapas[idx + 1] : undefined;
-        return {
-          discipulo,
-          progreso: seg.progreso,
-          proximaEtapa: prox?.nombre.replace(/^\d+\.\s*/, ""),
-        };
-      })
-      .sort((a, b) => b.progreso - a.progreso)
-      .slice(0, 6);
-
-    const evangelismoListos = evangelismo
-      .map((p) => ({ ...p, dias: diasDesde(p.fecha_inicio_estado) }))
-      .filter((p) => p.dias >= EVANGELISMO_LISTO_DIAS)
-      .sort((a, b) => b.dias - a.dias)
-      .slice(0, 6);
-
-    const riesgoIds = new Set(urgentesFull.map((x) => x.discipulo.id));
-    const sinContactoIds = new Set(
-      activos.filter((d) => {
-        const ds = diasSinContacto(d.id);
-        return ds === null || ds >= SIN_CONTACTO_DIAS;
-      }).map((d) => d.id)
-    );
-    const perfilPorId = new Map(perfiles.map((p) => [p.id, p]));
-    const porLider = new Map<string, DiscipuloRaw[]>();
-    for (const d of activos) {
-      if (!d.lider_id) continue;
-      const arr = porLider.get(d.lider_id) || [];
-      arr.push(d);
-      porLider.set(d.lider_id, arr);
-    }
-    const discipuladores = [...porLider.entries()]
-      .map(([id, lista]) => {
-        const perfil = perfilPorId.get(id);
-        return {
-          id,
-          nombre: perfil?.nombre || "Discipulador",
-          apellido: perfil?.apellido || "",
-          total: lista.length,
-          enRiesgo: lista.filter((d) => riesgoIds.has(d.id)).length,
-          sinContacto: lista.filter((d) => sinContactoIds.has(d.id)).length,
-        };
-      })
-      .filter((x) => x.enRiesgo > 0 || x.sinContacto > 0)
-      .sort((a, b) => b.enRiesgo - a.enRiesgo || b.sinContacto - a.sinContacto)
-      .slice(0, 5);
-
-    const tareasTotal = tareas.length;
-    const tareasCompletadas = tareas.filter((t) => t.estado === "completada").length;
-    const tareasCumplimientoPct = tareasTotal ? Math.round((tareasCompletadas / tareasTotal) * 100) : 0;
-    const tareasVencidas = tareas.filter((t) => t.estado === "vencida").length;
-
-    const bautizadosPct = totalDiscipulos ? Math.round((discipulosVisibles.filter((d) => d.bautizado).length / totalDiscipulos) * 100) : 0;
-    const miembrosPct = totalDiscipulos ? Math.round((discipulosVisibles.filter((d) => d.es_miembro).length / totalDiscipulos) * 100) : 0;
-
-    const oracionesRespondidas = oracionesVisibles.filter((o) => o.estado === "respondida").length;
-    const oracionesRespondidasPct = oracionesVisibles.length ? Math.round((oracionesRespondidas / oracionesVisibles.length) * 100) : 0;
-    const oracionesPendientes = oracionesVisibles.filter((o) => o.estado !== "respondida").length;
-
-    const conContacto = activos.filter((d) => {
-      const ds = diasSinContacto(d.id);
-      return ds !== null && ds <= SIN_CONTACTO_DIAS;
-    }).length;
-    const contactoPct = activos.length ? Math.round((conContacto / activos.length) * 100) : 0;
-
-    const discipuloNombre = new Map(discipulosVisibles.map((d) => [d.id, d]));
-    const oracionesRecientes = oracionesVisibles.slice(0, 4).map((o) => {
-      const d = o.discipulo_id ? discipuloNombre.get(o.discipulo_id) : undefined;
-      return {
-        id: o.id,
-        pedido: o.pedido,
-        estado: o.estado,
-        fecha: o.fecha,
-        discipulo: d ? `${d.apellido}, ${d.nombre}` : undefined,
-      };
-    });
-
-    const evangelismoRecientes = eventos.map((e) => ({
-      id: e.id,
-      descripcion: e.descripcion,
-      tipo: e.tipo,
-      fecha: e.fecha,
-      persona: e.personas?.[0] ? `${e.personas[0].nombre} ${e.personas[0].apellido}` : undefined,
-    }));
-
-    const citasAgendadas = agendaVisibles
-      .filter((a) => diasDesde(a.fecha) <= 0)
-      .map((a) => {
-        const d = a.discipulos;
-        return {
-          id: a.id,
-          discipulo: d ? `${d.apellido}, ${d.nombre}` : undefined,
-          fecha: a.fecha,
-          hora: a.hora || undefined,
-          tema: a.tema_tratado || undefined,
-        };
-      })
-      .sort((a, b) => a.fecha.localeCompare(b.fecha))
-      .slice(0, 5);
-
-    const mesActual = hoy.getMonth() + 1;
-    const cumpleañosMes = discipulosVisibles
-      .map((d) => {
-        if (!d.fecha_nacimiento) return null;
-        const f = new Date(d.fecha_nacimiento + "T00:00:00");
-        if (f.getMonth() + 1 !== mesActual) return null;
         return {
           id: d.id,
           nombre: d.nombre,
           apellido: d.apellido,
-          dia: f.getDate(),
-          edad: calcularEdad(d.fecha_nacimiento),
+          avatar_url: d.avatar_url ?? null,
+          discipulador: nombreLider(d.lider_id),
+          etapa: etapaNombre(d.etapa_id),
+          progreso,
+          reuniones,
+          objetivoReuniones: semanasObjetivo,
+          reunionPct,
+          ultimaReunion: ultima,
+          diasSinContacto,
+          estado,
+          razones,
         };
       })
-      .filter((x): x is { id: string; nombre: string; apellido: string; dia: number; edad: number } => x !== null)
-      .sort((a, b) => a.dia - b.dia);
+      .sort(
+        (a, b) =>
+          ESTADO_RANK[a.estado] - ESTADO_RANK[b.estado] ||
+          b.reunionPct - a.reunionPct ||
+          (a.ultimaReunion || "9999").localeCompare(b.ultimaReunion || "9999")
+      );
 
-    const anioActual = hoy.getFullYear();
-    const bautizadosAnio = discipulosVisibles.filter(
-      (d) => d.fecha_bautismo && new Date(d.fecha_bautismo + "T00:00:00").getFullYear() === anioActual
-    ).length;
-    const miembrosTotal = discipulosVisibles.filter((d) => d.es_miembro).length;
+    const segsActivos = seguimientosVisibles.filter((s) => s.estado === "activo" && s.progreso != null);
+    const progresoPromedio = segsActivos.length
+      ? Math.round(segsActivos.reduce((acc, s) => acc + s.progreso, 0) / segsActivos.length)
+      : null;
+
+    const seguimientoIds = seguimientosVisibles.map((s) => s.id);
+    const progsInicio = seguimientoIds
+      .map((id) => progresoEnFecha(objetivosPorSeg.get(id) || [], inicio))
+      .filter((p): p is number => p !== null);
+    const progresoInicio = progsInicio.length
+      ? Math.round(progsInicio.reduce((a, b) => a + b, 0) / progsInicio.length)
+      : null;
+    const variacionProgreso =
+      progresoPromedio !== null && progresoInicio !== null ? progresoPromedio - progresoInicio : null;
+
+    const reunionesRealizadas = agendaVisibles.filter((a) => a.fecha <= hoyISO && enPeriodoFecha(a.fecha)).length;
+    const objetivoReuniones = activos.length * semanasObjetivo;
+    const reunionesPct = objetivoReuniones ? Math.min(100, Math.round((reunionesRealizadas / objetivoReuniones) * 100)) : 0;
+
+    const enRiesgo = tabla.filter((t) => t.estado === "en_riesgo");
+    const necesitanAtencion = tabla.filter((t) => ESTADOS_PROBLEMA.includes(t.estado));
+
+    const atencion = necesitanAtencion
+      .map((t) => ({
+        id: t.id,
+        nombre: t.nombre,
+        apellido: t.apellido,
+        avatar_url: t.avatar_url,
+        estado: t.estado,
+        progreso: t.progreso,
+        reuniones: t.reuniones,
+        objetivoReuniones: t.objetivoReuniones,
+        ultimaReunion: t.ultimaReunion,
+        diasSinContacto: t.diasSinContacto,
+        razones: t.razones,
+      }))
+      .sort((a, b) => ESTADO_RANK[a.estado] - ESTADO_RANK[b.estado] || b.reuniones - a.reuniones);
+
+    let bucketDias = BUCKET_DIAS[periodo];
+    const totalBuckets = differenceInCalendarDays(hoy, inicio);
+    if (Number.isFinite(totalBuckets) && totalBuckets > 0 && Math.ceil(totalBuckets / bucketDias) > 60) {
+      bucketDias = Math.max(1, Math.ceil(totalBuckets / 60));
+    }
+    const serie = [];
+    for (let t = new Date(inicio); t <= hoy; t = new Date(t.getFullYear(), t.getMonth(), t.getDate() + bucketDias)) {
+      const fin = new Date(Math.min(t.getTime() + (bucketDias - 1) * 86400000, hoy.getTime()));
+      const finISO = fin.toISOString().slice(0, 10);
+      const tISO = t.toISOString().slice(0, 10);
+      const etiqueta = bucketDias >= 30 ? format(t, "MMM yyyy", { locale: es }) : format(t, "d MMM", { locale: es });
+
+      const reuniones = agendaVisibles.filter((a) => a.fecha <= finISO && a.fecha >= tISO).length;
+      const discipulosActivos = discipulosVisibles.filter(
+        (d) => d.estado === "activo" && (d.created_at || "").slice(0, 10) <= finISO
+      ).length;
+      const progs = seguimientoIds
+        .map((id) => progresoEnFecha(objetivosPorSeg.get(id) || [], fin))
+        .filter((p): p is number => p !== null);
+      const progreso = progs.length ? Math.round(progs.reduce((a, b) => a + b, 0) / progs.length) : null;
+
+      serie.push({ etiqueta, reuniones, discipulosActivos, progreso });
+    }
+
+    const discipuloPorId = new Map(discipulosVisibles.map((d) => [d.id, d]));
+    const nombreDiscipulo = (d?: DiscipuloRaw): string => (d ? `${d.apellido}, ${d.nombre}` : "un discípulo");
+
+    const actividad: ActividadItem[] = [];
+    const proxLimite = new Date(hoy.getTime() + 7 * 86400000).toISOString().slice(0, 10);
+
+    for (const a of agendaVisibles) {
+      if (a.fecha <= hoyISO) {
+        if (!enPeriodoFecha(a.fecha)) continue;
+        const d = a.discipulo_id ? discipuloPorId.get(a.discipulo_id) : undefined;
+        actividad.push({
+          id: `r-${a.id}`,
+          tipo: "reunion",
+          titulo: "Reunión registrada",
+          descripcion: `${nombreLider(a.lider_id)} se reunió con ${nombreDiscipulo(d)}`,
+          fecha: a.fecha + "T00:00:00",
+          discipulo_id: a.discipulo_id,
+          hora: a.hora ? a.hora.slice(0, 5) : null,
+        });
+      } else if (a.fecha <= proxLimite) {
+        const d = a.discipulo_id ? discipuloPorId.get(a.discipulo_id) : undefined;
+        actividad.push({
+          id: `p-${a.id}`,
+          tipo: "reunion_programada",
+          titulo: "Reunión programada",
+          descripcion: `${nombreDiscipulo(d)} tiene una reunión con ${nombreLider(a.lider_id)}`,
+          fecha: a.fecha + "T00:00:00",
+          discipulo_id: a.discipulo_id,
+          hora: a.hora ? a.hora.slice(0, 5) : null,
+        });
+      }
+    }
+
+    for (const o of objetivos) {
+      if (!segVisiblesIds.has(o.seguimiento_id)) continue;
+      if (!o.completado || !o.fecha_cumplimiento) continue;
+      if (!enPeriodoFecha(o.fecha_cumplimiento)) continue;
+      const did = segDiscipuloId.get(o.seguimiento_id);
+      const d = did ? discipuloPorId.get(did) : undefined;
+      actividad.push({
+        id: `o-${o.id}`,
+        tipo: "avance",
+        titulo: "Avance registrado",
+        descripcion: `${nombreDiscipulo(d)} completó: ${o.descripcion}`,
+        fecha: o.fecha_cumplimiento + "T12:00:00",
+        discipulo_id: did,
+      });
+    }
+
+    for (const t of tareasVisibles) {
+      if (t.estado !== "completada" || !t.completed_at) continue;
+      if (!enPeriodoDate(new Date(t.completed_at))) continue;
+      const d = t.discipulo_id ? discipuloPorId.get(t.discipulo_id) : undefined;
+      actividad.push({
+        id: `t-${t.id}`,
+        tipo: "avance",
+        titulo: "Tarea completada",
+        descripcion: `${nombreDiscipulo(d)} completó la tarea: ${t.titulo}`,
+        fecha: t.completed_at,
+        discipulo_id: t.discipulo_id,
+      });
+    }
+
+    for (const d of discipulosVisibles) {
+      if (!enPeriodoDate(new Date(d.created_at))) continue;
+      actividad.push({
+        id: `n-${d.id}`,
+        tipo: "nuevo_discipulo",
+        titulo: "Nuevo discípulo",
+        descripcion: `${nombreLider(d.lider_id)} agregó a ${nombreDiscipulo(d)}`,
+        fecha: d.created_at,
+        discipulo_id: d.id,
+      });
+    }
+
+    for (const item of atencion.slice(0, 3)) {
+      const d = discipuloPorId.get(item.id);
+      const f = item.ultimaReunion ?? d?.created_at;
+      if (!f) continue;
+      actividad.push({
+        id: `s-${item.id}`,
+        tipo: "sin_actividad",
+        titulo: "Sin actividad",
+        descripcion: `${nombreDiscipulo(d)} no tiene actividad reciente${item.diasSinContacto !== null ? ` (${item.diasSinContacto} días)` : ""}`,
+        fecha: f + "T00:00:00",
+        discipulo_id: item.id,
+        diasSinContacto: item.diasSinContacto,
+      });
+    }
+
+    actividad.sort((a, b) => b.fecha.localeCompare(a.fecha));
 
     return {
-      etapaFinal: { id: etapaFinal.id, nombre: etapaFinal.nombre },
-      salud: {
-        totalDiscipulos,
-        activos: activos.length,
+      periodo,
+      kpis: {
+        discipulosActivos: activos.length,
+        totalAsignados: discipulosVisibles.length,
         pausados,
         retirados,
-        retencionPct,
-        enEtapaFinal,
-        metaPct,
-        promedioProgreso,
-        tareasCumplimientoPct,
-        tareasVencidas,
-        bautizadosPct,
-        miembrosPct,
-        oracionesPendientes,
-        oracionesRespondidasPct,
-        contactoPct,
-        discipulosPorEtapa,
+        progresoPromedio,
+        variacionProgreso,
+        reunionesRealizadas,
+        objetivoReuniones,
+        reunionesPct,
+        enRiesgo: enRiesgo.length,
+        necesitanAtencion: necesitanAtencion.length,
       },
-      urgentes,
-      oracionesViejas,
-      listosAvanzar,
-      evangelismoListos,
-      discipuladores,
-      oracionesRecientes,
-      evangelismoRecientes,
-      citasAgendadas,
-      cumpleañosMes,
-      bautizadosAnio,
-      miembrosTotal,
+      tabla,
+      atencion: atencion.slice(0, 8),
+      grafico: { serie },
+      actividad: actividad.slice(0, 8),
     };
-  }, [raw, etapas, user]);
+  }, [raw, etapas, periodo, user]);
 
   if (!data) return <div className="flex items-center justify-center min-h-[50vh]"><p className="text-muted-foreground">Cargando...</p></div>;
 
-  return <DashboardClient data={data} esDiscipulador={user?.rol === "discipulador"} />;
+  return <DashboardClient data={data} periodo={periodo} onPeriodoChange={setPeriodo} esDiscipulador={user?.rol === "discipulador"} />;
 }

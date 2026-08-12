@@ -197,9 +197,9 @@ function EstadoBadge({ estado }: { estado: EstadoDiscipulador }) {
   );
 }
 
-function BarraProgreso({ value, bar }: { value: number; bar: string }) {
+function BarraProgreso({ value, bar, className }: { value: number; bar: string; className?: string }) {
   return (
-    <div className="h-1.5 w-full min-w-[48px] overflow-hidden rounded-full bg-muted">
+    <div className={cn("h-1.5 w-full min-w-[48px] overflow-hidden rounded-full bg-muted", className)}>
       <div
         className={cn("h-full rounded-full transition-all", bar)}
         style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
@@ -680,31 +680,35 @@ function DetalleDiscipulador({ disc }: { disc: DiscipuladorResumen }) {
             <div className="space-y-2">
               {disc.detalle.discipulos.map((d) => (
                 <div key={d.id} className="rounded-lg border p-2">
-                  <div className="flex items-center gap-2.5">
+                  <div className="flex items-start gap-2.5">
                     <Avatar persona={d} />
                     <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-1.5">
+                      <div className="flex items-center gap-2">
                         <Link
                           href={`/discipulos/ver?id=${d.id}`}
-                          className="truncate text-sm font-medium hover:underline"
+                          className="min-w-0 flex-1 truncate text-sm font-medium hover:underline"
                         >
                           {d.apellido}, {d.nombre}
                         </Link>
-                        {d.estado === "pausado" && (
-                          <Badge variant="outline" className="px-1.5 text-[10px] text-amber-600 dark:text-amber-400">Pausado</Badge>
-                        )}
-                        {d.estado === "retirado" && (
-                          <Badge variant="outline" className="px-1.5 text-[10px] text-muted-foreground">Retirado</Badge>
-                        )}
-                        {d.listoAvanzar && (
-                          <Badge variant="secondary" className="px-1.5 text-[10px] text-emerald-600 dark:text-emerald-400">Listo avanzar</Badge>
+                        {d.progreso !== null && (
+                          <span className="shrink-0 text-[11px] font-medium tabular-nums text-muted-foreground">{d.progreso}%</span>
                         )}
                       </div>
-                      <div className="mt-1 flex items-center gap-2">
+                      {(d.estado === "pausado" || d.estado === "retirado" || d.listoAvanzar) && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {d.estado === "pausado" && (
+                            <Badge variant="outline" className="px-1.5 text-[10px] text-amber-600 dark:text-amber-400">Pausado</Badge>
+                          )}
+                          {d.estado === "retirado" && (
+                            <Badge variant="outline" className="px-1.5 text-[10px] text-muted-foreground">Retirado</Badge>
+                          )}
+                          {d.listoAvanzar && (
+                            <Badge variant="secondary" className="px-1.5 text-[10px] text-emerald-600 dark:text-emerald-400">Listo avanzar</Badge>
+                          )}
+                        </div>
+                      )}
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
                         <span className="text-[11px] text-muted-foreground">{d.etapa}</span>
-                        {d.progreso !== null && (
-                          <span className="text-[11px] font-medium tabular-nums">{d.progreso}%</span>
-                        )}
                         {d.diasSinContacto !== null && d.diasSinContacto >= 15 && (
                           <span className="inline-flex items-center gap-0.5 text-[11px] font-medium text-amber-600">
                             <Clock className="h-3 w-3" /> {d.diasSinContacto} días
@@ -720,10 +724,10 @@ function DetalleDiscipulador({ disc }: { disc: DiscipuladorResumen }) {
                           ))}
                         </div>
                       )}
+                      {d.progreso !== null && (
+                        <BarraProgreso value={d.progreso} bar={cfg.bar} className="mt-2" />
+                      )}
                     </div>
-                    {d.progreso !== null && (
-                      <BarraProgreso value={d.progreso} bar={cfg.bar} />
-                    )}
                   </div>
                 </div>
               ))}

@@ -360,7 +360,7 @@ export default function EvangelismoPage() {
                         <span className="inline-block truncate max-w-[4.5rem] sm:max-w-none">{meta?.label}</span>
                       </button>
                       {estadoDropdownOpen === p.id && (
-                        <div className="absolute right-0 top-full mt-1 z-50 bg-popover border rounded-lg shadow-lg p-1 min-w-[180px]" onClick={(e) => e.stopPropagation()}>
+                        <div className="absolute right-0 top-full mt-1 z-50 bg-popover border rounded-lg shadow-lg p-1 min-w-[140px] sm:min-w-[180px]" onClick={(e) => e.stopPropagation()}>
                           {Object.entries(estadosMeta).map(([key, m]) => {
                             const ItemIcon = m.icon;
                             return (

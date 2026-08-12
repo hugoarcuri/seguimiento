@@ -242,14 +242,14 @@ export default function SeguimientoPage() {
       <Card>
         <CardContent className="p-4 space-y-4">
           <div className="flex flex-wrap items-end gap-3">
-            <div className="flex-1 min-w-[200px] space-y-1">
+              <div className="flex-1 min-w-0 space-y-1">
               <Label htmlFor="buscar" className="text-xs text-muted-foreground">Buscar</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input id="buscar" placeholder="Por nombre..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
               </div>
             </div>
-            <div className="w-44 space-y-1">
+              <div className="w-full space-y-1 sm:w-44">
               <Label className="text-xs text-muted-foreground">Etapa</Label>
               <Select value={etapaFiltro} onValueChange={(v) => setEtapaFiltro(v?.toString() ?? "")} items={[{ value: "", label: "Todas" }, ...etapas.map((e) => ({ value: String(e.id), label: e.nombre }))]}>
                 <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
@@ -261,7 +261,7 @@ export default function SeguimientoPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="w-52 space-y-1">
+              <div className="w-full space-y-1 sm:w-52">
               <Label className="text-xs text-muted-foreground">Discipulador</Label>
               <Select value={discipuladorFiltro} onValueChange={(v) => setDiscipuladorFiltro(v?.toString() ?? "")} items={[{ value: "", label: "Todos" }, ...discipuladores.map((p) => ({ value: p.id, label: `${p.apellido}, ${p.nombre}` }))]}>
                 <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
@@ -347,7 +347,7 @@ export default function SeguimientoPage() {
                     <TableCell>
                       <Badge variant="outline">{etapas.find((e) => e.id === s.etapa)?.nombre || `Etapa ${s.etapa}`}</Badge>
                     </TableCell>
-                    <TableCell className="min-w-[170px]">
+                    <TableCell className="min-w-[110px] sm:min-w-[170px]">
                       <div className="flex items-center gap-2">
                         <div className="flex flex-1 items-center gap-0.5" title="Etapa del discipulado (1 a 5)">
                           {etapas.map((e, i) => (
