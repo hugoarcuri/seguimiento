@@ -1,15 +1,15 @@
 "use client";
 
-import { useUser } from "@/hooks/useUser";
+import { useUser, invalidarCachePerfil } from "@/hooks/useUser";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Shield, Crown, Mail, Calendar, Save, Loader2, UserCog } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Shield, Crown, Mail, Calendar, Save, Loader2, UserCog, Camera } from "lucide-react";
 import { format } from "date-fns";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -36,6 +36,34 @@ export default function PerfilPage() {
   const [apellido, setApellido] = useState(user?.apellido || "");
   const [telefono, setTelefono] = useState(user?.telefono || "");
   const [guardando, setGuardando] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url || "");
+  const [subiendoAvatar, setSubiendoAvatar] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleSubirAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setSubiendoAvatar(true);
+    const supabase = createClient();
+    const ext = file.name.split(".").pop();
+    const path = `perfil-${user.id}.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from("discipulo-avatars")
+      .upload(path, file, { upsert: true });
+    if (uploadError) { toast.error("Error al subir foto"); setSubiendoAvatar(false); return; }
+    const { data: urlData } = supabase.storage.from("discipulo-avatars").getPublicUrl(path);
+    const publicUrl = urlData.publicUrl;
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({ avatar_url: publicUrl })
+      .eq("id", user.id);
+    if (updateError) { toast.error("Error al guardar foto"); setSubiendoAvatar(false); return; }
+    setAvatarUrl(publicUrl);
+    invalidarCachePerfil();
+    router.refresh();
+    setSubiendoAvatar(false);
+    toast.success("Foto de perfil actualizada");
+  };
 
   const handleGuardar = async () => {
     if (!user) return;
@@ -73,11 +101,34 @@ export default function PerfilPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="md:col-span-1">
           <CardContent className="flex flex-col items-center py-8 space-y-4">
-            <Avatar className="h-24 w-24">
-              <AvatarFallback className="text-3xl">
-                {user?.nombre?.charAt(0)?.toUpperCase() || "U"}
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative group">
+              <Avatar className="h-24 w-24">
+                {avatarUrl && <AvatarImage src={avatarUrl} alt="Foto de perfil" />}
+                <AvatarFallback className="text-3xl">
+                  {user?.nombre?.charAt(0)?.toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={subiendoAvatar}
+                className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition-opacity hover:opacity-100 disabled:opacity-0"
+                title="Cambiar foto de perfil"
+              >
+                {subiendoAvatar ? <Loader2 className="h-6 w-6 animate-spin" /> : <Camera className="h-6 w-6" />}
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleSubirAvatar}
+              />
+            </div>
+            <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={subiendoAvatar}>
+              {subiendoAvatar ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Camera className="mr-2 h-4 w-4" />}
+              Cambiar foto
+            </Button>
             <div className="text-center">
               <p className="text-xl font-semibold">
                 {user?.nombre} {user?.apellido}

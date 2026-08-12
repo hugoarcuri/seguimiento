@@ -2,7 +2,7 @@
 
 import { useUser } from "@/hooks/useUser";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -44,6 +44,7 @@ export function Navbar() {
               render={
                 <Button variant="ghost" className="relative h-11 w-11 rounded-full md:h-9 md:w-9 lg:h-8 lg:w-8">
                   <Avatar className="h-8 w-8">
+                    {user?.avatar_url && <AvatarImage src={user.avatar_url} alt="Foto de perfil" />}
                     <AvatarFallback>
                       {user?.nombre?.charAt(0)?.toUpperCase() || "U"}
                     </AvatarFallback>

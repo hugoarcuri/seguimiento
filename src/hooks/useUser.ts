@@ -9,6 +9,10 @@ import type { Profile } from "@/types/database";
 // un único fetch del perfil en vez de hacer 3 por cada montaje.
 let cachedProfile: Profile | null = null;
 
+export function invalidarCachePerfil() {
+  cachedProfile = null;
+}
+
 async function fetchProfile(id: string): Promise<Profile | null> {
   if (cachedProfile) return cachedProfile;
   const supabase = createClient();
