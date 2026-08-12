@@ -227,7 +227,7 @@ export function DashboardClient({
   ];
 
   return (
-    <div className="mx-auto max-w-7xl space-y-4">
+    <div className="w-full space-y-4">
       {/* HEADER */}
       <div>
         <h1 className="text-2xl font-bold lg:text-xl">
