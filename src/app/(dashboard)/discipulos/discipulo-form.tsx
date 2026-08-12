@@ -214,7 +214,25 @@ export function DiscipuloForm({
               .eq("id", newDiscipulo.id);
           }
         }
-        toast.success("Discípulo creado exitosamente");
+
+        const seguimientoPayload = {
+          discipulo_id: newDiscipulo.id,
+          discipulador_id: data.lider_id || user.id,
+          etapa: data.etapa_id || 1,
+          estado: "activo" as const,
+          fecha_inicio: new Date().toISOString().split("T")[0],
+          progreso: 0,
+        };
+        const { error: seguimientoError } = await supabase
+          .from("seguimientos")
+          .insert(seguimientoPayload);
+
+        if (seguimientoError) {
+          toast.success("Discípulo creado exitosamente");
+          toast.warning("No se pudo crear el seguimiento automáticamente");
+        } else {
+          toast.success("Discípulo y seguimiento creados exitosamente");
+        }
         router.push("/discipulos");
         router.refresh();
       }

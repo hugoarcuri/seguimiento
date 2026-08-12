@@ -12,7 +12,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Edit, Camera, Loader2, Calendar, Phone, Mail, MapPin } from "lucide-react";
 import { format } from "date-fns";
-import type { Discipulo, Agenda, Oracion, Tarea, Timeline, Etapa, Profile } from "@/types/database";
+import type { Discipulo, Agenda, Oracion, Tarea, Timeline, Etapa, Profile, Seguimiento } from "@/types/database";
 import { estadoColors, calcularEdad } from "@/lib/utils";
 import { useState, useRef, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -25,6 +25,7 @@ interface DiscipuloDetailClientProps {
   oraciones: Oracion[];
   tareas: Tarea[];
   timeline: Timeline[];
+  seguimientos: Seguimiento[];
 }
 
 export function DiscipuloDetailClient({
@@ -34,6 +35,7 @@ export function DiscipuloDetailClient({
   oraciones,
   tareas,
   timeline,
+  seguimientos,
 }: DiscipuloDetailClientProps) {
   const etapaActual = etapas.find((e) => e.id === initialDiscipulo.etapa_id);
   const [discipulo, setDiscipulo] = useState(initialDiscipulo);
@@ -186,6 +188,9 @@ export function DiscipuloDetailClient({
       <Tabs defaultValue="info" className="space-y-4">
         <TabsList>
           <TabsTrigger value="info">Información</TabsTrigger>
+          <TabsTrigger value="seguimiento">
+            Seguimiento ({seguimientos.length})
+          </TabsTrigger>
           <TabsTrigger value="agenda">
             Agenda ({agendas.length})
           </TabsTrigger>
@@ -276,6 +281,47 @@ export function DiscipuloDetailClient({
                 <p className="text-sm">{discipulo.observaciones}</p>
               </CardContent>
             </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="seguimiento" className="w-full min-w-0 space-y-4">
+          {seguimientos.length === 0 ? (
+            <Card>
+              <CardContent className="py-8 text-center text-muted-foreground">
+                No hay seguimientos registrados
+              </CardContent>
+            </Card>
+          ) : (
+            seguimientos.map((seguimiento) => (
+              <Card key={seguimiento.id}>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base">
+                      Etapa {seguimiento.etapa} - {seguimiento.estado}
+                    </CardTitle>
+                    <Badge variant={seguimiento.estado === "activo" ? "default" : "secondary"}>
+                      {seguimiento.estado}
+                    </Badge>
+                  </div>
+                  <CardDescription>
+                    Inicio: {format(new Date(seguimiento.fecha_inicio), "dd/MM/yyyy")}
+                    {seguimiento.fecha_fin && ` | Fin: ${format(new Date(seguimiento.fecha_fin), "dd/MM/yyyy")}`}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Progreso:</span>
+                    <span>{seguimiento.progreso}%</span>
+                  </div>
+                  <div className="w-full bg-secondary rounded-full h-2">
+                    <div
+                      className="bg-primary h-2 rounded-full transition-all"
+                      style={{ width: `${seguimiento.progreso}%` }}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            ))
           )}
         </TabsContent>
 

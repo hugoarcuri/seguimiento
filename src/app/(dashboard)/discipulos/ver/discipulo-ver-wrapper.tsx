@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { DiscipuloDetailClient } from "../discipulo-detail-client";
-import type { Discipulo, Etapa, Agenda, Oracion, Tarea, Timeline } from "@/types/database";
+import type { Discipulo, Etapa, Agenda, Oracion, Tarea, Timeline, Seguimiento } from "@/types/database";
 
 interface WrapperData {
   discipulo: Discipulo;
@@ -13,6 +13,7 @@ interface WrapperData {
   oraciones: Oracion[];
   tareas: Tarea[];
   timeline: Timeline[];
+  seguimientos: Seguimiento[];
 }
 
 function DiscipuloVerInner() {
@@ -35,7 +36,8 @@ function DiscipuloVerInner() {
       supabase.from("oraciones").select("*").eq("discipulo_id", id).order("fecha", { ascending: false }),
       supabase.from("tareas").select("*").eq("discipulo_id", id).order("created_at", { ascending: false }),
       supabase.from("timeline").select("*").eq("discipulo_id", id).order("created_at", { ascending: false }),
-    ]).then(([discipuloRes, etapasRes, agendasRes, oracionesRes, tareasRes, timelineRes]) => {
+      supabase.from("seguimientos").select("*").eq("discipulo_id", id).order("created_at", { ascending: false }),
+    ]).then(([discipuloRes, etapasRes, agendasRes, oracionesRes, tareasRes, timelineRes, seguimientosRes]) => {
       if (cancelado) return;
       if (!discipuloRes.data) { setLoading(false); return; }
       setData({
@@ -45,6 +47,7 @@ function DiscipuloVerInner() {
         oraciones: oracionesRes.data || [],
         tareas: tareasRes.data || [],
         timeline: timelineRes.data || [],
+        seguimientos: seguimientosRes.data || [],
       });
       setLoading(false);
     }).catch(console.error);

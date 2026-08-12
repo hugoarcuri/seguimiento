@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Search, UserPlus, Loader2, Trash2, Cake, Download } from "lucide-react";
 import { toast } from "sonner";
-import type { Discipulo, Etapa, Agenda, Oracion, Tarea, Timeline } from "@/types/database";
+import type { Discipulo, Etapa, Agenda, Oracion, Tarea, Timeline, Seguimiento } from "@/types/database";
 import { ImportarDiscipulos } from "./importar-discipulos";
 import { DiscipuloDetailClient } from "./discipulo-detail-client";
 import { cn } from "@/lib/utils";
@@ -61,6 +61,7 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
     oraciones: Oracion[];
     tareas: Tarea[];
     timeline: Timeline[];
+    seguimientos: Seguimiento[];
   } | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -86,7 +87,8 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
       supabase.from("oraciones").select("*").eq("discipulo_id", selectedId).order("fecha", { ascending: false }),
       supabase.from("tareas").select("*").eq("discipulo_id", selectedId).order("created_at", { ascending: false }),
       supabase.from("timeline").select("*").eq("discipulo_id", selectedId).order("created_at", { ascending: false }),
-    ]).then(([dRes, eRes, oRes, tRes, tlRes]) => {
+      supabase.from("seguimientos").select("*").eq("discipulo_id", selectedId).order("created_at", { ascending: false }),
+    ]).then(([dRes, eRes, oRes, tRes, tlRes, segRes]) => {
       if (cancelado) return;
       if (!dRes.data) { setLoadingDetail(false); return; }
       setDetailData({
@@ -95,6 +97,7 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
         oraciones: oRes.data || [],
         tareas: tRes.data || [],
         timeline: tlRes.data || [],
+        seguimientos: segRes.data || [],
       });
       setLoadingDetail(false);
     }).catch(() => { if (!cancelado) setLoadingDetail(false); });
@@ -306,6 +309,7 @@ export function DiscipulosClient({ discipulos, etapas, onCambio }: DiscipulosCli
             oraciones={detailData.oraciones}
             tareas={detailData.tareas}
             timeline={detailData.timeline}
+            seguimientos={detailData.seguimientos}
           />
         ) : selectedId && loadingDetail ? (
           <div className="flex items-center justify-center h-full">
