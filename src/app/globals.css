@@ -124,6 +124,7 @@
   html {
     @apply font-sans;
     overflow-x: clip;
+    font-size: 110%;
   }
   body {
     @apply bg-background text-foreground;
