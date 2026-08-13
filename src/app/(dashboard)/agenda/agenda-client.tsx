@@ -44,7 +44,6 @@ import { Plus, Loader2, Pencil, Trash2, CheckCircle2, Circle } from "lucide-reac
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { citaEsRealizadaAutomatica } from "@/lib/discipulo-health";
 import { Badge } from "@/components/ui/badge";
 import type { Agenda } from "@/types/database";
 
@@ -97,7 +96,7 @@ export function AgendaClient({
     const payload = {
       ...data,
       lider_id: user.id,
-      realizada: citaEsRealizadaAutomatica(data.fecha),
+      realizada: editing ? (editing.realizada ?? false) : false,
       hora: data.hora || null,
       lugar: data.lugar || null,
       material_utilizado: data.material_utilizado || null,

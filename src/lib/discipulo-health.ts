@@ -101,12 +101,6 @@ export function contarEncuentrosMes(items: { fecha: string; realizada?: boolean 
   }).length;
 }
 
-export function citaEsRealizadaAutomatica(fecha: string): boolean {
-  const hoy = new Date().toISOString().slice(0, 10);
-  const f = fecha.length === 10 ? fecha : fecha.split("T")[0];
-  return f <= hoy;
-}
-
 export function calcularSalud(input: InputSalud): SaludResultado {
   const alertas: AlertaDiscipulo[] = [];
   const salud = estadoEncuentrosMes(input.encuentrosMes);

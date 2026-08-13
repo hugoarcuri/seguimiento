@@ -22,7 +22,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { calcularEdad, estadoColors } from "@/lib/utils";
-import { estadoEncuentrosMes, contarEncuentrosMes, citaEsRealizadaAutomatica, SALUD_CONFIG } from "@/lib/discipulo-health";
+import { estadoEncuentrosMes, contarEncuentrosMes, SALUD_CONFIG } from "@/lib/discipulo-health";
 import {
   CAMPOS_EVALUACION, codificarCampoEvaluacion, decodificarCampoEvaluacion,
   OBJETIVOS_SUGERIDOS, calcularProgreso,
@@ -296,7 +296,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
       lider_id: user.id,
       fecha: encuentroDraft.fecha,
       tema_tratado: "",
-      realizada: citaEsRealizadaAutomatica(encuentroDraft.fecha),
+      realizada: encuentroEditing ? (encuentroEditing.realizada ?? false) : false,
       notas: encuentroDraft.notas || null,
       proximo_encuentro: encuentroDraft.proximo_encuentro || null,
     };

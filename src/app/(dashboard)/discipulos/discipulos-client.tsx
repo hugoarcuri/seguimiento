@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { citaEsRealizadaAutomatica } from "@/lib/discipulo-health";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -293,7 +292,7 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
       discipulo_id: encuentroDialog.id,
       lider_id: user?.id || encuentroDialog.lider_id || null,
       fecha: encuentroDraft.fecha,
-      realizada: citaEsRealizadaAutomatica(encuentroDraft.fecha),
+      realizada: false,
       hora: encuentroDraft.hora || null,
       lugar: encuentroDraft.lugar || null,
       tema_tratado: encuentroDraft.tema_tratado,
