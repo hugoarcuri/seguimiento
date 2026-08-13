@@ -51,7 +51,7 @@ export const SALUD_CONFIG: Record<
     etiqueta: "Crítico",
     orden: 0,
     dot: "bg-red-600",
-    badge: "bg-red-600 text-white",
+    badge: "bg-red-100 text-red-700 dark:bg-red-600 dark:text-white",
     bar: "bg-red-600",
     border: "border-l-red-600",
   },

@@ -67,7 +67,7 @@ export const ESTADOS_DISCIPULADOR: Record<
   critico: {
     label: "Crítico",
     dot: "bg-red-600",
-    badge: "bg-red-600 text-white",
+    badge: "bg-red-100 text-red-700 dark:bg-red-600 dark:text-white",
     card: "border-red-300 dark:border-red-800",
     bar: "bg-red-600",
   },
