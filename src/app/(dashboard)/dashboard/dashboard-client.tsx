@@ -1,144 +1,119 @@
 "use client";
 
+import { useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from "@/components/recharts-dynamic";
 import { cn } from "@/lib/utils";
+import { format, formatDistanceToNow } from "date-fns";
+import { es } from "date-fns/locale";
 import {
   Users,
-  Trophy,
-  Activity,
-  ClipboardCheck,
-  Cake,
+  TrendingUp,
+  CalendarCheck,
   AlertTriangle,
-  CheckCircle2,
-  Church,
-  HeartHandshake,
-  Clock,
+  Bell,
   ArrowRight,
-  Sparkles,
+  Clock,
+  UserPlus,
+  ChevronRight,
+  CalendarClock,
+  UserCheck,
 } from "lucide-react";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { ESTADOS_DISCIPULADOR, PERIODOS, type EstadoDiscipulador, type Periodo } from "./discipuladores/constants";
 
-export interface DiscipuloRaw {
+export type EstadoDiscipulo = EstadoDiscipulador;
+
+export interface FilaDiscipulo {
   id: string;
   nombre: string;
   apellido: string;
-  avatar_url?: string | null;
-  etapa_id: number;
-  estado: string;
-  lider_id?: string | null;
-  bautizado?: boolean | null;
-  es_miembro?: boolean | null;
-}
-
-export interface UrgenteItem {
-  discipulo: DiscipuloRaw;
+  avatar_url: string | null;
+  discipulador: string;
+  etapa: string;
+  progreso: number | null;
+  reuniones: number;
+  objetivoReuniones: number;
+  reunionPct: number;
+  ultimaReunion: string | null;
+  diasSinContacto: number | null;
+  estado: EstadoDiscipulo;
   razones: string[];
 }
 
-export interface ListoAvanzar {
-  discipulo: DiscipuloRaw;
-  progreso: number;
-  proximaEtapa?: string;
+export interface AtencionItem {
+  id: string;
+  nombre: string;
+  apellido: string;
+  avatar_url: string | null;
+  estado: EstadoDiscipulo;
+  progreso: number | null;
+  reuniones: number;
+  objetivoReuniones: number;
+  ultimaReunion: string | null;
+  diasSinContacto: number | null;
+  razones: string[];
 }
 
-export interface OracionVieja {
+export interface ActividadItem {
   id: string;
-  pedido: string;
-  dias: number;
-}
-
-export interface OracionReciente {
-  id: string;
-  pedido: string;
-  estado: string;
-  fecha: string;
-  discipulo?: string;
-}
-
-export interface EventoReciente {
-  id: string;
+  tipo: "reunion" | "reunion_programada" | "avance" | "nuevo_discipulo" | "sin_actividad";
+  titulo: string;
   descripcion: string;
-  tipo: string;
   fecha: string;
-  persona?: string;
+  discipulo_id?: string;
+  hora?: string | null;
+  diasSinContacto?: number | null;
 }
 
-export interface EvangelismoListo {
-  id: string;
-  nombre: string;
-  apellido: string;
-  estado: string;
-  dias: number;
-}
-
-export interface DiscipuladorItem {
-  id: string;
-  nombre: string;
-  apellido: string;
-  total: number;
-  enRiesgo: number;
-  sinContacto: number;
-}
-
-export interface CumpleMesItem {
-  id: string;
-  nombre: string;
-  apellido: string;
-  dia: number;
-  edad: number;
-}
-
-export interface CitaAgendada {
-  id: string;
-  discipulo?: string;
-  fecha: string;
-  hora?: string;
-  tema?: string;
-}
-
-export interface EtapaCount {
-  id: number;
-  nombre: string;
-  cantidad: number;
-}
-
-export interface Salud {
-  totalDiscipulos: number;
-  activos: number;
-  pausados: number;
-  retirados: number;
-  retencionPct: number;
-  enEtapaFinal: number;
-  metaPct: number;
-  promedioProgreso: number;
-  tareasCumplimientoPct: number;
-  tareasVencidas: number;
-  bautizadosPct: number;
-  miembrosPct: number;
-  oracionesPendientes: number;
-  oracionesRespondidasPct: number;
-  contactoPct: number;
-  discipulosPorEtapa: EtapaCount[];
+export interface PuntoSerie {
+  etiqueta: string;
+  reuniones: number;
+  discipulosActivos: number;
+  progreso: number | null;
 }
 
 export interface DashboardData {
-  etapaFinal: { id: number; nombre: string };
-  salud: Salud;
-  urgentes: UrgenteItem[];
-  oracionesViejas: OracionVieja[];
-  listosAvanzar: ListoAvanzar[];
-  evangelismoListos: EvangelismoListo[];
-  discipuladores: DiscipuladorItem[];
-  oracionesRecientes: OracionReciente[];
-  evangelismoRecientes: EventoReciente[];
-  citasAgendadas: CitaAgendada[];
-  cumpleañosMes: CumpleMesItem[];
-  bautizadosAnio: number;
-  miembrosTotal: number;
+  periodo: Periodo;
+  kpis: {
+    discipulosActivos: number;
+    totalAsignados: number;
+    pausados: number;
+    retirados: number;
+    progresoPromedio: number | null;
+    variacionProgreso: number | null;
+    reunionesRealizadas: number;
+    objetivoReuniones: number;
+    reunionesPct: number;
+    enRiesgo: number;
+    necesitanAtencion: number;
+  };
+  tabla: FilaDiscipulo[];
+  atencion: AtencionItem[];
+  grafico: { serie: PuntoSerie[] };
+  actividad: ActividadItem[];
 }
+
+const ESTADOS_PROBLEMA: EstadoDiscipulo[] = ["en_riesgo", "necesita_ayuda", "critico"];
 
 const avatarColors = [
   "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500", "bg-purple-500",
@@ -151,7 +126,7 @@ function getAvatarColor(id: string): string {
   return avatarColors[Math.abs(hash) % avatarColors.length];
 }
 
-function Avatar({ persona, className }: { persona: DiscipuloRaw; className?: string }) {
+function Avatar({ persona, className }: { persona: { id: string; nombre: string; apellido: string; avatar_url: string | null }; className?: string }) {
   if (persona.avatar_url) {
     return (
       <img
@@ -175,350 +150,192 @@ function Avatar({ persona, className }: { persona: DiscipuloRaw; className?: str
   );
 }
 
-function UrgentesCard({
-  urgentes,
-  oracionesViejas,
-}: {
-  urgentes: UrgenteItem[];
-  oracionesViejas: OracionVieja[];
-}) {
+function EstadoBadge({ estado }: { estado: EstadoDiscipulo }) {
+  const cfg = ESTADOS_DISCIPULADOR[estado];
   return (
-    <Card size="sm" className="border-red-200 dark:border-red-900">
-      <CardHeader className="shrink-0">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <AlertTriangle className="h-4 w-4 text-red-500" />
-            Necesitan atención urgente
-          </CardTitle>
-          <Badge variant="destructive">{urgentes.length}</Badge>
-        </div>
-        <CardDescription>Sin seguimiento, progreso bajo, sin encuentro, pendientes o sin discipulador</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {urgentes.length === 0 ? (
-          <p className="py-1 text-sm text-muted-foreground">No hay nadie que requiera atención urgente</p>
-        ) : (
-          urgentes.map((u) => (
-            <div
-              key={u.discipulo.id}
-              className="flex items-center gap-2.5 rounded-lg border border-red-200/70 bg-red-50/40 p-2 dark:bg-red-950/20"
-            >
-              <Avatar persona={u.discipulo} />
-              <div className="min-w-0 flex-1">
-                <Link
-                  href={`/discipulos/ver?id=${u.discipulo.id}`}
-                  className="block truncate text-sm font-medium hover:underline"
-                >
-                  {u.discipulo.apellido}, {u.discipulo.nombre}
-                </Link>
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {u.razones.map((r) => (
-                    <Badge
-                      key={r}
-                      variant="outline"
-                      className="px-1.5 text-[10px] text-red-600 dark:text-red-400"
-                    >
-                      {r}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ))
-        )}
-
-        {oracionesViejas.length > 0 && (
-          <div className="mt-2 space-y-1.5 border-t pt-2">
-            <p className="flex items-center gap-1 text-xs font-semibold text-muted-foreground">
-              <Clock className="h-3 w-3" /> Oraciones sin respuesta (30+ días)
-            </p>
-            {oracionesViejas.map((o) => (
-              <Link
-                key={o.id}
-                href="/oracion"
-                className="flex items-center gap-2 rounded text-xs transition-colors hover:bg-muted/50 hover:no-underline"
-              >
-                <Church className="h-3 w-3 shrink-0 text-muted-foreground" />
-                <span className="min-w-0 flex-1 truncate text-muted-foreground">{o.pedido}</span>
-                <span className="shrink-0 font-medium text-amber-600">{o.dias} días</span>
-              </Link>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap", cfg.badge)}>
+      <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", cfg.dot)} />
+      {cfg.label}
+    </span>
   );
 }
 
-function ListosCard({
-  listosAvanzar,
-  evangelismoListos,
-}: {
-  listosAvanzar: ListoAvanzar[];
-  evangelismoListos: EvangelismoListo[];
-}) {
-  const totalListos = listosAvanzar.length + evangelismoListos.length;
-
+function BarraProgreso({ value, bar, className }: { value: number; bar: string; className?: string }) {
   return (
-    <Card size="sm" className="border-emerald-200 dark:border-emerald-900">
-      <CardHeader className="shrink-0">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-            Listos para avanzar
-          </CardTitle>
-          <Badge variant="secondary">{totalListos}</Badge>
-        </div>
-        <CardDescription>Progreso 80%+ en su etapa o 30+ días en la etapa de evangelismo</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {listosAvanzar.length > 0 && (
-          <>
-            <p className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              <Sparkles className="h-3 w-3 text-emerald-500" /> Discípulos ({listosAvanzar.length})
-            </p>
-            {listosAvanzar.map((l) => (
-              <div key={l.discipulo.id} className="flex items-center gap-2.5 rounded-lg border border-emerald-200/70 bg-emerald-50/40 p-2 dark:bg-emerald-950/20">
-                <Avatar persona={l.discipulo} />
-                <div className="min-w-0 flex-1">
-                  <Link
-                    href={`/discipulos/ver?id=${l.discipulo.id}`}
-                    className="block truncate text-sm font-medium hover:underline"
-                  >
-                    {l.discipulo.apellido}, {l.discipulo.nombre}
-                  </Link>
-                  <p className="text-[11px] text-muted-foreground">
-                    {l.progreso}% completado
-                    {l.proximaEtapa && (
-                      <span className="inline-flex items-center gap-1 font-medium text-emerald-600">
-                        <ArrowRight className="h-3 w-3" /> {l.proximaEtapa}
-                      </span>
-                    )}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </>
-        )}
-
-        {evangelismoListos.length > 0 && (
-          <>
-            <p className="flex items-center gap-1 pt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              <HeartHandshake className="h-3 w-3 text-emerald-500" /> Evangelismo ({evangelismoListos.length})
-            </p>
-            {evangelismoListos.map((p) => (
-              <div key={p.id} className="flex items-center gap-2.5 rounded-lg border border-emerald-200/70 bg-emerald-50/40 p-2 dark:bg-emerald-950/20">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50">
-                  <HeartHandshake className="h-4 w-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <Link href="/evangelismo" className="block truncate text-sm font-medium hover:underline">
-                    {p.nombre} {p.apellido}
-                  </Link>
-                  <p className="text-[11px] text-muted-foreground">
-                    {p.dias} días en {p.estado === "oracion_salvacion" ? "oración" : p.estado === "actos_servicio" ? "actos de servicio" : "evangelio"}
-                  </p>
-                </div>
-                <ArrowRight className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
-              </div>
-            ))}
-          </>
-        )}
-
-        {totalListos === 0 && (
-          <p className="py-1 text-sm text-muted-foreground">No hay nadie listo para avanzar ahora mismo</p>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function CitasCard({ citas }: { citas: CitaAgendada[] }) {
-  return (
-    <Card size="sm">
-      <CardHeader className="shrink-0">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Clock className="h-4 w-4 text-indigo-500" />
-          Próximas citas
-        </CardTitle>
-        <CardDescription>Encuentros agendados para los próximos días</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {citas.length === 0 ? (
-          <p className="py-1 text-sm text-muted-foreground">Sin citas agendadas próximas</p>
-        ) : (
-          <div className="space-y-2">
-            {citas.map((c) => (
-              <Link key={c.id} href="/agenda" className="block rounded-lg border p-2.5 transition-colors hover:border-primary/50 hover:no-underline">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="min-w-0 flex-1 truncate text-sm font-medium">
-                    {c.discipulo || "Discípulo"}
-                  </p>
-                  <span className="shrink-0 text-[11px] font-semibold tabular-nums text-muted-foreground">
-                    {format(new Date(c.fecha + "T00:00:00"), "dd/MM", { locale: es })}
-                  </span>
-                </div>
-                {(c.hora || c.tema) && (
-                  <p className="mt-1 line-clamp-1 text-[11px] text-muted-foreground">
-                    {[c.hora, c.tema].filter(Boolean).join(" · ")}
-                  </p>
-                )}
-              </Link>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function DashboardDiscipulador({ data }: { data: DashboardData }) {
-  const stats = [
-    {
-      title: "Mis discípulos activos",
-      value: data.salud.activos,
-      description: `${data.salud.totalDiscipulos} asignados en total`,
-      icon: Users,
-      color: "text-blue-600",
-      bg: "bg-blue-50 dark:bg-blue-950",
-      href: "/discipulos",
-    },
-    {
-      title: "Requieren atención",
-      value: data.urgentes.length,
-      description: "progreso bajo o sin encuentro reciente",
-      icon: AlertTriangle,
-      color: "text-red-600",
-      bg: "bg-red-50 dark:bg-red-950",
-      href: "/discipulos",
-    },
-    {
-      title: "Listos para avanzar",
-      value: data.listosAvanzar.length,
-      description: "progreso 80%+ en su etapa",
-      icon: CheckCircle2,
-      color: "text-emerald-600",
-      bg: "bg-emerald-50 dark:bg-emerald-950",
-      href: "/seguimiento",
-    },
-    {
-      title: "Próximas citas",
-      value: data.citasAgendadas.length,
-      description: "encuentros agendados próximos",
-      icon: Clock,
-      color: "text-indigo-600",
-      bg: "bg-indigo-50 dark:bg-indigo-950",
-      href: "/agenda",
-    },
-  ];
-
-  return (
-    <div className="w-full space-y-4">
-      {/* HEADER */}
-      <div>
-        <h1 className="text-2xl font-bold lg:text-xl">Mi dashboard</h1>
-        <p className="text-sm text-muted-foreground">
-          Seguimiento y avance de tus discípulos asignados
-        </p>
-      </div>
-
-      {/* KPIs */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <Link key={stat.title} href={stat.href} className="group block">
-            <Card size="sm" className="transition-colors group-hover:border-primary/50">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                <CardTitle className="min-w-0 flex-1 truncate text-sm">{stat.title}</CardTitle>
-                <div className={cn("rounded-lg p-2 shrink-0", stat.bg)}>
-                  <stat.icon className={cn("h-4 w-4", stat.color)} />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold tabular-nums">{stat.value}</div>
-                <p className="text-xs text-muted-foreground">{stat.description}</p>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
-      </div>
-
-      {/* ACCIONABLE */}
-      <div className="grid gap-3 lg:grid-cols-3">
-        <UrgentesCard urgentes={data.urgentes} oracionesViejas={[]} />
-        <ListosCard listosAvanzar={data.listosAvanzar} evangelismoListos={[]} />
-        <CitasCard citas={data.citasAgendadas} />
-      </div>
+    <div className={cn("h-1.5 w-full min-w-[48px] overflow-hidden rounded-full bg-muted", className)}>
+      <div
+        className={cn("h-full rounded-full transition-all", bar)}
+        style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
+      />
     </div>
   );
 }
 
+const ACTIVIDAD_ICONOS: Record<ActividadItem["tipo"], { icon: typeof Users; cls: string }> = {
+  reunion: { icon: CalendarCheck, cls: "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400" },
+  avance: { icon: TrendingUp, cls: "bg-violet-100 text-violet-600 dark:bg-violet-950/60 dark:text-violet-400" },
+  nuevo_discipulo: { icon: UserPlus, cls: "bg-amber-100 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400" },
+  reunion_programada: { icon: Clock, cls: "bg-orange-100 text-orange-600 dark:bg-orange-950/60 dark:text-orange-400" },
+  sin_actividad: { icon: AlertTriangle, cls: "bg-red-100 text-red-600 dark:bg-red-950/60 dark:text-red-400" },
+};
+
+function tiempoRelativo(iso: string, hora?: string | null): string {
+  const f = new Date(iso);
+  const hoy = new Date();
+  const hoyInicio = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+  if (f >= hoyInicio) {
+    if (f.getDate() === hoy.getDate()) return hora ? `Hoy ${hora}` : "Hoy";
+    if (f.getDate() === hoy.getDate() + 1) return hora ? `Mañana ${hora}` : "Mañana";
+    return format(f, "dd/MM", { locale: es });
+  }
+  return formatDistanceToNow(f, { locale: es, addSuffix: true });
+}
+
+type TipoGrafico = "progreso" | "reuniones" | "discipulos";
+
 export function DashboardClient({
   data,
+  periodo,
+  onPeriodoChange,
   esDiscipulador = false,
 }: {
   data: DashboardData;
+  periodo: Periodo;
+  onPeriodoChange: (p: Periodo) => void;
   esDiscipulador?: boolean;
 }) {
-  if (esDiscipulador) return <DashboardDiscipulador data={data} />;
+  const router = useRouter();
+  const { kpis } = data;
+  const [soloRiesgo, setSoloRiesgo] = useState(false);
+  const [tipoGrafico, setTipoGrafico] = useState<TipoGrafico>("progreso");
 
-  const { etapaFinal, salud } = data;
-  const nombreMeta = etapaFinal.nombre.replace(/^\d+\.\s*/, "");
-  const nombreMes = format(new Date(), "MMMM", { locale: es }).replace(/^\w/, (c) => c.toUpperCase());
+  const irAtencion = () => {
+    document.getElementById("atencion")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
-  const stats = [
+  const irTablaRiesgo = () => {
+    setSoloRiesgo(true);
+    document.getElementById("estado-discipulos")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const filasTabla = soloRiesgo ? data.tabla.filter((t) => ESTADOS_PROBLEMA.includes(t.estado)) : data.tabla;
+
+  const variacion = kpis.variacionProgreso;
+  const descVariacion = variacion !== null ? (
+    <span className={cn("font-medium", variacion > 0 ? "text-emerald-600" : variacion < 0 ? "text-red-600" : "text-muted-foreground")}>
+      {variacion > 0 ? "+" : ""}{variacion} pp en el período
+    </span>
+  ) : (
+    "seguimientos activos"
+  );
+
+  const stats: {
+    title: string;
+    value: ReactNode;
+    description: ReactNode;
+    icon: typeof Users;
+    color: string;
+    bg: string;
+    destacado?: boolean;
+    href?: string;
+    onClick?: () => void;
+  }[] = [
     {
       title: "Discípulos activos",
-      value: salud.activos,
-      description: `${salud.totalDiscipulos} en total · ${salud.pausados} pausados · ${salud.retirados} retirados`,
+      value: kpis.discipulosActivos,
+      description: esDiscipulador
+        ? `${kpis.totalAsignados} asignados a vos`
+        : `${kpis.totalAsignados} asignados · ${kpis.pausados} pausados · ${kpis.retirados} retirados`,
       icon: Users,
       color: "text-blue-600",
       bg: "bg-blue-50 dark:bg-blue-950",
       href: "/discipulos",
     },
     {
-      title: `En la meta · ${nombreMeta}`,
-      value: salud.enEtapaFinal,
-      description: `${salud.metaPct}% de los activos`,
-      icon: Trophy,
-      color: "text-amber-600",
-      bg: "bg-amber-50 dark:bg-amber-950",
-      href: "/discipulos",
-    },
-    {
       title: "Progreso promedio",
-      value: `${salud.promedioProgreso}%`,
-      description: "seguimientos activos",
-      icon: Activity,
+      value: kpis.progresoPromedio !== null ? `${kpis.progresoPromedio}%` : "—",
+      description: descVariacion,
+      icon: TrendingUp,
       color: "text-emerald-600",
       bg: "bg-emerald-50 dark:bg-emerald-950",
       href: "/seguimiento",
     },
     {
-      title: "Tareas cumplidas",
-      value: `${salud.tareasCumplimientoPct}%`,
-      description: `${salud.tareasVencidas} vencidas · ${salud.oracionesPendientes} oraciones pendientes`,
-      icon: ClipboardCheck,
-      color: "text-violet-600",
-      bg: "bg-violet-50 dark:bg-violet-950",
-      href: "/tareas",
+      title: "Reuniones realizadas",
+      value: kpis.reunionesRealizadas,
+      description: `${kpis.reunionesPct}% del objetivo`,
+      icon: CalendarCheck,
+      color: "text-indigo-600",
+      bg: "bg-indigo-50 dark:bg-indigo-950",
+      href: "/agenda",
+    },
+    {
+      title: "En riesgo",
+      value: kpis.enRiesgo,
+      description: "progreso bajo o falta de seguimiento",
+      icon: AlertTriangle,
+      color: "text-amber-600",
+      bg: "bg-amber-50 dark:bg-amber-950",
+      onClick: irTablaRiesgo,
+    },
+    {
+      title: "Necesitan atención",
+      value: kpis.necesitanAtencion,
+      description: "requieren una intervención",
+      icon: AlertTriangle,
+      color: "text-red-600",
+      bg: "bg-red-50 dark:bg-red-950",
+      destacado: true,
+      onClick: irAtencion,
     },
   ];
 
   return (
     <div className="w-full space-y-4">
       {/* HEADER */}
-      <div>
-        <h1 className="text-2xl font-bold lg:text-xl">Dashboard Discípulos</h1>
-        <p className="text-sm text-muted-foreground">
-          El objetivo final es que todas las personas lleguen a {etapaFinal.nombre}
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold lg:text-xl">Dashboard Discípulos</h1>
+          <p className="text-sm text-muted-foreground">
+            Resumen del avance, seguimiento y reuniones de los discípulos.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="flex flex-wrap rounded-lg border bg-muted p-0.5">
+            {PERIODOS.map((p) => (
+              <Button
+                key={p.value}
+                size="sm"
+                variant={periodo === p.value ? "default" : "ghost"}
+                onClick={() => onPeriodoChange(p.value)}
+                className="h-7 px-2 text-xs"
+              >
+                {p.label}
+              </Button>
+            ))}
+          </div>
+          <Button variant="outline" size="icon-sm" onClick={irAtencion} title="Discípulos que necesitan atención" className="relative">
+            <Bell className="h-4 w-4" />
+            {kpis.necesitanAtencion > 0 && (
+              <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
+                {kpis.necesitanAtencion}
+              </span>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <Link key={stat.title} href={stat.href} className="group block">
-            <Card size="sm" className="transition-colors group-hover:border-primary/50">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+        {stats.map((stat) => {
+          const Inner = (
+            <Card
+              size="sm"
+              className={cn(
+                "transition-colors group-hover:border-primary/50",
+                stat.destacado && "border-red-300 dark:border-red-800"
+              )}
+            >
               <CardHeader className="flex flex-row items-center justify-between space-y-0">
                 <CardTitle className="min-w-0 flex-1 truncate text-sm">{stat.title}</CardTitle>
                 <div className={cn("rounded-lg p-2 shrink-0", stat.bg)}>
@@ -526,205 +343,286 @@ export function DashboardClient({
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold tabular-nums">{stat.value}</div>
+                <div className={cn("text-2xl font-bold tabular-nums", stat.destacado && "text-red-600")}>{stat.value}</div>
                 <p className="text-xs text-muted-foreground">{stat.description}</p>
               </CardContent>
             </Card>
-          </Link>
-        ))}
+          );
+          if (stat.onClick) {
+            return (
+              <button key={stat.title} onClick={stat.onClick} className="group block text-left">
+                {Inner}
+              </button>
+            );
+          }
+          return (
+            <Link key={stat.title} href={stat.href!} className="group block">
+              {Inner}
+            </Link>
+          );
+        })}
       </div>
 
-      {/* CUMPLEAÑOS DEL MES + BAUTIZADOS/MIEMBROS */}
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Card size="sm">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Cake className="h-4 w-4 text-pink-500" />
-                Cumpleaños del mes
-              </CardTitle>
-              <Badge variant="secondary">{data.cumpleañosMes.length}</Badge>
-            </div>
-            <CardDescription>Discípulos que cumplen años en {nombreMes}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {data.cumpleañosMes.length === 0 ? (
-              <p className="py-1 text-sm text-muted-foreground">No hay cumpleaños este mes</p>
-            ) : (
-              <div className="grid gap-2 sm:grid-cols-3">
-                {data.cumpleañosMes.map((c) => (
-                  <Link
-                    key={c.id}
-                    href={`/discipulos/ver?id=${c.id}`}
-                    className="flex items-center gap-2.5 rounded-lg border p-2 transition-colors hover:border-primary/50 hover:no-underline"
-                  >
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pink-100 text-sm font-bold text-pink-600 dark:bg-pink-950/50">
-                      {c.dia}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{c.apellido}, {c.nombre}</p>
-                      <p className="text-[11px] text-muted-foreground">Cumple {c.edad} años</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card size="sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Church className="h-4 w-4 text-violet-500" />
-              Bautizados y miembros
-            </CardTitle>
-            <CardDescription>Bautizados en lo que va del año y miembros actuales</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-lg border p-3">
-                <p className="text-xs text-muted-foreground">Bautizados del año</p>
-                <p className="text-2xl font-bold tabular-nums text-amber-600">{data.bautizadosAnio}</p>
-                <p className="text-[11px] text-muted-foreground">{data.salud.bautizadosPct}% del total</p>
-              </div>
-              <div className="rounded-lg border p-3">
-                <p className="text-xs text-muted-foreground">Miembros actuales</p>
-                <p className="text-2xl font-bold tabular-nums text-violet-600">{data.miembrosTotal}</p>
-                <p className="text-[11px] text-muted-foreground">{data.salud.miembrosPct}% del total</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* 3 COLUMNAS: ACTIVIDAD+CITAS | URGENTES | LISTOS+DISCIPULADORES */}
+      {/* TABLA + EVOLUCIÓN/ATENCIÓN */}
       <div className="grid gap-3 lg:grid-cols-3">
-        {/* ACTIVIDAD RECIENTE */}
+        {/* ESTADO DE DISCÍPULOS */}
+        <Card size="sm" className="lg:col-span-2" id="estado-discipulos">
+          <CardHeader className="shrink-0">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <CardTitle className="text-base">Estado de discípulos</CardTitle>
+                <CardDescription>Hacé clic en una fila para ver el detalle completo</CardDescription>
+              </div>
+              <Button
+                variant={soloRiesgo ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSoloRiesgo((v) => !v)}
+                className="h-7 text-xs"
+              >
+                <AlertTriangle className={cn("mr-1 h-3.5 w-3.5", soloRiesgo ? "" : "text-red-500")} />
+                {soloRiesgo ? "Ver todos" : "Solo en riesgo"}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Discípulo</TableHead>
+                    <TableHead>Discipulador</TableHead>
+                    <TableHead>Progreso</TableHead>
+                    <TableHead>Reuniones</TableHead>
+                    <TableHead>Última reunión</TableHead>
+                    <TableHead>Estado</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filasTabla.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
+                        {soloRiesgo ? "No hay discípulos en riesgo" : "No hay discípulos activos todavía."}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filasTabla.map((f) => {
+                      const cfg = ESTADOS_DISCIPULADOR[f.estado];
+                      return (
+                        <TableRow
+                          key={f.id}
+                          onClick={() => router.push(`/discipulos/ver?id=${f.id}`)}
+                          className="cursor-pointer"
+                        >
+                          <TableCell>
+                            <div className="flex items-center gap-2.5">
+                              <Avatar persona={f} />
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-medium">{f.nombre} {f.apellido}</p>
+                                <p className="truncate text-[11px] text-muted-foreground">{f.etapa}</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                              <UserCheck className="h-3.5 w-3.5 shrink-0" />
+                              <span className="truncate">{f.discipulador}</span>
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <BarraProgreso value={f.progreso ?? 0} bar={cfg.bar} className="w-20 sm:w-28" />
+                              <span className="w-9 text-right text-xs font-medium tabular-nums text-muted-foreground">
+                                {f.progreso !== null ? `${f.progreso}%` : "—"}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className={cn(
+                              "text-sm tabular-nums",
+                              f.reunionPct < 40 && "font-medium text-red-600",
+                              f.reunionPct >= 40 && f.reunionPct < 60 && "font-medium text-amber-600"
+                            )}>
+                              {f.reuniones}/{f.objetivoReuniones}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            {f.ultimaReunion ? (
+                              <div className="space-y-0.5">
+                                <p className="text-sm tabular-nums">{format(new Date(f.ultimaReunion + "T00:00:00"), "dd/MM/yyyy", { locale: es })}</p>
+                                {f.diasSinContacto !== null && f.diasSinContacto >= 15 && (
+                                  <p className={cn("text-[11px] font-medium", f.diasSinContacto >= 30 ? "text-red-600" : "text-amber-600")}>
+                                    {f.diasSinContacto} días sin reunión
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <EstadoBadge estado={f.estado} />
+                              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* COLUMNA DERECHA: EVOLUCIÓN + ATENCIÓN */}
         <div className="flex flex-col gap-3">
           <Card size="sm">
             <CardHeader className="shrink-0">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Activity className="h-4 w-4 text-blue-500" />
-                Actividad reciente
-              </CardTitle>
-              <CardDescription>Motivos de oración y avances de evangelismo</CardDescription>
+              <CardTitle className="text-base">Evolución del progreso promedio</CardTitle>
+              <CardDescription>Detectá si el grupo avanza, se estanca o retrocede</CardDescription>
+              <div className="flex rounded-lg border bg-muted p-0.5">
+                {([
+                  { value: "progreso", label: "Progreso promedio" },
+                  { value: "reuniones", label: "Reuniones" },
+                  { value: "discipulos", label: "Discípulos activos" },
+                ] as { value: TipoGrafico; label: string }[]).map((t) => (
+                  <Button
+                    key={t.value}
+                    size="sm"
+                    variant={tipoGrafico === t.value ? "default" : "ghost"}
+                    onClick={() => setTipoGrafico(t.value)}
+                    className="h-7 flex-1 px-1 text-xs"
+                  >
+                    {t.label}
+                  </Button>
+                ))}
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4">
-            {/* MOTIVOS DE ORACIÓN */}
-            <div>
-              <Link href="/oracion" className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground">
-                <Church className="h-3.5 w-3.5" /> Motivos de oración
-                <ArrowRight className="h-3 w-3" />
-              </Link>
-              {data.oracionesRecientes.length === 0 ? (
-                <p className="py-1 text-xs text-muted-foreground">Sin motivos recientes</p>
-              ) : (
-                <div className="space-y-2">
-                  {data.oracionesRecientes.map((o) => (
-                    <Link key={o.id} href="/oracion" className="block rounded-lg border p-2.5 transition-colors hover:border-primary/50 hover:no-underline">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="line-clamp-2 text-sm text-foreground">{o.pedido}</p>
-                        {o.estado === "respondida" ? (
-                          <Badge variant="secondary" className="shrink-0 px-1.5 text-[10px]">Respondida</Badge>
-                        ) : o.estado === "en_oracion" ? (
-                          <Badge variant="outline" className="shrink-0 px-1.5 text-[10px] text-blue-600 dark:text-blue-400">En oración</Badge>
-                        ) : (
-                          <Badge variant="outline" className="shrink-0 px-1.5 text-[10px] text-amber-600 dark:text-amber-400">Pendiente</Badge>
-                        )}
-                      </div>
-                      <p className="mt-1 text-[11px] text-muted-foreground">
-                        {o.discipulo ? `${o.discipulo} · ` : ""}
-                        {format(new Date(o.fecha + "T00:00:00"), "dd/MM/yyyy", { locale: es })}
-                      </p>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* EVANGELISMO */}
-            <div>
-              <Link href="/evangelismo" className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground">
-                <HeartHandshake className="h-3.5 w-3.5" /> Evangelismo
-                <ArrowRight className="h-3 w-3" />
-              </Link>
-              {data.evangelismoRecientes.length === 0 ? (
-                <p className="py-1 text-xs text-muted-foreground">Sin actividad reciente</p>
-              ) : (
-                <div className="space-y-2">
-                  {data.evangelismoRecientes.map((e) => (
-                    <Link key={e.id} href="/evangelismo" className="block rounded-lg border p-2.5 transition-colors hover:border-primary/50 hover:no-underline">
-                      <p className="line-clamp-2 text-sm text-foreground">{e.descripcion}</p>
-                      <p className="mt-1 text-[11px] text-muted-foreground">
-                        {e.persona ? `${e.persona} · ` : ""}
-                        {format(new Date(e.fecha + "T00:00:00"), "dd/MM/yyyy", { locale: es })}
-                      </p>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-          </CardContent>
-        </Card>
-
-        {/* PRÓXIMAS CITAS */}
-        <CitasCard citas={data.citasAgendadas} />
-      </div>
-
-        {/* QUIÉN NECESITA ATENCIÓN URGENTE */}
-        <UrgentesCard urgentes={data.urgentes} oracionesViejas={data.oracionesViejas} />
-
-      {/* COL 3: LISTOS + DISCIPULADORES */}
-      <div className="flex flex-col gap-3">
-        <ListosCard listosAvanzar={data.listosAvanzar} evangelismoListos={data.evangelismoListos} />
-
-          {/* DISCIPULADORES QUE REQUIEREN APOYO */}
-          <Card size="sm">
-            <CardHeader className="shrink-0">
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <HeartHandshake className="h-4 w-4 text-muted-foreground" />
-                  Discipuladores que requieren apoyo
-                </CardTitle>
-                <Badge variant="secondary">{data.discipuladores.length}</Badge>
+              <div className="h-[240px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={data.grafico.serie} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" opacity={0.1} />
+                    <XAxis dataKey="etiqueta" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
+                    <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                    <Tooltip />
+                    {tipoGrafico === "progreso" && (
+                      <Line type="monotone" dataKey="progreso" name="Progreso promedio" stroke="#10b981" strokeWidth={2} dot={{ r: 2 }} connectNulls />
+                    )}
+                    {tipoGrafico === "reuniones" && (
+                      <Line type="monotone" dataKey="reuniones" name="Reuniones" stroke="#3b82f6" strokeWidth={2} dot={{ r: 2 }} />
+                    )}
+                    {tipoGrafico === "discipulos" && (
+                      <Line type="monotone" dataKey="discipulosActivos" name="Discípulos activos" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 2 }} />
+                    )}
+                  </LineChart>
+                </ResponsiveContainer>
               </div>
-              <CardDescription>Por cantidad de discípulos en riesgo o sin encuentro reciente</CardDescription>
+            </CardContent>
+          </Card>
+
+          {/* DISCÍPULOS QUE NECESITAN ATENCIÓN */}
+          <Card size="sm" className="border-red-300/70 dark:border-red-900/70" id="atencion">
+            <CardHeader className="shrink-0">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-red-500" />
+                <CardTitle className="text-base">Discípulos que necesitan atención</CardTitle>
+                <Badge variant="destructive">{data.atencion.length}</Badge>
+              </div>
+              <CardDescription>Solo quienes presentan problemas de progreso o reuniones</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              {data.discipuladores.length === 0 ? (
-                <p className="py-1 text-sm text-muted-foreground">Todos los discipuladores están al día</p>
+              {data.atencion.length === 0 ? (
+                <p className="py-3 text-sm text-muted-foreground">No hay discípulos que necesiten atención.</p>
               ) : (
-                <div className="grid gap-2">
-                  {data.discipuladores.map((d) => (
-                    <Link
-                      key={d.id}
-                      href="/discipulos"
-                      className="rounded-lg border p-3 transition-colors hover:border-primary/50 hover:no-underline"
-                    >
-                      <p className="truncate text-sm font-medium">{d.nombre} {d.apellido}</p>
-                      <p className="text-xs text-muted-foreground">{d.total} discípulos</p>
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {d.enRiesgo > 0 && (
-                          <Badge variant="destructive" className="px-1.5 text-[10px]">
-                            {d.enRiesgo} en riesgo
-                          </Badge>
-                        )}
-                        {d.sinContacto > 0 && (
-                          <Badge variant="outline" className="px-1.5 text-[10px] text-amber-600 dark:text-amber-400">
-                            {d.sinContacto} sin encuentro
-                          </Badge>
-                        )}
-                      </div>
-                    </Link>
-                  ))}
-                </div>
+                <>
+                  {data.atencion.map((d) => {
+                    const cfg = ESTADOS_DISCIPULADOR[d.estado];
+                    return (
+                      <button
+                        key={d.id}
+                        onClick={() => router.push(`/discipulos/ver?id=${d.id}`)}
+                        className={cn("flex w-full items-center gap-2.5 rounded-lg border bg-card p-2.5 text-left transition-colors hover:border-primary/50", cfg.card)}
+                      >
+                        <Avatar persona={d} />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <p className="truncate text-sm font-medium">{d.nombre} {d.apellido}</p>
+                            <EstadoBadge estado={d.estado} />
+                          </div>
+                          <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
+                            {d.progreso !== null ? `Progreso: ${d.progreso}%` : "Sin seguimiento"}
+                            {d.ultimaReunion ? ` · Última reunión: ${format(new Date(d.ultimaReunion + "T00:00:00"), "dd/MM/yyyy", { locale: es })}` : " · Sin reuniones"}
+                            {` · Reuniones: ${d.reuniones}/${d.objetivoReuniones}`}
+                          </p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      </button>
+                    );
+                  })}
+                  <Button variant="outline" size="sm" className="mt-1 w-full h-7 text-xs" onClick={irTablaRiesgo}>
+                    Ver todos los que necesitan atención
+                    <ArrowRight className="ml-1 h-3 w-3" />
+                  </Button>
+                </>
               )}
             </CardContent>
           </Card>
         </div>
       </div>
+
+      {/* ACTIVIDAD RECIENTE */}
+      <Card size="sm">
+        <CardHeader className="shrink-0">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <CalendarClock className="h-4 w-4 text-blue-500" />
+              <CardTitle className="text-base">Actividad reciente</CardTitle>
+              <Badge variant="secondary">{data.actividad.length}</Badge>
+            </div>
+            <Link href="/seguimiento">
+              <Button variant="outline" size="sm" className="h-7 text-xs">
+                Ver toda la actividad
+                <ArrowRight className="ml-1 h-3 w-3" />
+              </Button>
+            </Link>
+          </div>
+          <CardDescription>Solo los eventos más relevantes del período</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {data.actividad.length === 0 ? (
+            <p className="py-3 text-sm text-muted-foreground">No hay actividad reciente en el período.</p>
+          ) : (
+            <div className="grid gap-2 lg:grid-cols-2">
+              {data.actividad.map((a) => {
+                const cfg = ACTIVIDAD_ICONOS[a.tipo];
+                const contenido = (
+                  <div className="flex items-center gap-2.5 rounded-lg border p-2.5">
+                    <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full", cfg.cls)}>
+                      <cfg.icon className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold">{a.titulo}</p>
+                      <p className="mt-0.5 truncate text-sm text-foreground">{a.descripcion}</p>
+                    </div>
+                    <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+                      {tiempoRelativo(a.fecha, a.hora)}
+                    </span>
+                  </div>
+                );
+                return a.discipulo_id ? (
+                  <Link key={a.id} href={`/discipulos/ver?id=${a.discipulo_id}`} className="block transition-colors hover:border-primary/50 rounded-lg">
+                    {contenido}
+                  </Link>
+                ) : (
+                  <div key={a.id}>{contenido}</div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
