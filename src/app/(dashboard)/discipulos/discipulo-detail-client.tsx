@@ -356,9 +356,9 @@ export function DiscipuloDetailClient({
       <div className="flex flex-col items-center gap-3 text-center">
         <div className="relative group shrink-0">
           {discipulo.avatar_url ? (
-            <img src={discipulo.avatar_url} alt="" className="w-24 h-24 rounded-full object-cover ring-4 ring-background shadow-lg" />
+            <img src={discipulo.avatar_url} alt="" className="w-[115px] h-[115px] rounded-full object-cover ring-4 ring-background shadow-lg" />
           ) : (
-            <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-3xl ring-4 ring-background shadow-lg">
+            <div className="w-[115px] h-[115px] rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-4xl ring-4 ring-background shadow-lg">
               {discipulo.nombre?.charAt(0)?.toUpperCase()}{discipulo.apellido?.charAt(0)?.toUpperCase()}
             </div>
           )}
