@@ -438,12 +438,13 @@ export default function DashboardPage() {
       const d = discipuloPorId.get(item.id);
       const f = item.ultimaReunion ?? d?.created_at;
       if (!f) continue;
+      const fecha = f.includes("T") ? f : f + "T00:00:00";
       actividad.push({
         id: `s-${item.id}`,
         tipo: "sin_actividad",
         titulo: "Sin actividad",
         descripcion: `${nombreDiscipulo(d)} no tiene actividad reciente${item.diasSinContacto !== null ? ` (${item.diasSinContacto} días)` : ""}`,
-        fecha: f + "T00:00:00",
+        fecha,
         discipulo_id: item.id,
         diasSinContacto: item.diasSinContacto,
       });

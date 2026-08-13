@@ -181,6 +181,7 @@ const ACTIVIDAD_ICONOS: Record<ActividadItem["tipo"], { icon: typeof Users; cls:
 
 function tiempoRelativo(iso: string, hora?: string | null): string {
   const f = new Date(iso);
+  if (Number.isNaN(f.getTime())) return "—";
   const hoy = new Date();
   const hoyInicio = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
   if (f >= hoyInicio) {
