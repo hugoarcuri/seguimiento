@@ -40,6 +40,7 @@ interface AgendaRaw {
   lider_id: string;
   fecha: string;
   tema_tratado?: string | null;
+  realizada?: boolean | null;
   discipulos?: { nombre: string; apellido: string } | null;
 }
 
@@ -98,7 +99,7 @@ export default function DiscipuladoresDashboardPage() {
       supabase.from("profiles").select("id, nombre, apellido, email, avatar_url").eq("rol", "discipulador").order("apellido", { ascending: true }),
       supabase.from("discipulos").select("id, nombre, apellido, avatar_url, etapa_id, estado, lider_id, created_at"),
       supabase.from("seguimientos").select("id, discipulo_id, progreso, estado"),
-      supabase.from("agenda").select("id, discipulo_id, lider_id, fecha, tema_tratado, discipulos:discipulo_id(nombre, apellido)").order("fecha", { ascending: false }),
+      supabase.from("agenda").select("id, discipulo_id, lider_id, fecha, tema_tratado, realizada, discipulos:discipulo_id(nombre, apellido)").order("fecha", { ascending: false }),
       supabase.from("tareas").select("id, discipulo_id, lider_id, titulo, estado, completed_at, created_at").order("created_at", { ascending: false }).limit(200),
     ]).then(([discipuladoresRes, discipulosRes, seguimientosRes, agendaRes, tareasRes]) => {
       setRaw({
@@ -146,12 +147,13 @@ export default function DiscipuladoresDashboardPage() {
 
     const ultimoEncuentro = new Map<string, string>();
     for (const a of agenda) {
+      if (!a.realizada) continue;
       if (!ultimoEncuentro.has(a.discipulo_id)) ultimoEncuentro.set(a.discipulo_id, a.fecha);
     }
 
     const reunidosEnPeriodo = new Set<string>();
     for (const a of agenda) {
-      if (a.fecha <= hoy.toISOString().slice(0, 10) && enPeriodoFecha(a.fecha)) reunidosEnPeriodo.add(a.discipulo_id);
+      if (a.realizada && a.fecha <= hoy.toISOString().slice(0, 10) && enPeriodoFecha(a.fecha)) reunidosEnPeriodo.add(a.discipulo_id);
     }
 
     const enRiesgo = (d: DiscipuloRaw, seg?: SeguimientoRaw): string[] => {
@@ -269,7 +271,7 @@ export default function DiscipuladoresDashboardPage() {
     for (const a of agenda) {
       const d = a.discipulo_id ? discipuloNombre.get(a.discipulo_id) : undefined;
       const nombreD = d ? nombreCompleto(d.nombre, d.apellido) : "un discípulo";
-      if (enPeriodoFecha(a.fecha) && a.fecha <= hoy.toISOString().slice(0, 10)) {
+      if (a.realizada && enPeriodoFecha(a.fecha) && a.fecha <= hoy.toISOString().slice(0, 10)) {
         actividad.push({
           id: `r-${a.id}`,
           tipo: "reunion",
@@ -359,7 +361,7 @@ export default function DiscipuladoresDashboardPage() {
           : format(t, "d MMM", { locale: es });
       serie.push({
         etiqueta,
-        reuniones: agenda.filter((a) => a.fecha <= finISO && a.fecha >= t.toISOString().slice(0, 10)).length,
+        reuniones: agenda.filter((a) => a.realizada && a.fecha <= finISO && a.fecha >= t.toISOString().slice(0, 10)).length,
         discipulosActivos: discipulos.filter((d) => {
           const c = new Date(d.created_at);
           return c <= fin && c >= t && d.estado === "activo";
@@ -392,7 +394,7 @@ export default function DiscipuladoresDashboardPage() {
       ? Math.round(segActivos.reduce((acc, s) => acc + s.progreso, 0) / segActivos.length)
       : null;
 
-    const reunionesRealizadas = agenda.filter((a) => a.fecha <= hoy.toISOString().slice(0, 10) && enPeriodoFecha(a.fecha)).length;
+    const reunionesRealizadas = agenda.filter((a) => a.realizada && a.fecha <= hoy.toISOString().slice(0, 10) && enPeriodoFecha(a.fecha)).length;
     const objetivoReuniones = discipulosActivosAsignados.length;
     const reunionesPctGlobal = objetivoReuniones ? Math.min(100, Math.round((reunionesRealizadas / objetivoReuniones) * 100)) : 0;
 

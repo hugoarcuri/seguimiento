@@ -68,6 +68,7 @@ interface AgendaRaw {
   fecha: string;
   hora?: string | null;
   tema_tratado?: string | null;
+  realizada?: boolean | null;
 }
 
 interface ObjetivoRaw {
@@ -111,7 +112,7 @@ export default function DashboardPage() {
       supabase.from("discipulos").select("id, nombre, apellido, avatar_url, etapa_id, estado, lider_id, bautizado, es_miembro, created_at"),
       supabase.from("profiles").select("id, nombre, apellido"),
       supabase.from("seguimientos").select("id, discipulo_id, discipulador_id, etapa, progreso, estado"),
-      supabase.from("agenda").select("id, discipulo_id, lider_id, fecha, hora, tema_tratado"),
+      supabase.from("agenda").select("id, discipulo_id, lider_id, fecha, hora, tema_tratado, realizada"),
       supabase.from("seguimiento_objetivos").select("id, seguimiento_id, descripcion, completado, fecha_cumplimiento, created_at"),
       supabase.from("tareas").select("id, discipulo_id, lider_id, titulo, estado, completed_at, created_at"),
     ]).then(([discipulosRes, perfilesRes, seguimientosRes, agendaRes, objetivosRes, tareasRes]) => {
@@ -193,7 +194,7 @@ export default function DashboardPage() {
     const ultimoEncuentro = new Map<string, string>();
     const reunionesEnPeriodo = new Map<string, number>();
     for (const a of agendaVisibles) {
-      if (a.fecha > hoyISO) continue;
+      if (a.fecha > hoyISO || !a.realizada) continue;
       if (!ultimoEncuentro.has(a.discipulo_id)) ultimoEncuentro.set(a.discipulo_id, a.fecha);
       if (enPeriodoFecha(a.fecha)) {
         reunionesEnPeriodo.set(a.discipulo_id, (reunionesEnPeriodo.get(a.discipulo_id) || 0) + 1);
@@ -312,7 +313,7 @@ export default function DashboardPage() {
     const variacionProgreso =
       progresoPromedio !== null && progresoInicio !== null ? progresoPromedio - progresoInicio : null;
 
-    const reunionesRealizadas = agendaVisibles.filter((a) => a.fecha <= hoyISO && enPeriodoFecha(a.fecha)).length;
+    const reunionesRealizadas = agendaVisibles.filter((a) => a.fecha <= hoyISO && a.realizada && enPeriodoFecha(a.fecha)).length;
     const objetivoReuniones = activos.length * semanasObjetivo;
     const reunionesPct = objetivoReuniones ? Math.min(100, Math.round((reunionesRealizadas / objetivoReuniones) * 100)) : 0;
 
@@ -347,7 +348,7 @@ export default function DashboardPage() {
       const tISO = t.toISOString().slice(0, 10);
       const etiqueta = bucketDias >= 30 ? format(t, "MMM yyyy", { locale: es }) : format(t, "d MMM", { locale: es });
 
-      const reuniones = agendaVisibles.filter((a) => a.fecha <= finISO && a.fecha >= tISO).length;
+      const reuniones = agendaVisibles.filter((a) => a.fecha <= finISO && a.fecha >= tISO && a.realizada).length;
       const discipulosActivos = discipulosVisibles.filter(
         (d) => d.estado === "activo" && (d.created_at || "").slice(0, 10) <= finISO
       ).length;
@@ -367,6 +368,7 @@ export default function DashboardPage() {
 
     for (const a of agendaVisibles) {
       if (a.fecha <= hoyISO) {
+        if (!a.realizada) continue;
         if (!enPeriodoFecha(a.fecha)) continue;
         const d = a.discipulo_id ? discipuloPorId.get(a.discipulo_id) : undefined;
         actividad.push({
