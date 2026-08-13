@@ -650,7 +650,7 @@ function DetalleDiscipulador({ disc }: { disc: DiscipuladorResumen }) {
           </div>
         )}
 
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <div className="rounded-lg border p-2 text-center">
             <p className="text-lg font-bold tabular-nums">{disc.activos}</p>
             <p className="text-[10px] text-muted-foreground">Discípulos</p>

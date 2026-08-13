@@ -313,9 +313,9 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
   ];
 
   return (
-    <div className="flex flex-col gap-6 sm:flex-row sm:h-[calc(100vh-8rem)]">
+    <div className="flex flex-col gap-6 lg:flex-row lg:h-[calc(100vh-8rem)]">
       {/* PANEL IZQUIERDO */}
-      <div className="w-full sm:w-[440px] sm:shrink-0 flex flex-col gap-3">
+      <div className="w-full lg:w-[440px] lg:shrink-0 flex flex-col gap-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-xl font-bold">Discípulos</h1>
@@ -583,7 +583,7 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-[11px] font-medium text-muted-foreground">Fecha *</Label>
                 <Input type="date" value={encuentroDraft.fecha} onChange={(e) => setEncuentroDraft({ ...encuentroDraft, fecha: e.target.value })} />

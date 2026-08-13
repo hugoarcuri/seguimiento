@@ -849,11 +849,11 @@ function SeguimientoDetalle({ id }: { id: string }) {
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between gap-2">
-                <div>
+                <div className="min-w-0">
                   <CardTitle className="text-base">Encuentros</CardTitle>
                   <CardDescription>Citas de discipulado del discípulo. {agendas.length} registros.</CardDescription>
                 </div>
-                <Button size="sm" onClick={() => abrirEncuentro()}>
+                <Button size="sm" onClick={() => abrirEncuentro()} className="shrink-0">
                   <CalendarPlus className="mr-1 h-4 w-4" /> Nuevo encuentro
                 </Button>
               </div>

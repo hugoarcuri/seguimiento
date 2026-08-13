@@ -181,9 +181,9 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
   };
 
   return (
-    <div className="flex flex-col gap-6 sm:flex-row sm:h-[calc(100vh-8rem)]">
+    <div className="flex flex-col gap-6 lg:flex-row lg:h-[calc(100vh-8rem)]">
       {/* LEFT PANEL */}
-      <div className="w-full sm:w-[418px] sm:shrink-0 flex flex-col gap-4">
+      <div className="w-full lg:w-[418px] lg:shrink-0 flex flex-col gap-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-xl font-bold">Discipuladores</h1>
@@ -373,7 +373,7 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
             <Card>
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-center justify-between gap-2">
-                  <h4 className="text-sm font-semibold">Discípulos vinculados ({discipulosDe.length})</h4>
+                  <h4 className="text-sm font-semibold min-w-0 flex-1 truncate">Discípulos vinculados ({discipulosDe.length})</h4>
                   <Button size="sm" variant="outline" onClick={() => setAsignarOpen(true)} className="gap-1 shrink-0">
                     <Link2 className="h-4 w-4" />
                     Asignar discípulo

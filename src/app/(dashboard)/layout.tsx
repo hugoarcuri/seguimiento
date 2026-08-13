@@ -12,7 +12,7 @@ export default function DashboardLayout({
     <TooltipProvider>
       <div className="flex min-h-screen">
         <Sidebar />
-        <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col min-w-0">
           <div className="flex items-center gap-2 px-4 lg:px-0 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <MobileSidebar />
             <Navbar />

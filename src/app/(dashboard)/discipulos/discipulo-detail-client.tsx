@@ -333,9 +333,9 @@ export function DiscipuloDetailClient({
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           {seguimiento && (
-            <Link href={`/seguimiento/ver?id=${seguimiento.id}`}>
+            <Link href={`/seguimiento/ver?id=${seguimiento.id}`} className="shrink-0">
               <Button variant="outline" size="sm" className="gap-1.5">
                 <Sparkles className="h-3.5 w-3.5" />
                 Seguimiento completo
@@ -592,9 +592,9 @@ export function DiscipuloDetailClient({
             agendas.map((a) => (
               <Card key={a.id}>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">{a.tema_tratado}</CardTitle>
-                    <Badge variant="outline">{fechaCorta(a.fecha)}</Badge>
+                  <div className="flex items-center justify-between gap-2">
+                    <CardTitle className="text-base min-w-0 flex-1 truncate">{a.tema_tratado || "Encuentro"}</CardTitle>
+                    <Badge variant="outline" className="shrink-0">{fechaCorta(a.fecha)}</Badge>
                   </div>
                   {a.hora && <CardDescription>{a.hora}</CardDescription>}
                 </CardHeader>
@@ -781,7 +781,7 @@ export function DiscipuloDetailClient({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-[11px] font-medium text-muted-foreground">Fecha *</Label>
                 <Input type="date" value={encuentroDraft.fecha} onChange={(e) => setEncuentroDraft({ ...encuentroDraft, fecha: e.target.value })} />

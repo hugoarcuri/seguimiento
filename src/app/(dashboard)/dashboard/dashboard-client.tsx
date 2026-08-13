@@ -530,9 +530,9 @@ export function DashboardClient({
           <Card size="sm" className="shrink-0 border-red-300/70 dark:border-red-900/70" id="atencion">
             <CardHeader className="shrink-0 border-b border-red-200/60 pb-2 dark:border-red-900/50">
               <div className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-red-500" />
-                <CardTitle className="text-base font-bold">Discípulos que necesitan atención</CardTitle>
-                <Badge variant="destructive">{data.atencion.length}</Badge>
+                <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
+                <CardTitle className="text-base font-bold min-w-0 flex-1">Discípulos que necesitan atención</CardTitle>
+                <Badge variant="destructive" className="shrink-0">{data.atencion.length}</Badge>
               </div>
               <CardDescription>Solo quienes presentan problemas de progreso o reuniones</CardDescription>
             </CardHeader>
