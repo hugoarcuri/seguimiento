@@ -334,16 +334,16 @@ export function DiscipuladoresDashboardClient({
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         {stats.map((stat) => {
           const Inner = (
-            <Card size="sm" className={cn("transition-colors group-hover:border-primary/50", stat.destacado && "border-red-300 dark:border-red-800")}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                <CardTitle className="min-w-0 flex-1 truncate text-sm">{stat.title}</CardTitle>
+            <Card size="sm" className={cn("h-full transition-colors group-hover:border-primary/50", stat.destacado && "border-red-300 dark:border-red-800")}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 border-b border-border/40 pb-2">
+                <CardTitle className="min-w-0 flex-1 truncate text-[11px] font-bold uppercase tracking-wide">{stat.title}</CardTitle>
                 <div className={cn("rounded-lg p-2 shrink-0", stat.bg)}>
                   <stat.icon className={cn("h-4 w-4", stat.color)} />
                 </div>
               </CardHeader>
               <CardContent>
                 <div className={cn("text-2xl font-bold tabular-nums", stat.destacado && "text-red-600")}>{stat.value}</div>
-                <p className="text-xs text-muted-foreground">{stat.description}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{stat.description}</p>
               </CardContent>
             </Card>
           );
@@ -365,10 +365,10 @@ export function DiscipuladoresDashboardClient({
       {/* TABLA + GRÁFICO */}
       <div className="grid gap-3 lg:grid-cols-3">
         <Card size="sm" className="lg:col-span-2" id="tabla-rendimiento">
-          <CardHeader className="shrink-0">
+          <CardHeader className="shrink-0 border-b border-border/40 pb-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <CardTitle className="text-base">Rendimiento de Discipuladores</CardTitle>
+                <CardTitle className="text-base font-bold">Rendimiento de Discipuladores</CardTitle>
                 <CardDescription>Hacé clic en una fila para ver el detalle</CardDescription>
               </div>
               <Button
@@ -447,9 +447,9 @@ export function DiscipuladoresDashboardClient({
           </CardContent>
         </Card>
 
-        <Card size="sm">
-          <CardHeader className="shrink-0">
-            <CardTitle className="text-base">Progreso general</CardTitle>
+        <Card size="sm" className="flex flex-col">
+          <CardHeader className="shrink-0 border-b border-border/40 pb-2">
+            <CardTitle className="text-base font-bold">Progreso general</CardTitle>
             <CardDescription>Evolución del trabajo a lo largo del tiempo</CardDescription>
             <div className="flex rounded-lg border bg-muted p-0.5">
               {([
@@ -469,12 +469,12 @@ export function DiscipuladoresDashboardClient({
               ))}
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1">
             {tipoGrafico === "etapas" ? (
               data.grafico.progresoPorEtapa.length === 0 ? (
                 <p className="py-8 text-center text-sm text-muted-foreground">Sin seguimientos activos</p>
               ) : (
-                <div className="h-[260px]">
+                <div className="h-full min-h-[260px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={data.grafico.progresoPorEtapa} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" opacity={0.1} />
@@ -487,7 +487,7 @@ export function DiscipuladoresDashboardClient({
                 </div>
               )
             ) : (
-              <div className="h-[260px]">
+              <div className="h-full min-h-[260px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={data.grafico.serie} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" opacity={0.1} />
@@ -509,11 +509,11 @@ export function DiscipuladoresDashboardClient({
 
       {/* NECESITAN ATENCIÓN */}
       <Card size="sm" className="border-red-300/70 dark:border-red-900/70" id="atencion">
-        <CardHeader className="shrink-0">
+        <CardHeader className="shrink-0 border-b border-red-200/60 pb-2 dark:border-red-900/50">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-red-500" />
-              <CardTitle className="text-base">Discipuladores que necesitan atención</CardTitle>
+              <CardTitle className="text-base font-bold">Discipuladores que necesitan atención</CardTitle>
               <Badge variant="destructive">{data.atencion.length}</Badge>
             </div>
             <Button
@@ -573,9 +573,9 @@ export function DiscipuladoresDashboardClient({
 
       {/* ACTIVIDAD RECIENTE */}
       <Card size="sm">
-        <CardHeader className="shrink-0">
+        <CardHeader className="shrink-0 border-b border-border/40 pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Actividad reciente</CardTitle>
+            <CardTitle className="text-base font-bold">Actividad reciente</CardTitle>
             <Badge variant="secondary">{data.actividad.length}</Badge>
           </div>
           <CardDescription>Lo más importante que pasó en el período</CardDescription>
@@ -584,7 +584,7 @@ export function DiscipuladoresDashboardClient({
           {data.actividad.length === 0 ? (
             <p className="py-3 text-sm text-muted-foreground">No hay actividad reciente en el período.</p>
           ) : (
-            <div className="space-y-2">
+            <div className="grid gap-2 lg:grid-cols-2 xl:grid-cols-3">
               {data.actividad.map((a) => {
                 const cfg = ACTIVIDAD_ICONOS[a.tipo];
                 return (
