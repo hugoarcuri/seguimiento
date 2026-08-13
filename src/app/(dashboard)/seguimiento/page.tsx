@@ -291,132 +291,222 @@ export default function SeguimientoPage() {
 
       <Card>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10">
-                  {filtrados.length > 0 && (
-                    <input
-                      type="checkbox"
-                      checked={todosSeleccionados}
-                      onChange={() => toggleTodos()}
-                      aria-label="Seleccionar todos"
-                      className="size-4 shrink-0 cursor-pointer accent-primary"
-                    />
-                  )}
-                </TableHead>
-                <TableHead>Discípulo</TableHead>
-                <TableHead>Discipulador</TableHead>
-                <TableHead>Etapa</TableHead>
-                <TableHead>Progreso</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead>Próximo encuentro</TableHead>                <TableHead className="text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtrados.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
-                    No hay seguimientos registrados
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filtrados.map((s) => {
+          <div className="md:hidden">
+            {filtrados.length === 0 ? (
+              <p className="text-center py-10 text-muted-foreground">No hay seguimientos registrados</p>
+            ) : (
+              <div className="space-y-3 p-3">
+                {filtrados.map((s) => {
                   const prox = proximoEncuentroPorDiscipulo[s.discipulo_id];
                   const lider = discipuladores.find((p) => p.id === s.discipulos?.lider_id);
+                  const estado = estadoEncuentrosMes(encuentrosMesPorDiscipulo[s.discipulo_id] || 0);
+                  const cfg = SALUD_CONFIG[estado];
+                  const etapaIdx = etapas.findIndex((ev) => ev.id === s.etapa);
                   return (
-                  <TableRow key={s.id}>
-                    <TableCell className="w-10">
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.includes(s.id)}
-                        onChange={() => toggleSeleccion(s.id)}
-                        aria-label="Seleccionar"
-                        title="Seleccionar"
-                        className="size-4 shrink-0 cursor-pointer accent-primary"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2.5">
-                        {s.discipulos?.avatar_url ? (
-                          <img src={s.discipulos.avatar_url} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
-                        ) : (
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-                            {(s.discipulos?.nombre?.[0] || "").toUpperCase()}
-                            {(s.discipulos?.apellido?.[0] || "").toUpperCase()}
+                    <div key={s.id} className="rounded-lg border p-3 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.includes(s.id)}
+                            onChange={() => toggleSeleccion(s.id)}
+                            aria-label="Seleccionar"
+                            title="Seleccionar"
+                            className="size-4 shrink-0 cursor-pointer accent-primary mt-1"
+                          />
+                          {s.discipulos?.avatar_url ? (
+                            <img src={s.discipulos.avatar_url} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
+                          ) : (
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                              {(s.discipulos?.nombre?.[0] || "").toUpperCase()}
+                              {(s.discipulos?.apellido?.[0] || "").toUpperCase()}
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="font-semibold truncate">
+                              {s.discipulos ? `${s.discipulos.apellido}, ${s.discipulos.nombre}` : "—"}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {lider ? `${lider.apellido}, ${lider.nombre}` : "—"}
+                            </p>
                           </div>
-                        )}
-                        <p className="text-base font-semibold">
-                          {s.discipulos ? `${s.discipulos.apellido}, ${s.discipulos.nombre}` : "—"}
-                        </p>
+                        </div>
+                        <div className="flex shrink-0 gap-1">
+                          <Link href={`/seguimiento/ver?id=${s.id}`}>
+                            <Button variant="ghost" size="icon" title="Ver">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </Link>
+                          <Button variant="ghost" size="icon" title="Editar" onClick={() => { setEditing(s); setDialogOpen(true); }}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" title="Eliminar" onClick={() => setEliminarUno(s)}>
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      {lider ? `${lider.apellido}, ${lider.nombre}` : "—"}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{etapas.find((e) => e.id === s.etapa)?.nombre || `Etapa ${s.etapa}`}</Badge>
-                    </TableCell>
-                    <TableCell className="min-w-[110px] sm:min-w-[170px]">
-                      <div className="flex items-center gap-2">
-                        <div className="flex flex-1 items-center gap-0.5" title="Etapa del discipulado (1 a 5)">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="outline">{etapas.find((e) => e.id === s.etapa)?.nombre || `Etapa ${s.etapa}`}</Badge>
+                        <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold", cfg.badge)}>
+                          <span className={cn("h-1.5 w-1.5 rounded-full bg-white/80")} />
+                          {cfg.etiqueta}
+                        </span>
+                        <span className="text-[11px] text-muted-foreground">{encuentrosMesPorDiscipulo[s.discipulo_id] || 0} encuentro(s) este mes</span>
+                      </div>
+                      <div className="flex items-center gap-2" title="Etapa del discipulado (1 a 5)">
+                        <div className="flex flex-1 items-center gap-0.5">
                           {etapas.map((e, i) => (
-                            <span key={e.id} className={cn("h-2.5 flex-1 rounded-sm", i <= etapas.findIndex((ev) => ev.id === s.etapa) ? "bg-primary" : "bg-muted")} />
+                            <span key={e.id} className={cn("h-2 flex-1 rounded-sm", i <= etapaIdx ? "bg-primary" : "bg-muted")} />
                           ))}
                         </div>
                         <span className="text-xs font-medium tabular-nums text-muted-foreground">{s.etapa}/{etapas.length}</span>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      {(() => {
-                        const estado = estadoEncuentrosMes(encuentrosMesPorDiscipulo[s.discipulo_id] || 0);
-                        const cfg = SALUD_CONFIG[estado];
-                        return (
-                          <div className="flex flex-col items-start gap-0.5">
-                            <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold", cfg.badge)}>
-                              <span className={cn("h-1.5 w-1.5 rounded-full bg-white/80")} />
-                              {cfg.etiqueta}
-                            </span>
-                            <span className="text-[11px] text-muted-foreground">{encuentrosMesPorDiscipulo[s.discipulo_id] || 0} encuentro(s) este mes</span>
-                          </div>
-                        );
-                      })()}
-                    </TableCell>
-                    <TableCell>
                       {prox ? (
                         <div className="space-y-0.5">
                           <p className="text-sm font-medium">{format(new Date(prox.fecha + "T12:00:00"), "dd/MM/yyyy")}</p>
                           <p className="text-xs text-muted-foreground">{prox.hora || prox.tema_tratado || "Programado"}</p>
                         </div>
                       ) : (
-                        <Link href={`/seguimiento/ver?id=${s.id}&encuentro=1`}>
-                          <Button variant="outline" size="sm">
+                        <Link href={`/seguimiento/ver?id=${s.id}&encuentro=1`} className="block">
+                          <Button variant="outline" size="sm" className="w-full">
                             <CalendarPlus className="mr-1 h-4 w-4" /> Registrar encuentro
                           </Button>
                         </Link>
                       )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Link href={`/seguimiento/ver?id=${s.id}`}>
-                          <Button variant="ghost" size="icon" title="Ver">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </Link>
-                        <Button variant="ghost" size="icon" title="Editar" onClick={() => { setEditing(s); setDialogOpen(true); }}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" title="Eliminar" onClick={() => setEliminarUno(s)}>
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10">
+                    {filtrados.length > 0 && (
+                      <input
+                        type="checkbox"
+                        checked={todosSeleccionados}
+                        onChange={() => toggleTodos()}
+                        aria-label="Seleccionar todos"
+                        className="size-4 shrink-0 cursor-pointer accent-primary"
+                      />
+                    )}
+                  </TableHead>
+                  <TableHead>Discípulo</TableHead>
+                  <TableHead>Discipulador</TableHead>
+                  <TableHead>Etapa</TableHead>
+                  <TableHead>Progreso</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Próximo encuentro</TableHead>                <TableHead className="text-right">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtrados.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
+                      No hay seguimientos registrados
                     </TableCell>
                   </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  filtrados.map((s) => {
+                    const prox = proximoEncuentroPorDiscipulo[s.discipulo_id];
+                    const lider = discipuladores.find((p) => p.id === s.discipulos?.lider_id);
+                    return (
+                    <TableRow key={s.id}>
+                      <TableCell className="w-10">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(s.id)}
+                          onChange={() => toggleSeleccion(s.id)}
+                          aria-label="Seleccionar"
+                          title="Seleccionar"
+                          className="size-4 shrink-0 cursor-pointer accent-primary"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2.5">
+                          {s.discipulos?.avatar_url ? (
+                            <img src={s.discipulos.avatar_url} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
+                          ) : (
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                              {(s.discipulos?.nombre?.[0] || "").toUpperCase()}
+                              {(s.discipulos?.apellido?.[0] || "").toUpperCase()}
+                            </div>
+                          )}
+                          <p className="text-base font-semibold">
+                            {s.discipulos ? `${s.discipulos.apellido}, ${s.discipulos.nombre}` : "—"}
+                          </p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {lider ? `${lider.apellido}, ${lider.nombre}` : "—"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{etapas.find((e) => e.id === s.etapa)?.nombre || `Etapa ${s.etapa}`}</Badge>
+                      </TableCell>
+                      <TableCell className="min-w-[110px] sm:min-w-[170px]">
+                        <div className="flex items-center gap-2">
+                          <div className="flex flex-1 items-center gap-0.5" title="Etapa del discipulado (1 a 5)">
+                            {etapas.map((e, i) => (
+                              <span key={e.id} className={cn("h-2.5 flex-1 rounded-sm", i <= etapas.findIndex((ev) => ev.id === s.etapa) ? "bg-primary" : "bg-muted")} />
+                            ))}
+                          </div>
+                          <span className="text-xs font-medium tabular-nums text-muted-foreground">{s.etapa}/{etapas.length}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {(() => {
+                          const estado = estadoEncuentrosMes(encuentrosMesPorDiscipulo[s.discipulo_id] || 0);
+                          const cfg = SALUD_CONFIG[estado];
+                          return (
+                            <div className="flex flex-col items-start gap-0.5">
+                              <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold", cfg.badge)}>
+                                <span className={cn("h-1.5 w-1.5 rounded-full bg-white/80")} />
+                                {cfg.etiqueta}
+                              </span>
+                              <span className="text-[11px] text-muted-foreground">{encuentrosMesPorDiscipulo[s.discipulo_id] || 0} encuentro(s) este mes</span>
+                            </div>
+                          );
+                        })()}
+                      </TableCell>
+                      <TableCell>
+                        {prox ? (
+                          <div className="space-y-0.5">
+                            <p className="text-sm font-medium">{format(new Date(prox.fecha + "T12:00:00"), "dd/MM/yyyy")}</p>
+                            <p className="text-xs text-muted-foreground">{prox.hora || prox.tema_tratado || "Programado"}</p>
+                          </div>
+                        ) : (
+                          <Link href={`/seguimiento/ver?id=${s.id}&encuentro=1`}>
+                            <Button variant="outline" size="sm">
+                              <CalendarPlus className="mr-1 h-4 w-4" /> Registrar encuentro
+                            </Button>
+                          </Link>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Link href={`/seguimiento/ver?id=${s.id}`}>
+                            <Button variant="ghost" size="icon" title="Ver">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </Link>
+                          <Button variant="ghost" size="icon" title="Editar" onClick={() => { setEditing(s); setDialogOpen(true); }}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" title="Eliminar" onClick={() => setEliminarUno(s)}>
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 

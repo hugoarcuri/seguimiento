@@ -309,73 +309,138 @@ export default function TareasPage() {
 
       <Card>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10">
-                  {tareas.length > 0 && (
-                    <Checkbox checked={todosSeleccionados} onCheckedChange={toggleTodos} aria-label="Seleccionar todos" />
-                  )}
-                </TableHead>
-                <TableHead>Título</TableHead>
-                {isAdmin && <TableHead>Discípulo</TableHead>}
-                <TableHead>Tipo</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead>Fecha Límite</TableHead>
-                <TableHead>Completada</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tareas.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={isAdmin ? 8 : 7} className="text-center py-8 text-muted-foreground">No hay tareas</TableCell>
-                </TableRow>
-              ) : (
-                tareas.map((tarea) => {
+          <div className="md:hidden">
+            {tareas.length === 0 ? (
+              <p className="text-center py-8 text-muted-foreground">No hay tareas</p>
+            ) : (
+              <div className="space-y-3 p-3">
+                {tareas.map((tarea) => {
                   const EstadoIcon = estadoConfig[tarea.estado].icon;
                   const discipulo = discipulos.find((d) => d.id === tarea.discipulo_id);
                   return (
-                    <TableRow key={tarea.id}>
-                      <TableCell className="w-10">
-                        <Checkbox checked={selectedIds.includes(tarea.id)} onCheckedChange={() => toggleSeleccion(tarea.id)} aria-label="Seleccionar" title="Seleccionar" />
-                      </TableCell>
-                      <TableCell className="font-medium">{tarea.titulo}</TableCell>
-                      {isAdmin && <TableCell>{discipulo ? `${discipulo.apellido}, ${discipulo.nombre}` : "—"}</TableCell>}
-                      <TableCell><Badge variant="outline">{tipoLabels[tarea.tipo]}</Badge></TableCell>
-                      <TableCell>
+                    <div key={tarea.id} className="rounded-lg border p-3 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-2.5 min-w-0">
+                          <Checkbox
+                            checked={selectedIds.includes(tarea.id)}
+                            onCheckedChange={() => toggleSeleccion(tarea.id)}
+                            aria-label="Seleccionar"
+                            title="Seleccionar"
+                            className="mt-0.5 shrink-0"
+                          />
+                          <p className="font-medium break-words min-w-0">{tarea.titulo}</p>
+                        </div>
+                        <Button variant="ghost" size="icon" onClick={() => toggleEstado(tarea.id, tarea.estado)} title={tarea.estado === "completada" ? "Revertir a pendiente" : "Marcar completada"} className="shrink-0">
+                          {tarea.estado === "completada"
+                            ? <RotateCcw className="h-4 w-4 text-amber-600" />
+                            : <CheckCircle2 className="h-4 w-4 text-green-600" />
+                          }
+                        </Button>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="outline">{tipoLabels[tarea.tipo]}</Badge>
                         <Badge variant={estadoConfig[tarea.estado].variant} className="gap-1">
                           <EstadoIcon className="h-3 w-3" /> {estadoConfig[tarea.estado].label}
                         </Badge>
-                      </TableCell>
-                      <TableCell>{tarea.fecha_limite ? format(new Date(tarea.fecha_limite), "dd/MM/yyyy") : "—"}</TableCell>
-                      <TableCell>{tarea.completed_at ? format(new Date(tarea.completed_at), "dd/MM/yyyy HH:mm", { locale: es }) : "—"}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => toggleEstado(tarea.id, tarea.estado)} title={tarea.estado === "completada" ? "Revertir a pendiente" : "Marcar completada"}>
-                            {tarea.estado === "completada"
-                              ? <RotateCcw className="h-4 w-4 text-amber-600" />
-                              : <CheckCircle2 className="h-4 w-4 text-green-600" />
-                            }
+                        {isAdmin && discipulo && (
+                          <span className="text-xs text-muted-foreground">{discipulo.apellido}, {discipulo.nombre}</span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                        {tarea.fecha_limite && (
+                          <span className="inline-flex items-center gap-1">
+                            <Clock className="h-3 w-3" /> Límite: {format(new Date(tarea.fecha_limite), "dd/MM/yyyy")}
+                          </span>
+                        )}
+                        {tarea.completed_at && (
+                          <span>Completada: {format(new Date(tarea.completed_at), "dd/MM/yyyy HH:mm", { locale: es })}</span>
+                        )}
+                      </div>
+                      {isAdmin && (
+                        <div className="flex gap-2 pt-1">
+                          <Button variant="outline" size="sm" onClick={() => openEdit(tarea)}>
+                            <Pencil className="mr-1 h-3.5 w-3.5" /> Editar
                           </Button>
-                          {isAdmin && (
-                            <>
-                              <Button variant="ghost" size="icon" onClick={() => openEdit(tarea)} title="Editar">
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" onClick={() => setDeleteId(tarea.id)} title="Eliminar">
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </>
-                          )}
+                          <Button variant="destructive" size="sm" onClick={() => setDeleteId(tarea.id)}>
+                            <Trash2 className="mr-1 h-3.5 w-3.5" /> Eliminar
+                          </Button>
                         </div>
-                      </TableCell>
-                    </TableRow>
+                      )}
+                    </div>
                   );
-                })
-              )}
-            </TableBody>
-          </Table>
+                })}
+              </div>
+            )}
+          </div>
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10">
+                    {tareas.length > 0 && (
+                      <Checkbox checked={todosSeleccionados} onCheckedChange={toggleTodos} aria-label="Seleccionar todos" />
+                    )}
+                  </TableHead>
+                  <TableHead>Título</TableHead>
+                  {isAdmin && <TableHead>Discípulo</TableHead>}
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Fecha Límite</TableHead>
+                  <TableHead>Completada</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {tareas.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={isAdmin ? 8 : 7} className="text-center py-8 text-muted-foreground">No hay tareas</TableCell>
+                  </TableRow>
+                ) : (
+                  tareas.map((tarea) => {
+                    const EstadoIcon = estadoConfig[tarea.estado].icon;
+                    const discipulo = discipulos.find((d) => d.id === tarea.discipulo_id);
+                    return (
+                      <TableRow key={tarea.id}>
+                        <TableCell className="w-10">
+                          <Checkbox checked={selectedIds.includes(tarea.id)} onCheckedChange={() => toggleSeleccion(tarea.id)} aria-label="Seleccionar" title="Seleccionar" />
+                        </TableCell>
+                        <TableCell className="font-medium">{tarea.titulo}</TableCell>
+                        {isAdmin && <TableCell>{discipulo ? `${discipulo.apellido}, ${discipulo.nombre}` : "—"}</TableCell>}
+                        <TableCell><Badge variant="outline">{tipoLabels[tarea.tipo]}</Badge></TableCell>
+                        <TableCell>
+                          <Badge variant={estadoConfig[tarea.estado].variant} className="gap-1">
+                            <EstadoIcon className="h-3 w-3" /> {estadoConfig[tarea.estado].label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{tarea.fecha_limite ? format(new Date(tarea.fecha_limite), "dd/MM/yyyy") : "—"}</TableCell>
+                        <TableCell>{tarea.completed_at ? format(new Date(tarea.completed_at), "dd/MM/yyyy HH:mm", { locale: es }) : "—"}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => toggleEstado(tarea.id, tarea.estado)} title={tarea.estado === "completada" ? "Revertir a pendiente" : "Marcar completada"}>
+                              {tarea.estado === "completada"
+                                ? <RotateCcw className="h-4 w-4 text-amber-600" />
+                                : <CheckCircle2 className="h-4 w-4 text-green-600" />
+                              }
+                            </Button>
+                            {isAdmin && (
+                              <>
+                                <Button variant="ghost" size="icon" onClick={() => openEdit(tarea)} title="Editar">
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => setDeleteId(tarea.id)} title="Eliminar">
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 

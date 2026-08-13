@@ -5,6 +5,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 const STORAGE_KEY = "app:font-scale:v1";
 const MIN_SCALE = 0.7;
 const MAX_SCALE = 1.5;
+const BASE_PERCENT = 110;
 
 interface FontSizeContextType {
   scale: number;
@@ -41,7 +42,7 @@ export function FontSizeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    document.documentElement.style.fontSize = `${(scale * 100).toFixed(0)}%`;
+    document.documentElement.style.fontSize = `${(scale * BASE_PERCENT).toFixed(0)}%`;
     try {
       window.localStorage.setItem(STORAGE_KEY, scale.toString());
     } catch {

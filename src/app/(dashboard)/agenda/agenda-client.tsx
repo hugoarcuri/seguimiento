@@ -242,70 +242,114 @@ export function AgendaClient({
           <CardDescription>{agendas.length} registros</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Fecha</TableHead>
-                <TableHead>Discípulo</TableHead>
-                <TableHead>Tema</TableHead>
-                <TableHead>Lugar</TableHead>
-                <TableHead>Compromisos</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {agendas.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    No hay citas registradas
-                  </TableCell>
-                </TableRow>
-              ) : (
-                agendas.map((agenda) => (
-                  <TableRow key={agenda.id}>
-                    <TableCell>
-                      <div className="flex flex-col gap-1">
-                        <span>{format(new Date(agenda.fecha), "dd/MM/yyyy")}</span>
-                        <Badge
-                          variant={agenda.realizada ? "default" : "outline"}
-                          className={cn("w-fit gap-1", agenda.realizada && "bg-emerald-500 text-white")}
-                        >
-                          {agenda.realizada ? <CheckCircle2 className="h-3 w-3" /> : <Circle className="h-3 w-3" />}
-                          {agenda.realizada ? "Realizada" : "Pendiente"}
-                        </Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell>
+          {agendas.length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground md:hidden">No hay citas registradas</p>
+          ) : (
+            <div className="space-y-3 md:hidden">
+              {agendas.map((agenda) => (
+                <div key={agenda.id} className="rounded-lg border p-3 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-medium">{format(new Date(agenda.fecha), "dd/MM/yyyy")}</p>
+                    <Badge
+                      variant={agenda.realizada ? "default" : "outline"}
+                      className={cn("w-fit gap-1", agenda.realizada && "bg-emerald-500 text-white")}
+                    >
+                      {agenda.realizada ? <CheckCircle2 className="h-3 w-3" /> : <Circle className="h-3 w-3" />}
+                      {agenda.realizada ? "Realizada" : "Pendiente"}
+                    </Badge>
+                  </div>
+                  <div className="space-y-1 text-sm">
+                    <p className="font-medium">
                       {agenda.discipulos?.nombre
                         ? `${agenda.discipulos.apellido}, ${agenda.discipulos.nombre}`
                         : "—"}
-                    </TableCell>
-                    <TableCell className="max-w-[200px] truncate">
-                      {agenda.tema_tratado}
-                    </TableCell>
-                    <TableCell>{agenda.lugar || "—"}</TableCell>
-                    <TableCell className="max-w-[200px] truncate">
-                      {agenda.compromisos || "—"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant={agenda.realizada ? "outline" : "default"} size="sm" onClick={() => toggleRealizada(agenda)}>
-                          {agenda.realizada ? <Circle className="mr-1 h-3.5 w-3.5" /> : <CheckCircle2 className="mr-1 h-3.5 w-3.5" />}
-                          {agenda.realizada ? "Desmarcar" : "Marcar realizada"}
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => openEdit(agenda)}>
-                          <Pencil className="mr-1 h-3.5 w-3.5" /> Editar
-                        </Button>
-                        <Button variant="destructive" size="sm" onClick={() => setDeleteId(agenda.id)}>
-                          <Trash2 className="mr-1 h-3.5 w-3.5" /> Eliminar
-                        </Button>
-                      </div>
+                    </p>
+                    {agenda.tema_tratado && <p className="text-muted-foreground break-words">Tema: {agenda.tema_tratado}</p>}
+                    {agenda.lugar && <p className="text-muted-foreground">Lugar: {agenda.lugar}</p>}
+                    {agenda.compromisos && <p className="text-muted-foreground break-words">Compromisos: {agenda.compromisos}</p>}
+                  </div>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <Button variant={agenda.realizada ? "outline" : "default"} size="sm" onClick={() => toggleRealizada(agenda)}>
+                      {agenda.realizada ? <Circle className="mr-1 h-3.5 w-3.5" /> : <CheckCircle2 className="mr-1 h-3.5 w-3.5" />}
+                      {agenda.realizada ? "Desmarcar" : "Marcar realizada"}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => openEdit(agenda)}>
+                      <Pencil className="mr-1 h-3.5 w-3.5" /> Editar
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => setDeleteId(agenda.id)}>
+                      <Trash2 className="mr-1 h-3.5 w-3.5" /> Eliminar
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Discípulo</TableHead>
+                  <TableHead>Tema</TableHead>
+                  <TableHead>Lugar</TableHead>
+                  <TableHead>Compromisos</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {agendas.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      No hay citas registradas
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  agendas.map((agenda) => (
+                    <TableRow key={agenda.id}>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          <span>{format(new Date(agenda.fecha), "dd/MM/yyyy")}</span>
+                          <Badge
+                            variant={agenda.realizada ? "default" : "outline"}
+                            className={cn("w-fit gap-1", agenda.realizada && "bg-emerald-500 text-white")}
+                          >
+                            {agenda.realizada ? <CheckCircle2 className="h-3 w-3" /> : <Circle className="h-3 w-3" />}
+                            {agenda.realizada ? "Realizada" : "Pendiente"}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {agenda.discipulos?.nombre
+                          ? `${agenda.discipulos.apellido}, ${agenda.discipulos.nombre}`
+                          : "—"}
+                      </TableCell>
+                      <TableCell className="max-w-[200px] truncate">
+                        {agenda.tema_tratado}
+                      </TableCell>
+                      <TableCell>{agenda.lugar || "—"}</TableCell>
+                      <TableCell className="max-w-[200px] truncate">
+                        {agenda.compromisos || "—"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant={agenda.realizada ? "outline" : "default"} size="sm" onClick={() => toggleRealizada(agenda)}>
+                            {agenda.realizada ? <Circle className="mr-1 h-3.5 w-3.5" /> : <CheckCircle2 className="mr-1 h-3.5 w-3.5" />}
+                            {agenda.realizada ? "Desmarcar" : "Marcar realizada"}
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => openEdit(agenda)}>
+                            <Pencil className="mr-1 h-3.5 w-3.5" /> Editar
+                          </Button>
+                          <Button variant="destructive" size="sm" onClick={() => setDeleteId(agenda.id)}>
+                            <Trash2 className="mr-1 h-3.5 w-3.5" /> Eliminar
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
