@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { PaletteProvider } from "@/components/palette-provider";
 import { FontSizeProvider } from "@/components/font-size-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { APP_URL, BASE_PATH } from "@/lib/constants/paths";
@@ -39,8 +40,10 @@ export default function RootLayout({
       <body className={`${inter.variable} font-sans antialiased`}>
         <FontSizeProvider>
           <ThemeProvider>
-            {children}
-            <Toaster />
+            <PaletteProvider>
+              {children}
+              <Toaster />
+            </PaletteProvider>
           </ThemeProvider>
         </FontSizeProvider>
       </body>

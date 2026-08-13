@@ -15,6 +15,7 @@ import { useTheme } from "next-themes";
 import { Moon, Sun, LogOut, User, Settings, Crown, Shield, UserCog } from "lucide-react";
 import Link from "next/link";
 import { FontControls } from "@/components/font-controls";
+import { PalettePicker } from "@/components/palette-picker";
 import { ROL_LABELS } from "@/lib/constants/navigation";
 
 const rolIcon = { admin: Crown, discipulador: UserCog, discipulo: Shield } as const;
@@ -29,6 +30,7 @@ export function Navbar() {
         <div className="flex-1" />
         <div className="flex items-center gap-1.5">
           <FontControls className="hidden md:flex mr-1 border-r pr-2" />
+          <PalettePicker />
           <Button
             variant="ghost"
             size="icon"
