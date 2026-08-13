@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { descargarCSV } from "@/lib/csv";
+import { estadoEncuentrosMes, contarEncuentrosMes, SALUD_CONFIG } from "@/lib/discipulo-health";
 import { SeguimientoForm } from "./seguimiento-form";
 import { useEtapas } from "@/hooks/useEtapas";
 import type { Seguimiento } from "@/types/database";
@@ -38,6 +39,7 @@ export default function SeguimientoPage() {
   const { etapas } = useEtapas();
   const [seguimientos, setSeguimientos] = useState<SeguimientoFila[]>([]);
   const [proximoEncuentroPorDiscipulo, setProximoEncuentroPorDiscipulo] = useState<Record<string, EncuentroProximo>>({});
+  const [encuentrosMesPorDiscipulo, setEncuentrosMesPorDiscipulo] = useState<Record<string, number>>({});
   const [discipulos, setDiscipulos] = useState<Array<{ id: string; nombre: string; apellido: string }>>([]);
   const [discipuladores, setDiscipuladores] = useState<Array<{ id: string; nombre: string; apellido: string }>>([]);
   const [loading, setLoading] = useState(true);
@@ -93,6 +95,7 @@ export default function SeguimientoPage() {
         .order("fecha", { ascending: true });
       const hoy = new Date().toISOString().split("T")[0];
       const mapa: Record<string, EncuentroProximo> = {};
+      const fechasPorDiscipulo: Record<string, string[]> = {};
       for (const a of agendaData || []) {
         if (!a.discipulo_id) continue;
         const esFuturo = a.fecha >= hoy;
@@ -105,8 +108,14 @@ export default function SeguimientoPage() {
         } else if (actual.esFuturo ? a.fecha < actual.fecha : a.fecha > actual.fecha) {
           mapa[a.discipulo_id] = item;
         }
+        (fechasPorDiscipulo[a.discipulo_id] ||= []).push(a.fecha);
       }
       setProximoEncuentroPorDiscipulo(mapa);
+      const encuentrosMap: Record<string, number> = {};
+      for (const [id, fechas] of Object.entries(fechasPorDiscipulo)) {
+        encuentrosMap[id] = contarEncuentrosMes(fechas);
+      }
+      setEncuentrosMesPorDiscipulo(encuentrosMap);
     } else {
       setProximoEncuentroPorDiscipulo({});
     }
@@ -300,13 +309,14 @@ export default function SeguimientoPage() {
                 <TableHead>Discipulador</TableHead>
                 <TableHead>Etapa</TableHead>
                 <TableHead>Progreso</TableHead>
+                <TableHead>Estado</TableHead>
                 <TableHead>Próximo encuentro</TableHead>                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtrados.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
                     No hay seguimientos registrados
                   </TableCell>
                 </TableRow>
@@ -356,6 +366,21 @@ export default function SeguimientoPage() {
                         </div>
                         <span className="text-xs font-medium tabular-nums text-muted-foreground">{s.etapa}/{etapas.length}</span>
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      {(() => {
+                        const estado = estadoEncuentrosMes(encuentrosMesPorDiscipulo[s.discipulo_id] || 0);
+                        const cfg = SALUD_CONFIG[estado];
+                        return (
+                          <div className="flex flex-col items-start gap-0.5">
+                            <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold", cfg.badge)}>
+                              <span className={cn("h-1.5 w-1.5 rounded-full bg-white/80")} />
+                              {cfg.etiqueta}
+                            </span>
+                            <span className="text-[11px] text-muted-foreground">{encuentrosMesPorDiscipulo[s.discipulo_id] || 0} encuentro(s) este mes</span>
+                          </div>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell>
                       {prox ? (

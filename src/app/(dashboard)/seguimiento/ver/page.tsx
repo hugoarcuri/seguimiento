@@ -22,6 +22,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { calcularEdad, estadoColors } from "@/lib/utils";
+import { estadoEncuentrosMes, contarEncuentrosMes, SALUD_CONFIG } from "@/lib/discipulo-health";
 import {
   CAMPOS_EVALUACION, codificarCampoEvaluacion, decodificarCampoEvaluacion,
   OBJETIVOS_SUGERIDOS, calcularProgreso,
@@ -74,6 +75,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
 
   const searchParams = useSearchParams();
   const abrioEncuentro = useRef(false);
+  const [tab, setTab] = useState("resumen");
 
   const refresh = useCallback(async () => {
     const [segRes, evalRes, objRes, obsRes, histRes, etapasRes] = await Promise.all([
@@ -332,6 +334,10 @@ function SeguimientoDetalle({ id }: { id: string }) {
 
   const nombreDiscipulo = seguimiento.discipulos ? `${seguimiento.discipulos.apellido}, ${seguimiento.discipulos.nombre}` : "—";
   const nombreDiscipulador = seguimiento.discipuladores ? `${seguimiento.discipuladores.apellido}, ${seguimiento.discipuladores.nombre}` : "—";
+  const encuentrosMes = contarEncuentrosMes(agendas.map((a) => a.fecha));
+  const estadoSeguimiento = estadoEncuentrosMes(encuentrosMes);
+  const estadoSeguimientoCfg = SALUD_CONFIG[estadoSeguimiento];
+  const objetivosPendientes = objetivos.filter((o) => !o.completado);
 
   return (
     <div className="space-y-6 max-w-[1000px] mx-auto">
@@ -340,12 +346,18 @@ function SeguimientoDetalle({ id }: { id: string }) {
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-bold truncate">{nombreDiscipulo}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold truncate">{nombreDiscipulo}</h1>
+            <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold shrink-0", estadoSeguimientoCfg.badge)}>
+              <span className={cn("h-1.5 w-1.5 rounded-full bg-white/80")} />
+              {estadoSeguimientoCfg.etiqueta}
+            </span>
+          </div>
           <p className="text-sm text-muted-foreground">Ficha de seguimiento espiritual</p>
         </div>
       </div>
 
-      <Tabs defaultValue="resumen" className="space-y-4">
+      <Tabs value={tab} onValueChange={setTab} className="space-y-4">
         <TabsList className="w-full justify-start flex-wrap h-auto">
           <TabsTrigger value="resumen">Resumen</TabsTrigger>
           <TabsTrigger value="evaluacion">Evaluación</TabsTrigger>
@@ -551,6 +563,39 @@ function SeguimientoDetalle({ id }: { id: string }) {
                     Calculado automáticamente según los objetivos cumplidos.
                   </p>
                 </div>
+
+                <div className="rounded-lg border p-3 space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-medium">Estado del seguimiento</p>
+                    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold", estadoSeguimientoCfg.badge)}>
+                      <span className={cn("h-1.5 w-1.5 rounded-full bg-white/80")} />
+                      {estadoSeguimientoCfg.etiqueta}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {encuentrosMes} encuentro(s) este mes. Con 2 encuentros por mes el seguimiento está al día.
+                  </p>
+                </div>
+
+                {objetivosPendientes.length > 0 && (
+                  <div className="rounded-lg border p-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-medium">Objetivos pendientes ({objetivosPendientes.length})</p>
+                      <button type="button" onClick={() => setTab("objetivos")} className="text-xs font-medium text-primary hover:underline">Ir a objetivos</button>
+                    </div>
+                    <ul className="space-y-1">
+                      {objetivosPendientes.slice(0, 5).map((o) => (
+                        <li key={o.id} className="flex items-start gap-2 text-sm">
+                          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+                          <span className="min-w-0 break-words">{o.descripcion}</span>
+                        </li>
+                      ))}
+                      {objetivosPendientes.length > 5 && (
+                        <li className="text-xs text-muted-foreground">+{objetivosPendientes.length - 5} más</li>
+                      )}
+                    </ul>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -710,7 +755,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
         </TabsContent>
 
         <TabsContent value="objetivos" className="space-y-4">
-          <Card>
+          <Card id="objetivos">
             <CardHeader>
               <CardTitle className="text-base">Objetivos</CardTitle>
               <CardDescription>Objetivos del discipulado. Marcalos al cumplirse.</CardDescription>

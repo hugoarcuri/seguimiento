@@ -63,7 +63,7 @@ function getAvatarColor(id: string): string {
   return avatarColors[Math.abs(hash) % avatarColors.length];
 }
 
-type Foco = "todos" | "urgentes" | "sin_contacto" | "sin_evaluacion" | "bautismo" | "membresia";
+type Foco = "todos" | "urgentes" | "sin_contacto" | "bautismo" | "membresia";
 
 interface DiscipulosClientProps {
   discipulos: DiscipuloRadar[];
@@ -77,7 +77,7 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
   const [search, setSearch] = useState("");
   const [etapaFilter, setEtapaFilter] = useState<number | null>(null);
   const [foco, setFoco] = useState<Foco>("todos");
-  const [colapsados, setColapsados] = useState<Set<SaludDiscipulo>>(new Set(["bueno", "excelente"]));
+  const [colapsados, setColapsados] = useState<Set<SaludDiscipulo>>(new Set(["al_dia"]));
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
@@ -99,9 +99,8 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
   const conteos = useMemo(() => {
     const n = (pred: (d: DiscipuloRadar) => boolean) => discipulos.filter(pred).length;
     return {
-      urgentes: n((d) => ["critico", "necesita_ayuda", "sin_seguimiento"].includes(d.salud.salud)),
+      urgentes: n((d) => d.salud.salud === "critico"),
       sin_contacto: n((d) => d.salud.alertas.some((a) => a.tipo === "sin_contacto")),
-      sin_evaluacion: n((d) => d.salud.alertas.some((a) => a.tipo === "sin_evaluacion")),
       bautismo: n((d) => d.salud.alertas.some((a) => a.tipo === "bautismo_pendiente")),
       membresia: n((d) => d.salud.alertas.some((a) => a.tipo === "membresia_pendiente")),
     };
@@ -118,7 +117,7 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
         if (!(nombre.includes(q) || apellido.includes(q) || nombreSolo.includes(q))) return false;
       }
       if (foco === "todos") return true;
-      if (foco === "urgentes") return ["critico", "necesita_ayuda", "sin_seguimiento"].includes(d.salud.salud);
+      if (foco === "urgentes") return d.salud.salud === "critico";
       return d.salud.alertas.some((a) => a.tipo === foco);
     });
   }, [discipulos, search, etapaFilter, foco]);
@@ -308,7 +307,6 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
   const chips: { key: Foco; label: string; value: number; cls: string }[] = [
     { key: "urgentes", label: "Urgentes", value: conteos.urgentes, cls: "text-red-600 dark:text-red-400" },
     { key: "sin_contacto", label: "Sin reunión", value: conteos.sin_contacto, cls: "text-amber-600 dark:text-amber-400" },
-    { key: "sin_evaluacion", label: "Sin evaluación", value: conteos.sin_evaluacion, cls: "text-amber-600 dark:text-amber-400" },
     { key: "bautismo", label: "Bautismo", value: conteos.bautismo, cls: "text-blue-600 dark:text-blue-400" },
     { key: "membresia", label: "Membresía", value: conteos.membresia, cls: "text-blue-600 dark:text-blue-400" },
   ];

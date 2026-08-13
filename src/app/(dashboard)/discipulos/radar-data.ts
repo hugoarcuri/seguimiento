@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import { calcularSalud, type SaludResultado } from "@/lib/discipulo-health";
+import { calcularSalud, contarEncuentrosMes, type SaludResultado } from "@/lib/discipulo-health";
 import { differenceInCalendarDays } from "date-fns";
 import type { Discipulo, Etapa } from "@/types/database";
 
@@ -106,8 +106,12 @@ export async function cargarRadar(): Promise<{ discipulos: DiscipuloRadar[]; eta
   const ultimaPorDiscipulo = new Map<string, string>();
   const proximaPorDiscipulo = new Map<string, string>();
   const diasPorDiscipulo = new Map<string, number>();
+  const fechasMesPorDiscipulo = new Map<string, string[]>();
   for (const a of (agendaRes.data || []) as AgendaRaw[]) {
     const f = a.fecha.length === 10 ? a.fecha : a.fecha.split("T")[0];
+    const fechas = fechasMesPorDiscipulo.get(a.discipulo_id) || [];
+    fechas.push(f);
+    fechasMesPorDiscipulo.set(a.discipulo_id, fechas);
     if (f <= hoyISO) {
       if (!ultimaPorDiscipulo.has(a.discipulo_id)) ultimaPorDiscipulo.set(a.discipulo_id, f);
     } else {
@@ -137,10 +141,7 @@ export async function cargarRadar(): Promise<{ discipulos: DiscipuloRadar[]; eta
       const diasSinContacto = diasPorDiscipulo.get(d.id) ?? null;
 
       const salud = calcularSalud({
-        estado: d.estado,
-        progreso: seg ? seg.progreso : null,
-        diasSinContacto,
-        diasUltimaEvaluacion: diasEval,
+        encuentrosMes: contarEncuentrosMes(fechasMesPorDiscipulo.get(d.id) || []),
         etapa: d.etapa_id,
         bautizado: d.bautizado ?? false,
         es_miembro: d.es_miembro ?? false,
