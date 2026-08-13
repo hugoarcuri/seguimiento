@@ -86,7 +86,7 @@ function DiscipuloVerInner() {
 
   const { discipulo, agendas, oraciones, objetivos } = data;
   const salud = calcularSalud({
-    encuentrosMes: contarEncuentrosMes(agendas.map((a) => a.fecha)),
+    encuentrosMes: contarEncuentrosMes(agendas.map((a) => ({ fecha: a.fecha, realizada: a.realizada }))),
     etapa: discipulo.etapa_id,
     bautizado: discipulo.bautizado ?? false,
     es_miembro: discipulo.es_miembro ?? false,

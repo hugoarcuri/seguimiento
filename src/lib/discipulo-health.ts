@@ -89,15 +89,22 @@ export function estadoEncuentrosMes(encuentrosMes: number): SaludDiscipulo {
   return encuentrosMes >= 2 ? "al_dia" : encuentrosMes === 1 ? "en_proceso" : "critico";
 }
 
-export function contarEncuentrosMes(fechas: string[]): number {
+export function contarEncuentrosMes(items: { fecha: string; realizada?: boolean }[]): number {
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
   const hoyISO = hoy.toISOString().slice(0, 10);
   const inicioMes = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}-01`;
-  return fechas.filter((f) => {
-    const fecha = f.length === 10 ? f : f.split("T")[0];
+  return items.filter((it) => {
+    if (it.realizada !== true) return false;
+    const fecha = it.fecha.length === 10 ? it.fecha : it.fecha.split("T")[0];
     return fecha >= inicioMes && fecha <= hoyISO;
   }).length;
+}
+
+export function citaEsRealizadaAutomatica(fecha: string): boolean {
+  const hoy = new Date().toISOString().slice(0, 10);
+  const f = fecha.length === 10 ? fecha : fecha.split("T")[0];
+  return f <= hoy;
 }
 
 export function calcularSalud(input: InputSalud): SaludResultado {

@@ -53,6 +53,7 @@ export interface Agenda {
   compromisos?: string;
   notas?: string;
   proximo_encuentro?: string;
+  realizada?: boolean;
   created_at: string;
   updated_at: string;
 }

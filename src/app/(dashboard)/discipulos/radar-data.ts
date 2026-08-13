@@ -47,6 +47,7 @@ interface ObjetivoRaw {
 interface AgendaRaw {
   discipulo_id: string;
   fecha: string;
+  realizada?: boolean;
 }
 
 interface OracionRaw {
@@ -73,7 +74,7 @@ export async function cargarRadar(): Promise<{ discipulos: DiscipuloRadar[]; eta
       supabase.from("seguimientos").select("id, discipulo_id, progreso, estado"),
       supabase.from("seguimiento_evaluaciones").select("seguimiento_id, fecha"),
       supabase.from("seguimiento_objetivos").select("seguimiento_id, completado"),
-      supabase.from("agenda").select("discipulo_id, fecha").order("fecha", { ascending: false }),
+      supabase.from("agenda").select("discipulo_id, fecha, realizada").order("fecha", { ascending: false }),
       supabase.from("oraciones").select("discipulo_id, estado"),
       supabase.from("profiles").select("id, nombre, apellido"),
     ]);
@@ -106,15 +107,15 @@ export async function cargarRadar(): Promise<{ discipulos: DiscipuloRadar[]; eta
   const ultimaPorDiscipulo = new Map<string, string>();
   const proximaPorDiscipulo = new Map<string, string>();
   const diasPorDiscipulo = new Map<string, number>();
-  const fechasMesPorDiscipulo = new Map<string, string[]>();
+  const fechasMesPorDiscipulo = new Map<string, { fecha: string; realizada?: boolean }[]>();
   for (const a of (agendaRes.data || []) as AgendaRaw[]) {
     const f = a.fecha.length === 10 ? a.fecha : a.fecha.split("T")[0];
     const fechas = fechasMesPorDiscipulo.get(a.discipulo_id) || [];
-    fechas.push(f);
+    fechas.push({ fecha: f, realizada: a.realizada });
     fechasMesPorDiscipulo.set(a.discipulo_id, fechas);
-    if (f <= hoyISO) {
+    if (a.realizada && f <= hoyISO) {
       if (!ultimaPorDiscipulo.has(a.discipulo_id)) ultimaPorDiscipulo.set(a.discipulo_id, f);
-    } else {
+    } else if (a.realizada !== true && f > hoyISO) {
       if (!proximaPorDiscipulo.has(a.discipulo_id)) proximaPorDiscipulo.set(a.discipulo_id, f);
     }
   }

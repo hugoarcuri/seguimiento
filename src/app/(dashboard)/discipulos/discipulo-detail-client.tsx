@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
+import { citaEsRealizadaAutomatica } from "@/lib/discipulo-health";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { estadoColors } from "@/lib/utils";
@@ -164,6 +165,7 @@ export function DiscipuloDetailClient({
         discipulo_id: discipulo.id,
         lider_id: user?.id || discipulo.lider_id || null,
         fecha: encuentroDraft.fecha,
+        realizada: citaEsRealizadaAutomatica(encuentroDraft.fecha),
         hora: encuentroDraft.hora || null,
         lugar: encuentroDraft.lugar || null,
         tema_tratado: encuentroDraft.tema_tratado,

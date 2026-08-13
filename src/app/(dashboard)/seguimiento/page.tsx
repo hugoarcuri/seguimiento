@@ -90,15 +90,15 @@ export default function SeguimientoPage() {
     if (ids.length) {
       const { data: agendaData } = await supabase
         .from("agenda")
-        .select("discipulo_id, fecha, hora, tema_tratado")
+        .select("discipulo_id, fecha, hora, tema_tratado, realizada")
         .in("discipulo_id", ids)
         .order("fecha", { ascending: true });
       const hoy = new Date().toISOString().split("T")[0];
       const mapa: Record<string, EncuentroProximo> = {};
-      const fechasPorDiscipulo: Record<string, string[]> = {};
+      const fechasPorDiscipulo: Record<string, { fecha: string; realizada?: boolean }[]> = {};
       for (const a of agendaData || []) {
         if (!a.discipulo_id) continue;
-        const esFuturo = a.fecha >= hoy;
+        const esFuturo = !a.realizada && a.fecha >= hoy;
         const item: EncuentroProximo = { fecha: a.fecha, hora: a.hora ?? undefined, tema_tratado: a.tema_tratado ?? undefined, esFuturo };
         const actual = mapa[a.discipulo_id];
         if (!actual) {
@@ -108,7 +108,7 @@ export default function SeguimientoPage() {
         } else if (actual.esFuturo ? a.fecha < actual.fecha : a.fecha > actual.fecha) {
           mapa[a.discipulo_id] = item;
         }
-        (fechasPorDiscipulo[a.discipulo_id] ||= []).push(a.fecha);
+        (fechasPorDiscipulo[a.discipulo_id] ||= []).push({ fecha: a.fecha, realizada: a.realizada });
       }
       setProximoEncuentroPorDiscipulo(mapa);
       const encuentrosMap: Record<string, number> = {};

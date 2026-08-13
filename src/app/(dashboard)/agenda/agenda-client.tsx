@@ -40,9 +40,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
+import { Plus, Loader2, Pencil, Trash2, CheckCircle2, Circle } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { citaEsRealizadaAutomatica } from "@/lib/discipulo-health";
+import { Badge } from "@/components/ui/badge";
 import type { Agenda } from "@/types/database";
 
 interface AgendaClientProps {
@@ -94,6 +97,7 @@ export function AgendaClient({
     const payload = {
       ...data,
       lider_id: user.id,
+      realizada: citaEsRealizadaAutomatica(data.fecha),
       hora: data.hora || null,
       lugar: data.lugar || null,
       material_utilizado: data.material_utilizado || null,
@@ -124,6 +128,14 @@ export function AgendaClient({
     toast.success("Cita eliminada");
     setDeleteId(null);
     setAgendas((prev) => prev.filter((e) => e.id !== deleteId));
+  };
+
+  const toggleRealizada = async (agenda: Agenda & { discipulos?: { nombre: string; apellido: string } }) => {
+    const nueva = !agenda.realizada;
+    const { error } = await createClient().from("agenda").update({ realizada: nueva }).eq("id", agenda.id);
+    if (error) { toast.error("Error al actualizar la cita"); return; }
+    setAgendas((prev) => prev.map((e) => e.id === agenda.id ? { ...e, realizada: nueva } : e));
+    toast.success(nueva ? "Cita marcada como realizada" : "Cita marcada como pendiente");
   };
 
   return (
@@ -253,7 +265,16 @@ export function AgendaClient({
                 agendas.map((agenda) => (
                   <TableRow key={agenda.id}>
                     <TableCell>
-                      {format(new Date(agenda.fecha), "dd/MM/yyyy")}
+                      <div className="flex flex-col gap-1">
+                        <span>{format(new Date(agenda.fecha), "dd/MM/yyyy")}</span>
+                        <Badge
+                          variant={agenda.realizada ? "default" : "outline"}
+                          className={cn("w-fit gap-1", agenda.realizada && "bg-emerald-500 text-white")}
+                        >
+                          {agenda.realizada ? <CheckCircle2 className="h-3 w-3" /> : <Circle className="h-3 w-3" />}
+                          {agenda.realizada ? "Realizada" : "Pendiente"}
+                        </Badge>
+                      </div>
                     </TableCell>
                     <TableCell>
                       {agenda.discipulos?.nombre
@@ -269,6 +290,10 @@ export function AgendaClient({
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        <Button variant={agenda.realizada ? "outline" : "default"} size="sm" onClick={() => toggleRealizada(agenda)}>
+                          {agenda.realizada ? <Circle className="mr-1 h-3.5 w-3.5" /> : <CheckCircle2 className="mr-1 h-3.5 w-3.5" />}
+                          {agenda.realizada ? "Desmarcar" : "Marcar realizada"}
+                        </Button>
                         <Button variant="outline" size="sm" onClick={() => openEdit(agenda)}>
                           <Pencil className="mr-1 h-3.5 w-3.5" /> Editar
                         </Button>

@@ -22,7 +22,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { calcularEdad, estadoColors } from "@/lib/utils";
-import { estadoEncuentrosMes, contarEncuentrosMes, SALUD_CONFIG } from "@/lib/discipulo-health";
+import { estadoEncuentrosMes, contarEncuentrosMes, citaEsRealizadaAutomatica, SALUD_CONFIG } from "@/lib/discipulo-health";
 import {
   CAMPOS_EVALUACION, codificarCampoEvaluacion, decodificarCampoEvaluacion,
   OBJETIVOS_SUGERIDOS, calcularProgreso,
@@ -296,6 +296,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
       lider_id: user.id,
       fecha: encuentroDraft.fecha,
       tema_tratado: "",
+      realizada: citaEsRealizadaAutomatica(encuentroDraft.fecha),
       notas: encuentroDraft.notas || null,
       proximo_encuentro: encuentroDraft.proximo_encuentro || null,
     };
@@ -322,6 +323,14 @@ function SeguimientoDetalle({ id }: { id: string }) {
     toast.success("Encuentro eliminado");
   };
 
+  const toggleEncuentroRealizado = async (agenda: Agenda) => {
+    const nueva = !agenda.realizada;
+    const { error, data } = await supabase.from("agenda").update({ realizada: nueva }).eq("id", agenda.id).select().single();
+    if (error) { toast.error("Error al actualizar el encuentro"); return; }
+    setAgendas((prev) => prev.map((e) => e.id === agenda.id ? (data as Agenda) : e));
+    toast.success(nueva ? "Encuentro marcado como realizado" : "Encuentro marcado como pendiente");
+  };
+
   if (loading) return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   if (!seguimiento) return (
     <div className="flex items-center justify-center min-h-[50vh]">
@@ -334,7 +343,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
 
   const nombreDiscipulo = seguimiento.discipulos ? `${seguimiento.discipulos.apellido}, ${seguimiento.discipulos.nombre}` : "—";
   const nombreDiscipulador = seguimiento.discipuladores ? `${seguimiento.discipuladores.apellido}, ${seguimiento.discipuladores.nombre}` : "—";
-  const encuentrosMes = contarEncuentrosMes(agendas.map((a) => a.fecha));
+  const encuentrosMes = contarEncuentrosMes(agendas.map((a) => ({ fecha: a.fecha, realizada: a.realizada })));
   const estadoSeguimiento = estadoEncuentrosMes(encuentrosMes);
   const estadoSeguimientoCfg = SALUD_CONFIG[estadoSeguimiento];
   const objetivosPendientes = objetivos.filter((o) => !o.completado);
@@ -861,6 +870,11 @@ function SeguimientoDetalle({ id }: { id: string }) {
                           <div className="min-w-0 space-y-1">
                             <div className="flex flex-wrap items-center gap-2">
                               <p className="text-sm font-medium">{format(new Date(agenda.fecha), "dd/MM/yyyy")}</p>
+                              {agenda.realizada ? (
+                                <Badge className="gap-1 bg-emerald-500 text-white"><Check className="h-3 w-3" /> Realizada</Badge>
+                              ) : (
+                                <Badge variant="outline" className="gap-1"><AlertTriangle className="h-3 w-3 text-amber-500" /> Pendiente</Badge>
+                              )}
                             </div>
                             {agenda.notas && (
                               <p className="text-xs text-muted-foreground break-words">Notas: {agenda.notas}</p>
@@ -872,6 +886,11 @@ function SeguimientoDetalle({ id }: { id: string }) {
                             )}
                           </div>
                           <div className="flex shrink-0 gap-1">
+                            {!agenda.realizada && (
+                              <Button variant="outline" size="sm" className="h-8 gap-1" onClick={() => toggleEncuentroRealizado(agenda)}>
+                                <Check className="h-3.5 w-3.5" /> Marcar realizada
+                              </Button>
+                            )}
                             <Button variant="ghost" size="icon" title="Editar" onClick={() => abrirEncuentro(agenda)}>
                               <Pencil className="h-4 w-4" />
                             </Button>
