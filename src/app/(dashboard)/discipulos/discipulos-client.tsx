@@ -315,7 +315,7 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
   return (
     <div className="flex flex-col gap-6 sm:flex-row sm:h-[calc(100vh-8rem)]">
       {/* PANEL IZQUIERDO */}
-      <div className="w-full sm:w-[400px] sm:shrink-0 flex flex-col gap-3">
+      <div className="w-full sm:w-[440px] sm:shrink-0 flex flex-col gap-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-xl font-bold">Discípulos</h1>

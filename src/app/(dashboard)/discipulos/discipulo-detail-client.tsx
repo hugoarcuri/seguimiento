@@ -458,10 +458,6 @@ export function DiscipuloDetailClient({
                 <ArrowRight className="h-3.5 w-3.5" />
               </Button>
             )}
-            <Button size="sm" variant="outline" onClick={() => setEncuentroOpen(true)} className="gap-1.5">
-              <CalendarPlus className="h-3.5 w-3.5" />
-              Registrar encuentro
-            </Button>
             <Button size="sm" variant="outline" onClick={() => setOracionOpen(true)} className="gap-1.5">
               <Plus className="h-3.5 w-3.5" />
               Pedido de oración
@@ -497,7 +493,7 @@ export function DiscipuloDetailClient({
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base">Próximos encuentros</CardTitle>
                   <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setEncuentroOpen(true)}>
-                    <CalendarPlus className="mr-1 h-3.5 w-3.5" />Agendar
+                    <CalendarPlus className="mr-1 h-3.5 w-3.5" />Registrar encuentro
                   </Button>
                 </div>
               </CardHeader>
