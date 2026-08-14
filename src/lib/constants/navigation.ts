@@ -1,35 +1,36 @@
-import type { LucideIcon } from "lucide-react";
+import type { SVGProps } from "react";
 import {
-  Gauge,
-  Users,
-  UserRoundCog,
-  CalendarCheck,
-  Handshake,
-  Settings,
-  User,
-  ClipboardCheck,
-  Flame,
-  Map,
-  FileBarChart,
-  LayoutDashboard,
-  List,
-} from "lucide-react";
+  OracionIcon,
+  EvangelismoIcon,
+  SeguimientoIcon,
+  AgendaIcon,
+  ConfiguracionIcon,
+  DashboardIcon,
+  ReportesIcon,
+  TareasIcon,
+  PerfilIcon,
+  ListaIcon,
+  DiscipulosIcon,
+  DiscipuladoresIcon,
+} from "@/components/twemoji-icons";
+
+export type NavIcon = (props: SVGProps<SVGSVGElement>) => React.JSX.Element;
 
 export interface NavLink {
   href: string;
   label: string;
-  icon: LucideIcon;
+  icon: NavIcon;
 }
 
 export interface NavChild {
   href: string;
   label: string;
-  icon: LucideIcon;
+  icon: NavIcon;
 }
 
 export interface NavGroup {
   label: string;
-  icon: LucideIcon;
+  icon: NavIcon;
   children: NavChild[];
 }
 
@@ -60,54 +61,54 @@ export const ROL_LABELS: Record<string, string> = {
 export const adminMenuItems: NavItem[] = [
   {
     label: "Discípulos",
-    icon: Users,
+    icon: DiscipulosIcon,
     children: [
-      { href: "/dashboard", label: "Dashboard Discípulos", icon: LayoutDashboard },
-      { href: "/discipulos", label: "Lista Discípulos", icon: List },
+      { href: "/dashboard", label: "Dashboard Discípulos", icon: DashboardIcon },
+      { href: "/discipulos", label: "Lista Discípulos", icon: ListaIcon },
     ],
   },
   {
     label: "Discipuladores",
-    icon: UserRoundCog,
+    icon: DiscipuladoresIcon,
     children: [
-      { href: "/dashboard/discipuladores", label: "Dashboard Discipuladores", icon: LayoutDashboard },
-      { href: "/discipuladores", label: "Lista Discipuladores", icon: List },
+      { href: "/dashboard/discipuladores", label: "Dashboard Discipuladores", icon: DashboardIcon },
+      { href: "/discipuladores", label: "Lista Discipuladores", icon: ListaIcon },
     ],
   },
-  { href: "/tareas", label: "Tareas", icon: ClipboardCheck },
-  { href: "/seguimiento", label: "Seguimiento", icon: Map },
-  { href: "/evangelismo", label: "Evangelismo", icon: Flame },
-  { href: "/agenda", label: "Agenda", icon: CalendarCheck },
-  { href: "/oracion", label: "Oración", icon: Handshake },
-  { href: "/reportes", label: "Reportes", icon: FileBarChart },
-  { href: "/configuracion", label: "Configuración", icon: Settings },
+  { href: "/tareas", label: "Tareas", icon: TareasIcon },
+  { href: "/seguimiento", label: "Seguimiento", icon: SeguimientoIcon },
+  { href: "/evangelismo", label: "Evangelismo", icon: EvangelismoIcon },
+  { href: "/agenda", label: "Agenda", icon: AgendaIcon },
+  { href: "/oracion", label: "Oración", icon: OracionIcon },
+  { href: "/reportes", label: "Reportes", icon: ReportesIcon },
+  { href: "/configuracion", label: "Configuración", icon: ConfiguracionIcon },
 ];
 
 export const discipuloMenuItems: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: Gauge },
-  { href: "/tareas", label: "Tareas", icon: ClipboardCheck },
-  { href: "/seguimiento", label: "Seguimiento", icon: Map },
-  { href: "/evangelismo", label: "Evangelismo", icon: Flame },
-  { href: "/oracion", label: "Oración", icon: Handshake },
-  { href: "/perfil", label: "Mi Perfil", icon: User },
-  { href: "/configuracion", label: "Configuración", icon: Settings },
+  { href: "/dashboard", label: "Dashboard", icon: DashboardIcon },
+  { href: "/tareas", label: "Tareas", icon: TareasIcon },
+  { href: "/seguimiento", label: "Seguimiento", icon: SeguimientoIcon },
+  { href: "/evangelismo", label: "Evangelismo", icon: EvangelismoIcon },
+  { href: "/oracion", label: "Oración", icon: OracionIcon },
+  { href: "/perfil", label: "Mi Perfil", icon: PerfilIcon },
+  { href: "/configuracion", label: "Configuración", icon: ConfiguracionIcon },
 ];
 
 export const discipuladorMenuItems: NavItem[] = [
   {
     label: "Discípulos",
-    icon: Users,
+    icon: DiscipulosIcon,
     children: [
-      { href: "/dashboard", label: "Dashboard Discípulos", icon: LayoutDashboard },
-      { href: "/discipulos", label: "Lista Discípulos", icon: List },
+      { href: "/dashboard", label: "Dashboard Discípulos", icon: DashboardIcon },
+      { href: "/discipulos", label: "Lista Discípulos", icon: ListaIcon },
     ],
   },
-  { href: "/tareas", label: "Tareas", icon: ClipboardCheck },
-  { href: "/seguimiento", label: "Seguimiento", icon: Map },
-  { href: "/evangelismo", label: "Evangelismo", icon: Flame },
-  { href: "/agenda", label: "Agenda", icon: CalendarCheck },
-  { href: "/oracion", label: "Oración", icon: Handshake },
-  { href: "/perfil", label: "Mi Perfil", icon: User },
+  { href: "/tareas", label: "Tareas", icon: TareasIcon },
+  { href: "/seguimiento", label: "Seguimiento", icon: SeguimientoIcon },
+  { href: "/evangelismo", label: "Evangelismo", icon: EvangelismoIcon },
+  { href: "/agenda", label: "Agenda", icon: AgendaIcon },
+  { href: "/oracion", label: "Oración", icon: OracionIcon },
+  { href: "/perfil", label: "Mi Perfil", icon: PerfilIcon },
 ];
 
 export function getMenuItems(rol?: string): NavItem[] {
