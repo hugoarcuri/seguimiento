@@ -33,8 +33,6 @@ import {
   Link2,
   Loader2,
   Download,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn, estadoColors, calcularEdad } from "@/lib/utils";
@@ -67,7 +65,6 @@ interface DiscipuladoresClientProps {
 
 export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCambio }: DiscipuladoresClientProps) {
   const [search, setSearch] = useState("");
-  const [compacto, setCompacto] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [crearOpen, setCrearOpen] = useState(false);
   const [editar, setEditar] = useState<Profile | null>(null);
@@ -186,7 +183,7 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:h-[calc(100vh-8rem)]">
       {/* LEFT PANEL */}
-      <div className="w-full lg:w-[502px] lg:shrink-0 flex flex-col gap-4">
+      <div className="w-full lg:w-[418px] lg:shrink-0 flex flex-col gap-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-xl font-bold">Discipuladores</h1>
@@ -235,20 +232,9 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
               />
               Seleccionar todos
             </label>
-            <div className="flex items-center gap-2">
-              {selectedIds.length > 0 && (
-                <span className="text-xs text-muted-foreground">{selectedIds.length} seleccionado(s)</span>
-              )}
-              <button
-                type="button"
-                onClick={() => setCompacto((c) => !c)}
-                title={compacto ? "Expandir lista" : "Colapsar lista"}
-                aria-label={compacto ? "Expandir lista" : "Colapsar lista"}
-                className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              >
-                {compacto ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-              </button>
-            </div>
+            {selectedIds.length > 0 && (
+              <span className="text-xs text-muted-foreground">{selectedIds.length} seleccionado(s)</span>
+            )}
           </div>
           )}
           {filtered.length === 0 ? (
@@ -291,9 +277,9 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium truncate">{p.apellido}, {p.nombre}</p>
-                    {!compacto && <p className="text-[11px] text-muted-foreground truncate">{p.email || "Sin email"}</p>}
+                    <p className="text-[11px] text-muted-foreground truncate">{p.email || "Sin email"}</p>
                   </div>
-                  {!compacto && <Badge variant="secondary" className="shrink-0">{count}</Badge>}
+                  <Badge variant="secondary" className="shrink-0">{count}</Badge>
                 </div>
               );
             })

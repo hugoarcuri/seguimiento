@@ -23,7 +23,6 @@ import {
   Download,
   CalendarPlus,
   ChevronDown,
-  ChevronUp,
   Cake,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -76,7 +75,6 @@ interface DiscipulosClientProps {
 export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: DiscipulosClientProps) {
   const router = useRouter();
   const [search, setSearch] = useState("");
-  const [compacto, setCompacto] = useState(false);
   const [etapaFilter, setEtapaFilter] = useState<number | null>(null);
   const [foco, setFoco] = useState<Foco>("todos");
   const [colapsados, setColapsados] = useState<Set<SaludDiscipulo>>(new Set(["al_dia"]));
@@ -336,7 +334,7 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:h-full">
       {/* PANEL IZQUIERDO */}
-      <div className="w-full lg:w-[528px] lg:shrink-0 flex flex-col gap-3">
+      <div className="w-full lg:w-[440px] lg:shrink-0 flex flex-col gap-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-xl font-bold">Discípulos</h1>
@@ -423,20 +421,9 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
               />
               Seleccionar todos
             </label>
-            <div className="flex items-center gap-2">
-              {selectedIds.length > 0 && (
-                <span className="text-xs text-muted-foreground">{selectedIds.length} seleccionado(s)</span>
-              )}
-              <button
-                type="button"
-                onClick={() => setCompacto((c) => !c)}
-                title={compacto ? "Expandir lista" : "Colapsar lista"}
-                aria-label={compacto ? "Expandir lista" : "Colapsar lista"}
-                className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              >
-                {compacto ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-              </button>
-            </div>
+            {selectedIds.length > 0 && (
+              <span className="text-xs text-muted-foreground">{selectedIds.length} seleccionado(s)</span>
+            )}
           </div>
         )}
 
@@ -478,10 +465,7 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
                               tabIndex={0}
                               onClick={() => cargarDetalle(d.id)}
                               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); cargarDetalle(d.id); } }}
-                              className={cn(
-                                "w-full flex gap-2 p-2 text-left cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                                compacto ? "items-center" : "items-start"
-                              )}
+                              className="w-full flex items-start gap-2 p-2 text-left cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             >
                               <span onClick={(e) => e.stopPropagation()} className="shrink-0 rounded-md p-1 -m-1 hover:bg-primary/10 pt-0.5" title="Seleccionar">
                                 <input
@@ -502,10 +486,8 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center justify-between gap-2">
                                   <p className="text-sm font-medium truncate">{d.apellido}, {d.nombre}</p>
-                                  {!compacto && <span className={cn("text-[10px] font-semibold rounded-full px-1.5 py-0.5 shrink-0", cfg.badge)}>{cfg.etiqueta}</span>}
+                                  <span className={cn("text-[10px] font-semibold rounded-full px-1.5 py-0.5 shrink-0", cfg.badge)}>{cfg.etiqueta}</span>
                                 </div>
-                                {!compacto && (
-                                  <>
                                 <p className="text-[11px] text-muted-foreground truncate">
                                   {d.etapa_nombre}
                                   {d.progreso !== null && <span className="tabular-nums"> · {d.progreso}%</span>}
@@ -528,16 +510,14 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
                                     </span>
                                   ))}
                                 </div>
-                                  </>
-                                )}
                               </div>
-                              {esAdmin && !compacto && (
+                              {esAdmin && (
                                 <button type="button" onClick={(e) => { e.stopPropagation(); setDeleteDialog(d.id); }} className="shrink-0 text-muted-foreground/50 hover:text-destructive transition-colors pt-0.5" aria-label="Eliminar">
                                   <Trash2 className="h-3.5 w-3.5" />
                                 </button>
                               )}
                             </div>
-                            {!compacto && d.salud.accion !== "celebrar" && (
+                            {d.salud.accion !== "celebrar" && (
                               <div className="px-2 pb-2">
                                 <Button
                                   size="sm"
