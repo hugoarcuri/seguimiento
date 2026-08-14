@@ -43,7 +43,7 @@ function SidebarGroup({
                 : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             )}
           >
-            <group.icon className="h-5 w-5 shrink-0" />
+            <group.icon className="h-6 w-6 shrink-0" />
             {!collapsed && (
               <>
                 <span className="flex-1 text-left">{group.label}</span>
@@ -70,7 +70,7 @@ function SidebarGroup({
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
               )}
             >
-              <child.icon className="h-4 w-4 shrink-0" />
+              <child.icon className="h-5 w-5 shrink-0" />
               {child.label}
             </Link>
           );
@@ -162,7 +162,7 @@ export function Sidebar() {
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 )}
               >
-                <item.icon className="h-5 w-5 shrink-0" />
+                <item.icon className="h-6 w-6 shrink-0" />
                 <span className={cn(collapsed && "hidden")}>{item.label}</span>
               </Link>
             );

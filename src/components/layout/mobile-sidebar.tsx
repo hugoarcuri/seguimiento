@@ -39,7 +39,7 @@ function MobileGroup({
           isActive ? "text-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
         )}
       >
-        <group.icon className="h-5 w-5 shrink-0" />
+        <group.icon className="h-6 w-6 shrink-0" />
         <span className="flex-1 text-left">{group.label}</span>
         <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform", open && "rotate-180")} />
       </button>
@@ -123,7 +123,7 @@ export function MobileSidebar() {
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 )}
               >
-                <item.icon className="h-5 w-5 shrink-0" />
+                <item.icon className="h-6 w-6 shrink-0" />
                 {item.label}
               </Link>
             );
