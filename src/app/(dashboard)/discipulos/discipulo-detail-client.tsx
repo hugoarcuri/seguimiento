@@ -434,7 +434,7 @@ export function DiscipuloDetailClient({
   const alertas = salud?.alertas || [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 @container">
       {/* BARRA SUPERIOR */}
       <div className="flex items-center justify-between">
         <Link
@@ -512,7 +512,7 @@ export function DiscipuloDetailClient({
       </div>
 
       {/* DATOS PERSONALES Y ESPIRITUALES */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 @lg:grid-cols-2">
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between gap-2">
@@ -537,7 +537,7 @@ export function DiscipuloDetailClient({
           </CardHeader>
           <CardContent>
             {editandoDatos ? (
-              <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
+              <div className="grid gap-x-4 gap-y-3 @sm:grid-cols-2">
                 <div className="space-y-1">
                   <Label className="text-[11px] font-medium text-muted-foreground">Nombre *</Label>
                   <Input className="h-9" value={draft.nombre} onChange={(e) => setDraft({ ...draft, nombre: e.target.value })} />
@@ -583,7 +583,7 @@ export function DiscipuloDetailClient({
                   <Label className="text-[11px] font-medium text-muted-foreground">¿Con quién vive?</Label>
                   <Input className="h-9" value={draft.convive_con} onChange={(e) => setDraft({ ...draft, convive_con: e.target.value })} />
                 </div>
-                <div className="space-y-1 sm:col-span-2">
+                <div className="space-y-1 @sm:col-span-2">
                   <Label className="text-[11px] font-medium text-muted-foreground">Etapa *</Label>
                   <Select
                     value={String(draft.etapa_id)}
@@ -598,7 +598,7 @@ export function DiscipuloDetailClient({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1 sm:col-span-2">
+                <div className="space-y-1 @sm:col-span-2">
                   <Label className="text-[11px] font-medium text-muted-foreground">Discipulador</Label>
                   <Select
                     value={draft.lider_id || "none"}
@@ -625,7 +625,7 @@ export function DiscipuloDetailClient({
                   <Label className="text-[11px] font-medium text-muted-foreground">Bautismo</Label>
                   <Input type="date" className="h-9 disabled:opacity-50" value={draft.fecha_bautismo} disabled={!draft.bautizado} onChange={(e) => setDraft({ ...draft, fecha_bautismo: e.target.value })} />
                 </div>
-                <div className="space-y-1 sm:col-span-2">
+                <div className="space-y-1 @sm:col-span-2">
                   <Label className="text-[11px] font-medium text-muted-foreground">Marcas espirituales</Label>
                   <div className="flex flex-wrap items-center gap-6">
                     <label className="flex cursor-pointer items-center gap-2 text-sm">
@@ -638,13 +638,13 @@ export function DiscipuloDetailClient({
                     </label>
                   </div>
                 </div>
-                <div className="space-y-1 sm:col-span-2">
+                <div className="space-y-1 @sm:col-span-2">
                   <Label className="text-[11px] font-medium text-muted-foreground">Observaciones</Label>
                   <Textarea rows={2} className="resize-none" value={draft.observaciones} onChange={(e) => setDraft({ ...draft, observaciones: e.target.value })} />
                 </div>
               </div>
             ) : (
-              <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+              <div className="grid gap-x-6 gap-y-3 @sm:grid-cols-2">
                 <FilaDato label="Nombre" valor={discipulo.nombre} />
                 <FilaDato label="Apellido" valor={discipulo.apellido} />
                 <FilaDato label="Sexo" valor={discipulo.sexo === "F" ? "Femenino" : discipulo.sexo === "M" ? "Masculino" : undefined} />
@@ -685,7 +685,7 @@ export function DiscipuloDetailClient({
             <CardTitle className="text-base">Datos espirituales</CardTitle>
             <CardDescription>Se completan automáticamente desde la sección Seguimiento</CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+          <CardContent className="grid gap-x-6 gap-y-3 @sm:grid-cols-2">
             {!evaluacion ? (
               <div className="col-span-full rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground space-y-2">
                 <p>Todavía no hay una evaluación de seguimiento.</p>

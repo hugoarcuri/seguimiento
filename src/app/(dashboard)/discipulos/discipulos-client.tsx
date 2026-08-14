@@ -23,6 +23,8 @@ import {
   Download,
   CalendarPlus,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Cake,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -78,6 +80,7 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
   const [etapaFilter, setEtapaFilter] = useState<number | null>(null);
   const [foco, setFoco] = useState<Foco>("todos");
   const [colapsados, setColapsados] = useState<Set<SaludDiscipulo>>(new Set(["al_dia"]));
+  const [listaReducida, setListaReducida] = useState(false);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
@@ -334,13 +337,22 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:h-full">
       {/* PANEL IZQUIERDO */}
-      <div className="w-full lg:w-[440px] lg:shrink-0 flex flex-col gap-3">
+      <div className={cn("w-full lg:shrink-0 flex flex-col gap-3", listaReducida ? "lg:w-[250px]" : "lg:w-[440px]")}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-xl font-bold">Discípulos</h1>
             <p className="text-xs text-muted-foreground">{filtrados.length} de {discipulos.length}</p>
           </div>
           <div className="flex flex-wrap gap-1">
+            <button
+              type="button"
+              onClick={() => setListaReducida((v) => !v)}
+              className="inline-flex items-center justify-center rounded-lg border border-border bg-background hover:bg-muted min-h-11 md:min-h-8 gap-1 px-2 text-xs font-medium"
+              title={listaReducida ? "Expandir lista" : "Reducir lista"}
+              aria-label={listaReducida ? "Expandir lista" : "Reducir lista"}
+            >
+              {listaReducida ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
+            </button>
             {selectedIds.length > 0 && (
               <>
                 <Button variant="outline" size="sm" onClick={exportarSeleccionados} className="gap-1 px-2 text-xs font-medium">
@@ -366,50 +378,56 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
           </div>
         </div>
 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Buscar discípulo..." className="pl-9 h-11 md:h-8 text-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
-        </div>
+        {!listaReducida && (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input placeholder="Buscar discípulo..." className="pl-9 h-11 md:h-8 text-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
+        )}
 
-        <div className="flex flex-wrap gap-1.5">
-          <button
-            type="button"
-            onClick={() => setFoco("todos")}
-            className={cn(
-              "text-xs rounded-full px-2.5 py-1 font-medium transition-colors inline-flex items-center gap-1.5",
-              foco === "todos" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
-            )}
-          >
-            Todos
-          </button>
-          {chips.map((c) => (
-            <button
-              key={c.key}
-              type="button"
-              onClick={() => setFoco(c.key)}
-              className={cn(
-                "text-xs rounded-full px-2.5 py-1 font-medium transition-colors inline-flex items-center gap-1",
-                foco === c.key ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
-              )}
-            >
-              {c.label}
-              <span className={cn("tabular-nums", foco === c.key ? "" : c.cls)}>{c.value}</span>
-            </button>
-          ))}
-        </div>
+        {!listaReducida && (
+          <>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => setFoco("todos")}
+                className={cn(
+                  "text-xs rounded-full px-2.5 py-1 font-medium transition-colors inline-flex items-center gap-1.5",
+                  foco === "todos" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                )}
+              >
+                Todos
+              </button>
+              {chips.map((c) => (
+                <button
+                  key={c.key}
+                  type="button"
+                  onClick={() => setFoco(c.key)}
+                  className={cn(
+                    "text-xs rounded-full px-2.5 py-1 font-medium transition-colors inline-flex items-center gap-1",
+                    foco === c.key ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  )}
+                >
+                  {c.label}
+                  <span className={cn("tabular-nums", foco === c.key ? "" : c.cls)}>{c.value}</span>
+                </button>
+              ))}
+            </div>
 
-        <div className="flex flex-wrap gap-1">
-          <button type="button" onClick={() => setEtapaFilter(null)}
-            className={cn("text-xs rounded-full px-2.5 py-1 font-medium transition-colors", etapaFilter === null ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80")}
-          >Todas</button>
-          {etapas.map((e) => (
-            <button key={e.id} type="button" onClick={() => setEtapaFilter(e.id)}
-              className={cn("text-xs rounded-full px-2.5 py-1 font-medium transition-colors", etapaFilter === e.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80")}
-            >{e.nombre}</button>
-          ))}
-        </div>
+            <div className="flex flex-wrap gap-1">
+              <button type="button" onClick={() => setEtapaFilter(null)}
+                className={cn("text-xs rounded-full px-2.5 py-1 font-medium transition-colors", etapaFilter === null ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80")}
+              >Todas</button>
+              {etapas.map((e) => (
+                <button key={e.id} type="button" onClick={() => setEtapaFilter(e.id)}
+                  className={cn("text-xs rounded-full px-2.5 py-1 font-medium transition-colors", etapaFilter === e.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80")}
+                >{e.nombre}</button>
+              ))}
+            </div>
+          </>
+        )}
 
-        {filtrados.length > 0 && (
+        {!listaReducida && filtrados.length > 0 && (
           <div className="flex items-center justify-between px-1 pb-0.5">
             <label className="flex cursor-pointer items-center gap-2 text-sm">
               <input
@@ -467,15 +485,17 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
                               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); cargarDetalle(d.id); } }}
                               className="w-full flex items-start gap-2 p-2 text-left cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             >
-                              <span onClick={(e) => e.stopPropagation()} className="shrink-0 rounded-md p-1 -m-1 hover:bg-primary/10 pt-0.5" title="Seleccionar">
-                                <input
-                                  type="checkbox"
-                                  checked={selectedIds.includes(d.id)}
-                                  onChange={() => toggleSeleccion(d.id)}
-                                  aria-label="Seleccionar"
-                                  className="size-4 shrink-0 cursor-pointer accent-primary"
-                                />
-                              </span>
+                              {!listaReducida && (
+                                <span onClick={(e) => e.stopPropagation()} className="shrink-0 rounded-md p-1 -m-1 hover:bg-primary/10 pt-0.5" title="Seleccionar">
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedIds.includes(d.id)}
+                                    onChange={() => toggleSeleccion(d.id)}
+                                    aria-label="Seleccionar"
+                                    className="size-4 shrink-0 cursor-pointer accent-primary"
+                                  />
+                                </span>
+                              )}
                               {d.avatar_url ? (
                                 <img src={d.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
                               ) : (
@@ -486,38 +506,44 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center justify-between gap-2">
                                   <p className="text-sm font-medium truncate">{d.apellido}, {d.nombre}</p>
-                                  <span className={cn("text-[10px] font-semibold rounded-full px-1.5 py-0.5 shrink-0", cfg.badge)}>{cfg.etiqueta}</span>
+                                  {!listaReducida && (
+                                    <span className={cn("text-[10px] font-semibold rounded-full px-1.5 py-0.5 shrink-0", cfg.badge)}>{cfg.etiqueta}</span>
+                                  )}
                                 </div>
-                                <p className="text-[11px] text-muted-foreground truncate">
-                                  {d.etapa_nombre}
-                                  {d.progreso !== null && <span className="tabular-nums"> · {d.progreso}%</span>}
-                                </p>
-                                {diasCumple !== null && diasCumple <= DIAS_CUMPLEANOS && (
+                                {!listaReducida && (
+                                  <p className="text-[11px] text-muted-foreground truncate">
+                                    {d.etapa_nombre}
+                                    {d.progreso !== null && <span className="tabular-nums"> · {d.progreso}%</span>}
+                                  </p>
+                                )}
+                                {!listaReducida && diasCumple !== null && diasCumple <= DIAS_CUMPLEANOS && (
                                   <p className="text-[11px] font-medium text-amber-600 dark:text-amber-400 truncate flex items-center gap-1">
                                     <Cake className="h-3 w-3 shrink-0" />
                                     {diasCumple === 0 ? "¡Hoy cumple años!" : `Cumple en ${diasCumple} día${diasCumple === 1 ? "" : "s"}`}
                                   </p>
                                 )}
-                                <div className="flex flex-wrap items-center gap-1 mt-1">
-                                  {d.diasSinContacto !== null && d.diasSinContacto >= UMBRALES_SALUD.contactoAlerta && (
-                                    <span className={cn("text-[10px] rounded-full px-1.5 py-0.5 font-medium", d.diasSinContacto >= UMBRALES_SALUD.contactoCritico ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400" : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400")}>
-                                      {d.diasSinContacto}d sin reunión
-                                    </span>
-                                  )}
-                                  {alertasVisibles.map((a) => (
-                                    <span key={a.tipo} className={cn("text-[10px] rounded-full px-1.5 py-0.5 font-medium", a.severidad === "alta" ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400" : a.severidad === "media" ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400" : "bg-muted text-muted-foreground")}>
-                                      {a.mensaje}
-                                    </span>
-                                  ))}
-                                </div>
+                                {!listaReducida && (
+                                  <div className="flex flex-wrap items-center gap-1 mt-1">
+                                    {d.diasSinContacto !== null && d.diasSinContacto >= UMBRALES_SALUD.contactoAlerta && (
+                                      <span className={cn("text-[10px] rounded-full px-1.5 py-0.5 font-medium", d.diasSinContacto >= UMBRALES_SALUD.contactoCritico ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400" : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400")}>
+                                        {d.diasSinContacto}d sin reunión
+                                      </span>
+                                    )}
+                                    {alertasVisibles.map((a) => (
+                                      <span key={a.tipo} className={cn("text-[10px] rounded-full px-1.5 py-0.5 font-medium", a.severidad === "alta" ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400" : a.severidad === "media" ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400" : "bg-muted text-muted-foreground")}>
+                                        {a.mensaje}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
-                              {esAdmin && (
+                              {!listaReducida && esAdmin && (
                                 <button type="button" onClick={(e) => { e.stopPropagation(); setDeleteDialog(d.id); }} className="shrink-0 text-muted-foreground/50 hover:text-destructive transition-colors pt-0.5" aria-label="Eliminar">
                                   <Trash2 className="h-3.5 w-3.5" />
                                 </button>
                               )}
                             </div>
-                            {d.salud.accion !== "celebrar" && (
+                            {!listaReducida && d.salud.accion !== "celebrar" && (
                               <div className="px-2 pb-2">
                                 <Button
                                   size="sm"
@@ -543,7 +569,7 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
       </div>
 
       {/* PANEL DERECHO */}
-      <div className="flex-1 min-w-0 overflow-y-auto">
+      <div className="flex-1 min-w-0 overflow-y-auto @container">
         {selectedId && detalle?.discipulo.id === selectedId ? (
           <DiscipuloDetailClient key={selectedId} {...detalle} />
         ) : selectedId && loadingDetail ? (

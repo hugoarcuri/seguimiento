@@ -33,6 +33,8 @@ import {
   Link2,
   Loader2,
   Download,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn, estadoColors, calcularEdad } from "@/lib/utils";
@@ -75,6 +77,7 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [listaReducida, setListaReducida] = useState(false);
 
   const selected = useMemo(
     () => discipuladores.find((p) => p.id === selectedId) || null,
@@ -183,44 +186,57 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:h-[calc(100vh-8rem)]">
       {/* LEFT PANEL */}
-      <div className="w-full lg:w-[418px] lg:shrink-0 flex flex-col gap-4">
+      <div className={cn("w-full lg:shrink-0 flex flex-col gap-4", listaReducida ? "lg:w-[250px]" : "lg:w-[418px]")}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-xl font-bold">Discipuladores</h1>
             <p className="text-xs text-muted-foreground">{filtered.length} de {discipuladores.length}</p>
           </div>
-          <Button onClick={() => setCrearOpen(true)} className="gap-1 px-2 text-xs font-medium">
-            <UserPlus className="h-3.5 w-3.5" />
-            Nuevo
-          </Button>
+          <div className="flex flex-wrap gap-1">
+            <button
+              type="button"
+              onClick={() => setListaReducida((v) => !v)}
+              className="inline-flex items-center justify-center rounded-lg border border-border bg-background hover:bg-muted min-h-11 md:min-h-8 gap-1 px-2 text-xs font-medium"
+              title={listaReducida ? "Expandir lista" : "Reducir lista"}
+              aria-label={listaReducida ? "Expandir lista" : "Reducir lista"}
+            >
+              {listaReducida ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
+            </button>
+            <Button onClick={() => setCrearOpen(true)} className="gap-1 px-2 text-xs font-medium">
+              <UserPlus className="h-3.5 w-3.5" />
+              Nuevo
+            </Button>
+          </div>
         </div>
 
-        {selectedIds.length > 0 && (
+        {!listaReducida && selectedIds.length > 0 && (
           <Button variant="outline" size="sm" onClick={exportarSeleccionados} className="gap-1 px-2 text-xs font-medium">
             <Download className="h-3.5 w-3.5" />
             Exportar
           </Button>
         )}
 
-        {selectedIds.length > 0 && (
+        {!listaReducida && selectedIds.length > 0 && (
           <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)} className="gap-1 px-2 text-xs font-medium">
             <Trash2 className="h-3.5 w-3.5" />
             Eliminar ({selectedIds.length})
           </Button>
         )}
 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Discipulador..."
-            className="pl-9 h-11 md:h-8 text-sm"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
+        {!listaReducida && (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Discipulador..."
+              className="pl-9 h-11 md:h-8 text-sm"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        )}
 
         <div className="flex-1 overflow-y-auto space-y-0.5 -mx-1 px-1">
-          {filtered.length > 0 && (
+          {!listaReducida && filtered.length > 0 && (
           <div className="flex items-center justify-between px-1 pb-1">
             <label className="flex cursor-pointer items-center gap-2 text-sm">
               <input
@@ -259,15 +275,17 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
                     selectedId === p.id ? "bg-primary/10" : "hover:bg-muted/50"
                   )}
                 >
-                  <span onClick={(e) => e.stopPropagation()} className="shrink-0 rounded-md p-1 -m-1 hover:bg-primary/10" title="Seleccionar">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.includes(p.id)}
-                      onChange={() => toggleSeleccion(p.id)}
-                      aria-label="Seleccionar"
-                      className="size-4 shrink-0 cursor-pointer accent-primary"
-                    />
-                  </span>
+                  {!listaReducida && (
+                    <span onClick={(e) => e.stopPropagation()} className="shrink-0 rounded-md p-1 -m-1 hover:bg-primary/10" title="Seleccionar">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(p.id)}
+                        onChange={() => toggleSeleccion(p.id)}
+                        aria-label="Seleccionar"
+                        className="size-4 shrink-0 cursor-pointer accent-primary"
+                      />
+                    </span>
+                  )}
                   {p.avatar_url ? (
                     <img src={p.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
                   ) : (
@@ -277,9 +295,9 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium truncate">{p.apellido}, {p.nombre}</p>
-                    <p className="text-[11px] text-muted-foreground truncate">{p.email || "Sin email"}</p>
+                    {!listaReducida && <p className="text-[11px] text-muted-foreground truncate">{p.email || "Sin email"}</p>}
                   </div>
-                  <Badge variant="secondary" className="shrink-0">{count}</Badge>
+                  {!listaReducida && <Badge variant="secondary" className="shrink-0">{count}</Badge>}
                 </div>
               );
             })
@@ -288,7 +306,7 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
       </div>
 
       {/* RIGHT PANEL */}
-      <div className="flex-1 min-w-0 overflow-y-auto">
+      <div className="flex-1 min-w-0 overflow-y-auto @container">
         {selected ? (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -319,7 +337,7 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
               </div>
             </div>
 
-            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+            <div className="grid gap-3 @sm:grid-cols-2">
               <Card>
                 <CardContent className="p-4 flex items-center gap-3 min-w-0">
                   <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -347,7 +365,7 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
             <Card>
               <CardContent className="p-4 space-y-3">
                 <h4 className="text-sm font-semibold">Datos personales</h4>
-                <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+                <div className="grid gap-3 @sm:grid-cols-2">
                   <div>
                     <p className="text-xs text-muted-foreground">Edad</p>
                     <p className="text-sm font-medium">
