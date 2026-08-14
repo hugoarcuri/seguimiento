@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/useUser";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ChevronDown, PanelLeft, PanelLeftClose } from "lucide-react";
 import { adminMenuItems, discipuloMenuItems, discipuladorMenuItems, isNavGroup, navHrefs, type NavGroup } from "@/lib/constants/navigation";
 import { findActiveHref, BASE_PATH } from "@/lib/constants/paths";
@@ -24,67 +25,58 @@ function SidebarGroup({
   activeHref: string | null;
 }) {
   const isActive = group.children.some((child) => child.href === activeHref);
-  const [userOpen, setUserOpen] = useState<boolean | null>(null);
-  const open = userOpen ?? isActive;
-
-  const toggle = () => setUserOpen((o) => (o === null ? !isActive : !o));
+  const [open, setOpen] = useState(false);
 
   return (
-    <div>
-      <button
-        type="button"
-        onClick={toggle}
-        title={group.label}
-        aria-expanded={open}
-        className={cn(
-          "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-          collapsed ? "justify-center px-0" : "justify-start px-3",
-          isActive
-            ? "text-foreground"
-            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-        )}
-      >
-        <group.icon className="h-5 w-5 shrink-0" />
-        {!collapsed && (
-          <>
-            <span className="flex-1 text-left">{group.label}</span>
-            <ChevronDown
-              className={cn("h-4 w-4 shrink-0 transition-transform", open && "rotate-180")}
-            />
-          </>
-        )}
-      </button>
-      {open && (
-        <div className="space-y-1 mt-1">
-          {group.children.map((child) => {
-            const childActive = activeHref === child.href;
-            return (
-              <Link
-                key={child.href}
-                href={child.href}
-                title={child.label}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-colors",
-                  collapsed ? "justify-center px-0" : "justify-start pl-11 pr-3",
-                  childActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                )}
-              >
-                {collapsed ? (
-                  <child.icon className="h-5 w-5 shrink-0" />
-                ) : (
-                  <>
-                    <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", childActive ? "bg-current" : "bg-muted-foreground/50")} />
-                    <span className="truncate">{child.label}</span>
-                  </>
-                )}
-              </Link>
-            );
-          })}
-        </div>
-      )}
-    </div>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        openOnHover
+        closeDelay={100}
+        render={
+          <button
+            type="button"
+            className={cn(
+              "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+              collapsed ? "justify-center px-0" : "justify-start",
+              isActive
+                ? "text-foreground"
+                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            )}
+          >
+            <group.icon className="h-5 w-5 shrink-0" />
+            {!collapsed && (
+              <>
+                <span className="flex-1 text-left">{group.label}</span>
+                <ChevronDown
+                  className={cn("h-4 w-4 shrink-0 transition-transform", open && "rotate-180")}
+                />
+              </>
+            )}
+          </button>
+        }
+      />
+      <PopoverContent side="right" sideOffset={12} className="w-52 gap-1 p-1">
+        {group.children.map((child) => {
+          const childActive = activeHref === child.href;
+          return (
+            <Link
+              key={child.href}
+              href={child.href}
+              onClick={() => setOpen(false)}
+              className={cn(
+                "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors",
+                childActive
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              )}
+            >
+              <child.icon className="h-4 w-4 shrink-0" />
+              {child.label}
+            </Link>
+          );
+        })}
+      </PopoverContent>
+    </Popover>
   );
 }
 
