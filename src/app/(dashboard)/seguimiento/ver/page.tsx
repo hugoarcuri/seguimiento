@@ -16,13 +16,12 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   ArrowLeft, Loader2, Save, Plus, Trash2, User, CalendarDays, UserCheck, TrendingUp,
-  Phone, Mail, MapPin, Church, Pencil, CalendarPlus, Check, AlertTriangle,
+  Church, Pencil, CalendarPlus, Check, AlertTriangle,
   Users, Sparkles, GraduationCap, Briefcase, Home, ClipboardList, type LucideIcon,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { calcularEdad, estadoColors } from "@/lib/utils";
 import { estadoEncuentrosMes, contarEncuentrosMes, SALUD_CONFIG } from "@/lib/discipulo-health";
 import {
   CAMPOS_EVALUACION, codificarCampoEvaluacion, decodificarCampoEvaluacion,
@@ -427,77 +426,6 @@ function SeguimientoDetalle({ id }: { id: string }) {
               </Link>
             </div>
           )}
-          {seguimiento.discipulos && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Ficha personal del discípulo</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-4">
-                  {seguimiento.discipulos.avatar_url ? (
-                    <img src={seguimiento.discipulos.avatar_url} alt="" className="w-16 h-16 rounded-full object-cover ring-4 ring-background shadow" />
-                  ) : (
-                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xl ring-4 ring-background shadow">
-                      {seguimiento.discipulos.nombre?.charAt(0)?.toUpperCase()}{seguimiento.discipulos.apellido?.charAt(0)?.toUpperCase()}
-                    </div>
-                  )}
-                  <div className="min-w-0">
-                    <p className="text-lg font-bold truncate">{nombreDiscipulo}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="secondary">{etapas.find((e) => e.id === seguimiento.discipulos?.etapa_id)?.nombre || "Sin etapa"}</Badge>
-                      <span className={`h-3 w-3 rounded-full ${estadoColors[seguimiento.discipulos.estado]}`} />
-                      <span className="text-sm capitalize text-muted-foreground">{seguimiento.discipulos.estado}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"><CalendarDays className="h-4 w-4 text-primary" /></div>
-                    <div className="min-w-0">
-                      <p className="text-xs text-muted-foreground">Edad</p>
-                      <p className="text-sm font-medium truncate">{seguimiento.discipulos.fecha_nacimiento ? `${calcularEdad(seguimiento.discipulos.fecha_nacimiento)} años` : "—"}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"><User className="h-4 w-4 text-primary" /></div>
-                    <div className="min-w-0">
-                      <p className="text-xs text-muted-foreground">Sexo</p>
-                      <p className="text-sm font-medium truncate">{seguimiento.discipulos.sexo === "M" ? "Masculino" : seguimiento.discipulos.sexo === "F" ? "Femenino" : "—"}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"><Phone className="h-4 w-4 text-primary" /></div>
-                    <div className="min-w-0">
-                      <p className="text-xs text-muted-foreground">Teléfono</p>
-                      <p className="text-sm font-medium truncate">{seguimiento.discipulos.telefono || "—"}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"><Mail className="h-4 w-4 text-primary" /></div>
-                    <div className="min-w-0">
-                      <p className="text-xs text-muted-foreground">Email</p>
-                      <p className="text-sm font-medium truncate">{seguimiento.discipulos.email || "—"}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"><MapPin className="h-4 w-4 text-primary" /></div>
-                    <div className="min-w-0">
-                      <p className="text-xs text-muted-foreground">Dirección</p>
-                      <p className="text-sm font-medium truncate">{seguimiento.discipulos.direccion || "—"}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"><Church className="h-4 w-4 text-primary" /></div>
-                    <div className="min-w-0">
-                      <p className="text-xs text-muted-foreground">Ministerio</p>
-                      <p className="text-sm font-medium truncate">{seguimiento.discipulos.ministerio || "—"}</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Resumen de seguimiento</CardTitle>
