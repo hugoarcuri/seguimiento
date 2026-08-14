@@ -4,7 +4,7 @@ import {
   Users,
   UserRoundCog,
   CalendarCheck,
-  Handshake,
+  MessagesSquare,
   Settings,
   User,
   ClipboardCheck,
@@ -78,7 +78,7 @@ export const adminMenuItems: NavItem[] = [
   { href: "/seguimiento", label: "Seguimiento", icon: Map },
   { href: "/evangelismo", label: "Evangelismo", icon: Flame },
   { href: "/agenda", label: "Agenda", icon: CalendarCheck },
-  { href: "/oracion", label: "Oración", icon: Handshake },
+  { href: "/oracion", label: "Oración", icon: MessagesSquare },
   { href: "/reportes", label: "Reportes", icon: FileBarChart },
   { href: "/configuracion", label: "Configuración", icon: Settings },
 ];
@@ -88,7 +88,7 @@ export const discipuloMenuItems: NavItem[] = [
   { href: "/tareas", label: "Tareas", icon: ClipboardCheck },
   { href: "/seguimiento", label: "Seguimiento", icon: Map },
   { href: "/evangelismo", label: "Evangelismo", icon: Flame },
-  { href: "/oracion", label: "Oración", icon: Handshake },
+  { href: "/oracion", label: "Oración", icon: MessagesSquare },
   { href: "/perfil", label: "Mi Perfil", icon: User },
   { href: "/configuracion", label: "Configuración", icon: Settings },
 ];
@@ -106,7 +106,7 @@ export const discipuladorMenuItems: NavItem[] = [
   { href: "/seguimiento", label: "Seguimiento", icon: Map },
   { href: "/evangelismo", label: "Evangelismo", icon: Flame },
   { href: "/agenda", label: "Agenda", icon: CalendarCheck },
-  { href: "/oracion", label: "Oración", icon: Handshake },
+  { href: "/oracion", label: "Oración", icon: MessagesSquare },
   { href: "/perfil", label: "Mi Perfil", icon: User },
 ];
 
