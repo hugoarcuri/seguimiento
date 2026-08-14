@@ -23,6 +23,7 @@ function DiscipuloVerInner() {
     seguimientos: Seguimiento[];
     evaluacion: SeguimientoEvaluacion | null;
     objetivos: SeguimientoObjetivo[];
+    discipulador?: { nombre: string; apellido: string } | null;
   } | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -47,6 +48,15 @@ function DiscipuloVerInner() {
         if (cancelado) return;
         if (!discipuloRes.data) { setLoading(false); return; }
         const discipulo = discipuloRes.data as Discipulo;
+        let discipulador: { nombre: string; apellido: string } | null = null;
+        if (discipulo.lider_id) {
+          const { data: liderRes } = await supabase
+            .from("profiles")
+            .select("nombre, apellido")
+            .eq("id", discipulo.lider_id)
+            .maybeSingle();
+          if (!cancelado && liderRes) discipulador = liderRes as { nombre: string; apellido: string };
+        }
         const seguimientos = (seguimientosRes.data || []) as Seguimiento[];
         const seg = seguimientos.find((s) => s.estado === "activo") || seguimientos[0];
         let evaluacion: SeguimientoEvaluacion | null = null;
@@ -71,6 +81,7 @@ function DiscipuloVerInner() {
           seguimientos,
           evaluacion,
           objetivos,
+          discipulador,
         });
         setLoading(false);
       } catch (err) {

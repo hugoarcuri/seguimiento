@@ -37,7 +37,7 @@ import {
 import { ImportarDiscipulos } from "./importar-discipulos";
 import { DiscipuloDetailClient, type DetalleDiscipulo } from "./discipulo-detail-client";
 import type { DiscipuloRadar } from "./radar-data";
-import type { Etapa, Seguimiento, SeguimientoEvaluacion, SeguimientoObjetivo } from "@/types/database";
+import type { Discipulo, Etapa, Seguimiento, SeguimientoEvaluacion, SeguimientoObjetivo } from "@/types/database";
 
 const DIAS_CUMPLEANOS = 7;
 
@@ -139,6 +139,16 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
       supabase.from("seguimientos").select("*").eq("discipulo_id", id).order("created_at", { ascending: false }),
     ]);
     if (!dRes.data) { setLoadingDetail(false); return; }
+    const discipulo = dRes.data as Discipulo;
+    let discipulador: { nombre: string; apellido: string } | null = null;
+    if (discipulo.lider_id) {
+      const { data: liderRes } = await supabase
+        .from("profiles")
+        .select("nombre, apellido")
+        .eq("id", discipulo.lider_id)
+        .maybeSingle();
+      if (liderRes) discipulador = liderRes as { nombre: string; apellido: string };
+    }
     const seguimientos = (segRes.data || []) as Seguimiento[];
     const seg = seguimientos.find((s) => s.estado === "activo") || seguimientos[0];
     let evaluacion: SeguimientoEvaluacion | null = null;
@@ -161,6 +171,7 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
       seguimientos,
       evaluacion,
       objetivos,
+      discipulador,
       salud: discipulosRef.current.find((r) => r.id === id)?.salud ?? null,
       onCambio,
     });

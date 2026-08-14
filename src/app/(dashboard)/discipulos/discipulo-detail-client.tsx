@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useRef } from "react";
+import { useState, useRef, type ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -68,6 +68,7 @@ export interface DetalleDiscipulo {
   evaluacion: SeguimientoEvaluacion | null;
   objetivos: SeguimientoObjetivo[];
   salud: SaludResultado | null;
+  discipulador?: { nombre: string; apellido: string } | null;
   onCambio?: () => void;
 }
 
@@ -86,7 +87,29 @@ function diasDesde(fecha: string): number {
   return Math.max(0, Math.round((hoy.getTime() - d.getTime()) / 86_400_000));
 }
 
+function edadDesde(fecha?: string | null): string | null {
+  if (!fecha) return null;
+  const d = fecha.length === 10 ? new Date(`${fecha}T00:00:00`) : new Date(fecha);
+  if (isNaN(d.getTime())) return null;
+  const hoy = new Date();
+  let edad = hoy.getFullYear() - d.getFullYear();
+  const cumplePasado =
+    hoy.getMonth() > d.getMonth() ||
+    (hoy.getMonth() === d.getMonth() && hoy.getDate() >= d.getDate());
+  if (!cumplePasado) edad -= 1;
+  return edad >= 0 ? `${edad} años` : null;
+}
+
 const esFutura = (fecha: string) => (fecha.length === 10 ? fecha : fecha.split("T")[0]) > hoyISO;
+
+function FilaDato({ label, valor }: { label: string; valor?: ReactNode }) {
+  return (
+    <div className="min-w-0">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="text-sm font-medium break-words">{valor ?? "—"}</p>
+    </div>
+  );
+}
 
 export function DiscipuloDetailClient({
   discipulo: initialDiscipulo,
@@ -99,6 +122,7 @@ export function DiscipuloDetailClient({
   evaluacion: initialEvaluacion,
   objetivos: initialObjetivos,
   salud,
+  discipulador,
   onCambio,
 }: DetalleDiscipulo) {
   const router = useRouter();
@@ -479,11 +503,76 @@ export function DiscipuloDetailClient({
       <Tabs defaultValue="hoy" className="space-y-4">
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="hoy">Hoy</TabsTrigger>
+          <TabsTrigger value="datos">Datos</TabsTrigger>
           <TabsTrigger value="encuentros">Encuentros ({agendas.length})</TabsTrigger>
           <TabsTrigger value="salud">Salud espiritual</TabsTrigger>
           <TabsTrigger value="oracion">Oración ({oraciones.length})</TabsTrigger>
           <TabsTrigger value="historial">Historial</TabsTrigger>
         </TabsList>
+
+        {/* DATOS */}
+        <TabsContent value="datos" className="w-full min-w-0 space-y-4">
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Datos personales</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+                <FilaDato label="Sexo" valor={discipulo.sexo === "F" ? "Femenino" : discipulo.sexo === "M" ? "Masculino" : undefined} />
+                <FilaDato
+                  label="Nacimiento"
+                  valor={
+                    discipulo.fecha_nacimiento
+                      ? `${fechaCorta(discipulo.fecha_nacimiento)}${edadDesde(discipulo.fecha_nacimiento) ? ` · ${edadDesde(discipulo.fecha_nacimiento)}` : ""}`
+                      : undefined
+                  }
+                />
+                <FilaDato label="Teléfono" valor={discipulo.telefono} />
+                <FilaDato label="Email" valor={discipulo.email} />
+                <FilaDato label="Dirección" valor={discipulo.direccion} />
+                <FilaDato label="¿Con quién vive?" valor={discipulo.convive_con} />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Datos espirituales</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+                <FilaDato
+                  label="Discipulador"
+                  valor={discipulador ? `${discipulador.apellido}, ${discipulador.nombre}` : undefined}
+                />
+                <FilaDato label="Etapa actual" valor={etapaActual?.nombre} />
+                <FilaDato
+                  label="Bautizado"
+                  valor={
+                    discipulo.bautizado
+                      ? `Sí${discipulo.fecha_bautismo ? ` · ${fechaCorta(discipulo.fecha_bautismo)}` : ""}`
+                      : discipulo.bautizado === false
+                        ? "No"
+                        : undefined
+                  }
+                />
+                <FilaDato label="Es miembro" valor={discipulo.es_miembro === true ? "Sí" : discipulo.es_miembro === false ? "No" : undefined} />
+                <FilaDato label="Fecha de conversión" valor={discipulo.fecha_conversion ? fechaCorta(discipulo.fecha_conversion) : undefined} />
+                <FilaDato
+                  label="Ministerio"
+                  valor={evaluacion?.ministerio || discipulo.ministerio || undefined}
+                />
+                <FilaDato
+                  label="Dones"
+                  valor={evaluacion?.don_espiritual || discipulo.dones || undefined}
+                />
+                <FilaDato label="¿Estudia?" valor={evaluacion?.estudia || undefined} />
+                <FilaDato label="¿Trabaja?" valor={evaluacion?.trabaja || undefined} />
+                <FilaDato label="Relación con la autoridad" valor={evaluacion?.relacion_autoridad || undefined} />
+                <FilaDato label="Hábitos pecaminosos" valor={evaluacion?.habitos_pecaminosos || undefined} />
+                <FilaDato label="Observaciones" valor={discipulo.observaciones || undefined} />
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
 
         {/* HOY */}
         <TabsContent value="hoy" className="w-full min-w-0 space-y-4">
