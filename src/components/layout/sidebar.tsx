@@ -86,7 +86,7 @@ export function Sidebar() {
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 )}
               >
-                <item.icon className="h-4 w-4 shrink-0" />
+                <item.icon className="h-5 w-5 shrink-0" />
                 <span className={cn(collapsed && "hidden")}>{item.label}</span>
               </Link>
             );

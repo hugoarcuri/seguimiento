@@ -24,6 +24,7 @@ function DiscipuloVerInner() {
     evaluacion: SeguimientoEvaluacion | null;
     objetivos: SeguimientoObjetivo[];
     discipulador?: { nombre: string; apellido: string } | null;
+    discipuladores?: Array<{ id: string; nombre: string; apellido: string }>;
   } | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -49,6 +50,7 @@ function DiscipuloVerInner() {
         if (!discipuloRes.data) { setLoading(false); return; }
         const discipulo = discipuloRes.data as Discipulo;
         let discipulador: { nombre: string; apellido: string } | null = null;
+        let discipuladores: Array<{ id: string; nombre: string; apellido: string }> = [];
         if (discipulo.lider_id) {
           const { data: liderRes } = await supabase
             .from("profiles")
@@ -57,6 +59,12 @@ function DiscipuloVerInner() {
             .maybeSingle();
           if (!cancelado && liderRes) discipulador = liderRes as { nombre: string; apellido: string };
         }
+        const { data: listaDiscipuladores } = await supabase
+          .from("profiles")
+          .select("id, nombre, apellido")
+          .or("rol.eq.discipulador,rol.eq.admin")
+          .order("apellido", { ascending: true });
+        if (!cancelado) discipuladores = (listaDiscipuladores || []) as Array<{ id: string; nombre: string; apellido: string }>;
         const seguimientos = (seguimientosRes.data || []) as Seguimiento[];
         const seg = seguimientos.find((s) => s.estado === "activo") || seguimientos[0];
         let evaluacion: SeguimientoEvaluacion | null = null;
@@ -82,6 +90,7 @@ function DiscipuloVerInner() {
           evaluacion,
           objetivos,
           discipulador,
+          discipuladores,
         });
         setLoading(false);
       } catch (err) {

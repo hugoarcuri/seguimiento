@@ -16,6 +16,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -69,6 +77,7 @@ export interface DetalleDiscipulo {
   objetivos: SeguimientoObjetivo[];
   salud: SaludResultado | null;
   discipulador?: { nombre: string; apellido: string } | null;
+  discipuladores?: Array<{ id: string; nombre: string; apellido: string }>;
   onCambio?: () => void;
 }
 
@@ -123,6 +132,7 @@ export function DiscipuloDetailClient({
   objetivos: initialObjetivos,
   salud,
   discipulador,
+  discipuladores = [],
   onCambio,
 }: DetalleDiscipulo) {
   const router = useRouter();
@@ -131,6 +141,26 @@ export function DiscipuloDetailClient({
   const [discipulo, setDiscipulo] = useState(initialDiscipulo);
   const [subiendoAvatar, setSubiendoAvatar] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const [editandoDatos, setEditandoDatos] = useState(false);
+  const [guardandoDatos, setGuardandoDatos] = useState(false);
+  const [draft, setDraft] = useState({
+    nombre: initialDiscipulo.nombre ?? "",
+    apellido: initialDiscipulo.apellido ?? "",
+    sexo: initialDiscipulo.sexo ?? "",
+    fecha_nacimiento: initialDiscipulo.fecha_nacimiento?.split("T")[0] ?? "",
+    telefono: initialDiscipulo.telefono ?? "",
+    email: initialDiscipulo.email ?? "",
+    direccion: initialDiscipulo.direccion ?? "",
+    convive_con: initialDiscipulo.convive_con ?? "",
+    etapa_id: initialDiscipulo.etapa_id ?? 1,
+    lider_id: initialDiscipulo.lider_id ?? "",
+    fecha_conversion: initialDiscipulo.fecha_conversion?.split("T")[0] ?? "",
+    fecha_bautismo: initialDiscipulo.fecha_bautismo?.split("T")[0] ?? "",
+    bautizado: initialDiscipulo.bautizado ?? false,
+    es_miembro: initialDiscipulo.es_miembro ?? false,
+    observaciones: initialDiscipulo.observaciones ?? "",
+  });
 
   const [agendas, setAgendas] = useState(initialAgendas);
   const [oraciones, setOraciones] = useState(initialOraciones);
@@ -173,6 +203,62 @@ export function DiscipuloDetailClient({
     setDiscipulo((prev) => ({ ...prev, avatar_url: urlData.publicUrl }));
     setSubiendoAvatar(false);
     toast.success("Foto actualizada");
+  };
+
+  const iniciarEdicionDatos = () => {
+    setDraft({
+      nombre: discipulo.nombre ?? "",
+      apellido: discipulo.apellido ?? "",
+      sexo: discipulo.sexo ?? "",
+      fecha_nacimiento: discipulo.fecha_nacimiento?.split("T")[0] ?? "",
+      telefono: discipulo.telefono ?? "",
+      email: discipulo.email ?? "",
+      direccion: discipulo.direccion ?? "",
+      convive_con: discipulo.convive_con ?? "",
+      etapa_id: discipulo.etapa_id ?? 1,
+      lider_id: discipulo.lider_id ?? "",
+      fecha_conversion: discipulo.fecha_conversion?.split("T")[0] ?? "",
+      fecha_bautismo: discipulo.fecha_bautismo?.split("T")[0] ?? "",
+      bautizado: discipulo.bautizado ?? false,
+      es_miembro: discipulo.es_miembro ?? false,
+      observaciones: discipulo.observaciones ?? "",
+    });
+    setEditandoDatos(true);
+  };
+
+  const guardarDatos = async () => {
+    if (!draft.nombre.trim() || !draft.apellido.trim()) {
+      toast.error("Nombre y apellido son obligatorios");
+      return;
+    }
+    setGuardandoDatos(true);
+    const payload = {
+      nombre: draft.nombre.trim(),
+      apellido: draft.apellido.trim(),
+      sexo: draft.sexo || null,
+      fecha_nacimiento: draft.fecha_nacimiento || null,
+      telefono: draft.telefono || null,
+      email: draft.email || null,
+      direccion: draft.direccion || null,
+      convive_con: draft.convive_con || null,
+      etapa_id: draft.etapa_id,
+      lider_id: draft.lider_id || null,
+      fecha_conversion: draft.fecha_conversion || null,
+      fecha_bautismo: draft.bautizado ? (draft.fecha_bautismo || null) : null,
+      bautizado: draft.bautizado,
+      es_miembro: draft.es_miembro,
+      observaciones: draft.observaciones || null,
+    };
+    const { error } = await supabase.from("discipulos").update(payload).eq("id", discipulo.id);
+    setGuardandoDatos(false);
+    if (error) {
+      toast.error("Error al guardar los datos");
+      return;
+    }
+    setDiscipulo((prev) => ({ ...prev, ...payload }) as Discipulo);
+    setEditandoDatos(false);
+    toast.success("Datos guardados");
+    onCambio?.();
   };
 
   const registrarEncuentro = async () => {
@@ -425,6 +511,279 @@ export function DiscipuloDetailClient({
         </p>
       </div>
 
+      {/* DATOS PERSONALES Y ESPIRITUALES */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle className="text-base">Datos personales</CardTitle>
+              {!editandoDatos ? (
+                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={iniciarEdicionDatos}>
+                  <Edit className="mr-1 h-3.5 w-3.5" />
+                  Editar
+                </Button>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setEditandoDatos(false)} disabled={guardandoDatos}>
+                    Cancelar
+                  </Button>
+                  <Button size="sm" className="h-7 text-xs" onClick={guardarDatos} disabled={guardandoDatos}>
+                    {guardandoDatos && <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />}
+                    Guardar
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {editandoDatos ? (
+              <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground">Nombre *</Label>
+                  <Input className="h-9" value={draft.nombre} onChange={(e) => setDraft({ ...draft, nombre: e.target.value })} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground">Apellido *</Label>
+                  <Input className="h-9" value={draft.apellido} onChange={(e) => setDraft({ ...draft, apellido: e.target.value })} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground">Sexo</Label>
+                  <div className="flex gap-1.5">
+                    {(["M", "F"] as const).map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setDraft({ ...draft, sexo: s })}
+                        className={`min-h-9 px-3 rounded-lg text-xs font-medium transition-colors ${
+                          draft.sexo === s ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        }`}
+                      >
+                        {s === "M" ? "Masculino" : "Femenino"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground">Nacimiento</Label>
+                  <Input type="date" className="h-9" value={draft.fecha_nacimiento} onChange={(e) => setDraft({ ...draft, fecha_nacimiento: e.target.value })} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground">Teléfono</Label>
+                  <Input className="h-9" value={draft.telefono} onChange={(e) => setDraft({ ...draft, telefono: e.target.value })} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground">Email</Label>
+                  <Input type="email" className="h-9" value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground">Dirección</Label>
+                  <Input className="h-9" value={draft.direccion} onChange={(e) => setDraft({ ...draft, direccion: e.target.value })} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground">¿Con quién vive?</Label>
+                  <Input className="h-9" value={draft.convive_con} onChange={(e) => setDraft({ ...draft, convive_con: e.target.value })} />
+                </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <Label className="text-[11px] font-medium text-muted-foreground">Etapa *</Label>
+                  <Select
+                    value={String(draft.etapa_id)}
+                    onValueChange={(v) => setDraft({ ...draft, etapa_id: parseInt(v ?? "1", 10) })}
+                    items={etapas.map((e) => ({ value: String(e.id), label: e.nombre }))}
+                  >
+                    <SelectTrigger className="h-9 w-full"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {etapas.map((e) => (
+                        <SelectItem key={e.id} value={String(e.id)}>{e.nombre}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <Label className="text-[11px] font-medium text-muted-foreground">Discipulador</Label>
+                  <Select
+                    value={draft.lider_id || "none"}
+                    onValueChange={(v) => setDraft({ ...draft, lider_id: !v || v === "none" ? "" : v })}
+                    items={[
+                      { value: "none", label: "Sin asignar" },
+                      ...discipuladores.map((d) => ({ value: d.id, label: `${d.apellido}, ${d.nombre}` })),
+                    ]}
+                  >
+                    <SelectTrigger className="h-9 w-full"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sin asignar</SelectItem>
+                      {discipuladores.map((d) => (
+                        <SelectItem key={d.id} value={d.id}>{d.apellido}, {d.nombre}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground">Conversión</Label>
+                  <Input type="date" className="h-9" value={draft.fecha_conversion} onChange={(e) => setDraft({ ...draft, fecha_conversion: e.target.value })} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-medium text-muted-foreground">Bautismo</Label>
+                  <Input type="date" className="h-9 disabled:opacity-50" value={draft.fecha_bautismo} disabled={!draft.bautizado} onChange={(e) => setDraft({ ...draft, fecha_bautismo: e.target.value })} />
+                </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <Label className="text-[11px] font-medium text-muted-foreground">Marcas espirituales</Label>
+                  <div className="flex flex-wrap items-center gap-6">
+                    <label className="flex cursor-pointer items-center gap-2 text-sm">
+                      <Checkbox checked={draft.bautizado} onCheckedChange={(v) => setDraft({ ...draft, bautizado: !!v, fecha_bautismo: !v ? "" : draft.fecha_bautismo })} />
+                      Está bautizado
+                    </label>
+                    <label className="flex cursor-pointer items-center gap-2 text-sm">
+                      <Checkbox checked={draft.es_miembro} onCheckedChange={(v) => setDraft({ ...draft, es_miembro: !!v })} />
+                      Es miembro
+                    </label>
+                  </div>
+                </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <Label className="text-[11px] font-medium text-muted-foreground">Observaciones</Label>
+                  <Textarea rows={2} className="resize-none" value={draft.observaciones} onChange={(e) => setDraft({ ...draft, observaciones: e.target.value })} />
+                </div>
+              </div>
+            ) : (
+              <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+                <FilaDato label="Nombre" valor={discipulo.nombre} />
+                <FilaDato label="Apellido" valor={discipulo.apellido} />
+                <FilaDato label="Sexo" valor={discipulo.sexo === "F" ? "Femenino" : discipulo.sexo === "M" ? "Masculino" : undefined} />
+                <FilaDato
+                  label="Nacimiento"
+                  valor={
+                    discipulo.fecha_nacimiento
+                      ? `${fechaCorta(discipulo.fecha_nacimiento)}${edadDesde(discipulo.fecha_nacimiento) ? ` · ${edadDesde(discipulo.fecha_nacimiento)}` : ""}`
+                      : undefined
+                  }
+                />
+                <FilaDato label="Teléfono" valor={discipulo.telefono} />
+                <FilaDato label="Email" valor={discipulo.email} />
+                <FilaDato label="Dirección" valor={discipulo.direccion} />
+                <FilaDato label="¿Con quién vive?" valor={discipulo.convive_con} />
+                <FilaDato label="Discipulador" valor={discipulador ? `${discipulador.apellido}, ${discipulador.nombre}` : undefined} />
+                <FilaDato label="Etapa actual" valor={etapaActual?.nombre} />
+                <FilaDato label="Conversión" valor={discipulo.fecha_conversion ? fechaCorta(discipulo.fecha_conversion) : undefined} />
+                <FilaDato
+                  label="Bautizado"
+                  valor={
+                    discipulo.bautizado
+                      ? `Sí${discipulo.fecha_bautismo ? ` · ${fechaCorta(discipulo.fecha_bautismo)}` : ""}`
+                      : discipulo.bautizado === false
+                        ? "No"
+                        : undefined
+                  }
+                />
+                <FilaDato label="Es miembro" valor={discipulo.es_miembro === true ? "Sí" : discipulo.es_miembro === false ? "No" : undefined} />
+                <FilaDato label="Observaciones" valor={discipulo.observaciones || undefined} />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Datos espirituales</CardTitle>
+            <CardDescription>Se completan automáticamente desde la sección Seguimiento</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+            {!evaluacion ? (
+              <div className="col-span-full rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground space-y-2">
+                <p>Todavía no hay una evaluación de seguimiento.</p>
+                {seguimiento ? (
+                  <Link href={`/seguimiento/ver?id=${seguimiento.id}`}>
+                    <Button size="sm" variant="outline" className="gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Hacer evaluación
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button size="sm" variant="outline" className="gap-1.5" onClick={iniciarSeguimiento}>
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Iniciar seguimiento
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <>
+                <FilaDato
+                  label="Ministerio"
+                  valor={
+                    (() => {
+                      const { opcion, detalle } = decodificarCampoEvaluacion(
+                        CAMPOS_EVALUACION.find((c) => c.key === "ministerio")!,
+                        evaluacion.ministerio || ""
+                      );
+                      return detalle || opcion || undefined;
+                    })()
+                  }
+                />
+                <FilaDato
+                  label="Don espiritual"
+                  valor={
+                    (() => {
+                      const { opcion, detalle } = decodificarCampoEvaluacion(
+                        CAMPOS_EVALUACION.find((c) => c.key === "don_espiritual")!,
+                        evaluacion.don_espiritual || ""
+                      );
+                      return detalle || opcion || undefined;
+                    })()
+                  }
+                />
+                <FilaDato
+                  label="¿Estudia?"
+                  valor={
+                    (() => {
+                      const { opcion, detalle } = decodificarCampoEvaluacion(
+                        CAMPOS_EVALUACION.find((c) => c.key === "estudia")!,
+                        evaluacion.estudia || ""
+                      );
+                      return detalle || opcion || undefined;
+                    })()
+                  }
+                />
+                <FilaDato
+                  label="¿Trabaja?"
+                  valor={
+                    (() => {
+                      const { opcion, detalle } = decodificarCampoEvaluacion(
+                        CAMPOS_EVALUACION.find((c) => c.key === "trabaja")!,
+                        evaluacion.trabaja || ""
+                      );
+                      return detalle || opcion || undefined;
+                    })()
+                  }
+                />
+                <FilaDato
+                  label="Relación con la autoridad"
+                  valor={
+                    (() => {
+                      const { opcion } = decodificarCampoEvaluacion(
+                        CAMPOS_EVALUACION.find((c) => c.key === "relacion_autoridad")!,
+                        evaluacion.relacion_autoridad || ""
+                      );
+                      return opcion || undefined;
+                    })()
+                  }
+                />
+                <FilaDato label="Hábitos pecaminosos" valor={evaluacion.habitos_pecaminosos || undefined} />
+                <FilaDato
+                  label="¿Con quién vive?"
+                  valor={
+                    (() => {
+                      const { opcion, detalle } = decodificarCampoEvaluacion(
+                        CAMPOS_EVALUACION.find((c) => c.key === "convive_con")!,
+                        evaluacion.convive_con || ""
+                      );
+                      return detalle || opcion || undefined;
+                    })()
+                  }
+                />
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       {/* MÉTRICAS CLAVE */}
       <div className="grid gap-3 sm:grid-cols-3">
         <Card>
@@ -503,76 +862,11 @@ export function DiscipuloDetailClient({
       <Tabs defaultValue="hoy" className="space-y-4">
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="hoy">Hoy</TabsTrigger>
-          <TabsTrigger value="datos">Datos</TabsTrigger>
           <TabsTrigger value="encuentros">Encuentros ({agendas.length})</TabsTrigger>
           <TabsTrigger value="salud">Salud espiritual</TabsTrigger>
           <TabsTrigger value="oracion">Oración ({oraciones.length})</TabsTrigger>
           <TabsTrigger value="historial">Historial</TabsTrigger>
         </TabsList>
-
-        {/* DATOS */}
-        <TabsContent value="datos" className="w-full min-w-0 space-y-4">
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Datos personales</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
-                <FilaDato label="Sexo" valor={discipulo.sexo === "F" ? "Femenino" : discipulo.sexo === "M" ? "Masculino" : undefined} />
-                <FilaDato
-                  label="Nacimiento"
-                  valor={
-                    discipulo.fecha_nacimiento
-                      ? `${fechaCorta(discipulo.fecha_nacimiento)}${edadDesde(discipulo.fecha_nacimiento) ? ` · ${edadDesde(discipulo.fecha_nacimiento)}` : ""}`
-                      : undefined
-                  }
-                />
-                <FilaDato label="Teléfono" valor={discipulo.telefono} />
-                <FilaDato label="Email" valor={discipulo.email} />
-                <FilaDato label="Dirección" valor={discipulo.direccion} />
-                <FilaDato label="¿Con quién vive?" valor={discipulo.convive_con} />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Datos espirituales</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
-                <FilaDato
-                  label="Discipulador"
-                  valor={discipulador ? `${discipulador.apellido}, ${discipulador.nombre}` : undefined}
-                />
-                <FilaDato label="Etapa actual" valor={etapaActual?.nombre} />
-                <FilaDato
-                  label="Bautizado"
-                  valor={
-                    discipulo.bautizado
-                      ? `Sí${discipulo.fecha_bautismo ? ` · ${fechaCorta(discipulo.fecha_bautismo)}` : ""}`
-                      : discipulo.bautizado === false
-                        ? "No"
-                        : undefined
-                  }
-                />
-                <FilaDato label="Es miembro" valor={discipulo.es_miembro === true ? "Sí" : discipulo.es_miembro === false ? "No" : undefined} />
-                <FilaDato label="Fecha de conversión" valor={discipulo.fecha_conversion ? fechaCorta(discipulo.fecha_conversion) : undefined} />
-                <FilaDato
-                  label="Ministerio"
-                  valor={evaluacion?.ministerio || discipulo.ministerio || undefined}
-                />
-                <FilaDato
-                  label="Dones"
-                  valor={evaluacion?.don_espiritual || discipulo.dones || undefined}
-                />
-                <FilaDato label="¿Estudia?" valor={evaluacion?.estudia || undefined} />
-                <FilaDato label="¿Trabaja?" valor={evaluacion?.trabaja || undefined} />
-                <FilaDato label="Relación con la autoridad" valor={evaluacion?.relacion_autoridad || undefined} />
-                <FilaDato label="Hábitos pecaminosos" valor={evaluacion?.habitos_pecaminosos || undefined} />
-                <FilaDato label="Observaciones" valor={discipulo.observaciones || undefined} />
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
 
         {/* HOY */}
         <TabsContent value="hoy" className="w-full min-w-0 space-y-4">

@@ -141,6 +141,7 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
     if (!dRes.data) { setLoadingDetail(false); return; }
     const discipulo = dRes.data as Discipulo;
     let discipulador: { nombre: string; apellido: string } | null = null;
+    let discipuladores: Array<{ id: string; nombre: string; apellido: string }> = [];
     if (discipulo.lider_id) {
       const { data: liderRes } = await supabase
         .from("profiles")
@@ -149,6 +150,12 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
         .maybeSingle();
       if (liderRes) discipulador = liderRes as { nombre: string; apellido: string };
     }
+    const { data: listaDiscipuladores } = await supabase
+      .from("profiles")
+      .select("id, nombre, apellido")
+      .or("rol.eq.discipulador,rol.eq.admin")
+      .order("apellido", { ascending: true });
+    discipuladores = (listaDiscipuladores || []) as Array<{ id: string; nombre: string; apellido: string }>;
     const seguimientos = (segRes.data || []) as Seguimiento[];
     const seg = seguimientos.find((s) => s.estado === "activo") || seguimientos[0];
     let evaluacion: SeguimientoEvaluacion | null = null;
@@ -172,6 +179,7 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
       evaluacion,
       objetivos,
       discipulador,
+      discipuladores,
       salud: discipulosRef.current.find((r) => r.id === id)?.salud ?? null,
       onCambio,
     });
@@ -324,7 +332,7 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
   ];
 
   return (
-    <div className="flex flex-col gap-6 lg:flex-row lg:h-[calc(100vh-8rem)]">
+    <div className="flex flex-col gap-6 lg:flex-row lg:h-full">
       {/* PANEL IZQUIERDO */}
       <div className="w-full lg:w-[440px] lg:shrink-0 flex flex-col gap-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

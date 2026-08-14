@@ -1,8 +1,8 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  LayoutDashboard,
+  Gauge,
   Users,
-  UserCog,
+  UserRoundCog,
   CalendarCheck,
   Church,
   Settings,
@@ -11,6 +11,7 @@ import {
   Heart,
   BookOpen,
   FileBarChart,
+  ChartColumn,
 } from "lucide-react";
 
 export interface NavItem {
@@ -26,10 +27,10 @@ export const ROL_LABELS: Record<string, string> = {
 };
 
 export const adminMenuItems: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard Discípulos", icon: LayoutDashboard },
-  { href: "/dashboard/discipuladores", label: "Dashboard Discipuladores", icon: UserCog },
+  { href: "/dashboard", label: "Dashboard Discípulos", icon: Gauge },
+  { href: "/dashboard/discipuladores", label: "Dashboard Discipuladores", icon: ChartColumn },
   { href: "/discipulos", label: "Discípulos", icon: Users },
-  { href: "/discipuladores", label: "Discipuladores", icon: UserCog },
+  { href: "/discipuladores", label: "Discipuladores", icon: UserRoundCog },
   { href: "/tareas", label: "Tareas", icon: ClipboardCheck },
   { href: "/seguimiento", label: "Seguimiento", icon: BookOpen },
   { href: "/evangelismo", label: "Evangelismo", icon: Heart },
@@ -40,7 +41,7 @@ export const adminMenuItems: NavItem[] = [
 ];
 
 export const discipuloMenuItems: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Dashboard", icon: Gauge },
   { href: "/tareas", label: "Tareas", icon: ClipboardCheck },
   { href: "/seguimiento", label: "Seguimiento", icon: BookOpen },
   { href: "/evangelismo", label: "Evangelismo", icon: Heart },
@@ -50,7 +51,7 @@ export const discipuloMenuItems: NavItem[] = [
 ];
 
 export const discipuladorMenuItems: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Dashboard", icon: Gauge },
   { href: "/discipulos", label: "Discípulos", icon: Users },
   { href: "/tareas", label: "Tareas", icon: ClipboardCheck },
   { href: "/seguimiento", label: "Seguimiento", icon: BookOpen },
