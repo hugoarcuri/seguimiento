@@ -12,9 +12,9 @@ function Checkbox({
   return (
     <CheckboxBase.Checkbox.Root
       className={cn(
-        "peer size-5 shrink-0 cursor-pointer rounded-[5px] border border-input bg-card shadow-sm transition-all",
+        "peer size-5 shrink-0 cursor-pointer rounded-[5px] border border-input bg-card shadow-sm transition-colors",
         "outline-none hover:border-primary/70 hover:bg-accent",
-        "focus-visible:border-ring focus-visible:ring-[2px] focus-visible:ring-ring/35",
+        "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
         "disabled:cursor-not-allowed disabled:opacity-50",
         "data-[checked=true]:border-primary data-[checked=true]:bg-primary data-[checked=true]:text-primary-foreground",
         className

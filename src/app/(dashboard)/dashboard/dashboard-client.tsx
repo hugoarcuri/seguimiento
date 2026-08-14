@@ -249,8 +249,8 @@ export function DashboardClient({
         ? `${kpis.totalAsignados} asignados a vos`
         : `${kpis.totalAsignados} asignados · ${kpis.pausados} pausados · ${kpis.retirados} retirados`,
       icon: Users,
-      color: "text-blue-600 dark:text-blue-400",
-      bg: "bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-950 dark:to-blue-900/60",
+      color: "text-blue-600",
+      bg: "bg-blue-50 dark:bg-blue-950",
       href: "/discipulos",
     },
     {
@@ -258,8 +258,8 @@ export function DashboardClient({
       value: kpis.progresoPromedio !== null ? `${kpis.progresoPromedio}%` : "—",
       description: descVariacion,
       icon: TrendingUp,
-      color: "text-emerald-600 dark:text-emerald-400",
-      bg: "bg-gradient-to-br from-emerald-100 to-emerald-50 dark:from-emerald-950 dark:to-emerald-900/60",
+      color: "text-emerald-600",
+      bg: "bg-emerald-50 dark:bg-emerald-950",
       href: "/seguimiento",
     },
     {
@@ -267,8 +267,8 @@ export function DashboardClient({
       value: kpis.reunionesRealizadas,
       description: `${kpis.reunionesPct}% del objetivo`,
       icon: CalendarCheck,
-      color: "text-indigo-600 dark:text-indigo-400",
-      bg: "bg-gradient-to-br from-indigo-100 to-indigo-50 dark:from-indigo-950 dark:to-indigo-900/60",
+      color: "text-indigo-600",
+      bg: "bg-indigo-50 dark:bg-indigo-950",
       href: "/agenda",
     },
     {
@@ -276,8 +276,8 @@ export function DashboardClient({
       value: kpis.enRiesgo,
       description: "progreso bajo o falta de seguimiento",
       icon: AlertTriangle,
-      color: "text-amber-600 dark:text-amber-400",
-      bg: "bg-gradient-to-br from-amber-100 to-amber-50 dark:from-amber-950 dark:to-amber-900/60",
+      color: "text-amber-600",
+      bg: "bg-amber-50 dark:bg-amber-950",
       onClick: irTablaRiesgo,
     },
     {
@@ -285,8 +285,8 @@ export function DashboardClient({
       value: kpis.necesitanAtencion,
       description: "requieren una intervención",
       icon: AlertTriangle,
-      color: "text-red-600 dark:text-red-400",
-      bg: "bg-gradient-to-br from-red-100 to-red-50 dark:from-red-950 dark:to-red-900/60",
+      color: "text-red-600",
+      bg: "bg-red-50 dark:bg-red-950",
       destacado: true,
       onClick: irAtencion,
     },
@@ -334,15 +334,15 @@ export function DashboardClient({
             <Card
               size="sm"
               className={cn(
-                "h-full transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-primary/40 group-hover:shadow-lifted",
+                "h-full transition-colors group-hover:border-primary/50",
                 stat.destacado && "border-red-300 dark:border-red-800"
               )}
             >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 border-b border-border/40 pb-2">
-                <CardTitle className="min-w-0 flex-1 truncate font-sans text-[11px] font-bold uppercase tracking-wide">
+                <CardTitle className="min-w-0 flex-1 truncate text-[11px] font-bold uppercase tracking-wide">
                   {stat.title}
                 </CardTitle>
-                <div className={cn("rounded-xl p-2.5 shrink-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]", stat.bg)}>
+                <div className={cn("rounded-lg p-2 shrink-0", stat.bg)}>
                   <stat.icon className={cn("h-4 w-4", stat.color)} />
                 </div>
               </CardHeader>
@@ -547,7 +547,7 @@ export function DashboardClient({
                       <button
                         key={d.id}
                         onClick={() => router.push(`/discipulos/ver?id=${d.id}`)}
-                        className={cn("flex w-full items-center gap-2.5 rounded-lg border bg-card p-2.5 text-left shadow-[0_1px_1px_rgba(0,0,0,0.02)] transition-all hover:border-primary/40 hover:shadow-card", cfg.card)}
+                        className={cn("flex w-full items-center gap-2.5 rounded-lg border bg-card p-2.5 text-left transition-colors hover:border-primary/50", cfg.card)}
                       >
                         <Avatar persona={d} />
                         <div className="min-w-0 flex-1">
@@ -602,8 +602,8 @@ export function DashboardClient({
               {data.actividad.map((a) => {
                 const cfg = ACTIVIDAD_ICONOS[a.tipo];
                 const contenido = (
-                  <div className="flex items-center gap-2.5 rounded-lg border bg-card/50 p-2.5 shadow-[0_1px_1px_rgba(0,0,0,0.02)]">
-                    <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]", cfg.cls)}>
+                  <div className="flex items-center gap-2.5 rounded-lg border p-2.5">
+                    <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full", cfg.cls)}>
                       <cfg.icon className="h-4 w-4" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -616,7 +616,7 @@ export function DashboardClient({
                   </div>
                 );
                 return a.discipulo_id ? (
-                  <Link key={a.id} href={`/discipulos/ver?id=${a.discipulo_id}`} className="block transition-all hover:shadow-card rounded-lg">
+                  <Link key={a.id} href={`/discipulos/ver?id=${a.discipulo_id}`} className="block transition-colors hover:border-primary/50 rounded-lg">
                     {contenido}
                   </Link>
                 ) : (

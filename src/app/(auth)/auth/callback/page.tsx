@@ -30,13 +30,11 @@ export default function AuthCallbackPage() {
   }, [router]);
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-background via-background to-muted p-4">
-      <div aria-hidden className="pointer-events-none absolute -top-40 -right-32 h-[30rem] w-[30rem] rounded-full bg-primary/10 blur-3xl" />
-      <div aria-hidden className="pointer-events-none absolute -bottom-44 -left-28 h-[26rem] w-[26rem] rounded-full bg-primary/10 blur-3xl" />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
       {error ? (
-        <p className="relative text-sm text-destructive text-center max-w-sm">{error}</p>
+        <p className="text-sm text-destructive text-center max-w-sm">{error}</p>
       ) : (
-        <Loader2 className="relative h-8 w-8 animate-spin text-muted-foreground" />
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       )}
     </div>
   );

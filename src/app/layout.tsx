@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Manrope, Instrument_Serif } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PaletteProvider } from "@/components/palette-provider";
@@ -7,14 +7,7 @@ import { FontSizeProvider } from "@/components/font-size-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { APP_URL, BASE_PATH } from "@/lib/constants/paths";
 
-const manrope = Manrope({ subsets: ["latin"], variable: "--font-sans" });
-
-const instrumentSerif = Instrument_Serif({
-  subsets: ["latin"],
-  weight: "400",
-  style: ["normal", "italic"],
-  variable: "--font-instrument-serif",
-});
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
@@ -44,7 +37,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={`${manrope.variable} ${instrumentSerif.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} font-sans antialiased`}>
         <FontSizeProvider>
           <ThemeProvider>
             <PaletteProvider>

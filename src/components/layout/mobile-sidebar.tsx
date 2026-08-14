@@ -36,12 +36,9 @@ export function MobileSidebar() {
       />
       <SheetContent side="left" className="w-64 p-0">
         <div className="p-6 border-b">
-          <Link href="/dashboard" className="flex items-center gap-2.5">
-            <span className="relative inline-flex shrink-0">
-              <Image src={`${BASE_PATH}/logo.png`} alt="Logo" width={32} height={32} className="rounded-xl" />
-              <span aria-hidden className="absolute -inset-1 -z-10 rounded-2xl bg-gradient-to-br from-primary/30 to-transparent blur-sm" />
-            </span>
-            <span className="font-heading text-lg tracking-tight">Discipulado</span>
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <Image src={`${BASE_PATH}/logo.png`} alt="Logo" width={32} height={32} className="rounded" />
+            <span className="font-semibold text-lg">Discipulado</span>
           </Link>
         </div>
         <nav className="space-y-1 p-3 flex-1 overflow-y-auto">
@@ -53,18 +50,13 @@ export function MobileSidebar() {
                 href={item.href}
                 onClick={() => setOpen(false)}
                 className={cn(
-                  "group/nav flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-all",
+                  "flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-primary/10 text-primary font-semibold"
+                    ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 )}
               >
-                <item.icon
-                  className={cn(
-                    "h-5 w-5 shrink-0 transition-transform duration-150 group-hover/nav:scale-110",
-                    isActive && "text-primary"
-                  )}
-                />
+                <item.icon className="h-5 w-5 shrink-0" />
                 {item.label}
               </Link>
             );
