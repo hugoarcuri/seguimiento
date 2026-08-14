@@ -11,13 +11,41 @@ import {
   Heart,
   BookOpen,
   FileBarChart,
-  ChartColumn,
 } from "lucide-react";
 
-export interface NavItem {
+export interface NavLink {
   href: string;
   label: string;
   icon: LucideIcon;
+}
+
+export interface NavChild {
+  href: string;
+  label: string;
+}
+
+export interface NavGroup {
+  label: string;
+  icon: LucideIcon;
+  children: NavChild[];
+}
+
+export type NavItem = NavLink | NavGroup;
+
+export function isNavGroup(item: NavItem): item is NavGroup {
+  return "children" in item;
+}
+
+export function navHrefs(items: NavItem[]): string[] {
+  const hrefs: string[] = [];
+  items.forEach((item) => {
+    if (isNavGroup(item)) {
+      item.children.forEach((child) => hrefs.push(child.href));
+    } else {
+      hrefs.push(item.href);
+    }
+  });
+  return hrefs;
 }
 
 export const ROL_LABELS: Record<string, string> = {
@@ -27,10 +55,22 @@ export const ROL_LABELS: Record<string, string> = {
 };
 
 export const adminMenuItems: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard Discípulos", icon: Gauge },
-  { href: "/dashboard/discipuladores", label: "Dashboard Discipuladores", icon: ChartColumn },
-  { href: "/discipulos", label: "Discípulos", icon: Users },
-  { href: "/discipuladores", label: "Discipuladores", icon: UserRoundCog },
+  {
+    label: "Discípulos",
+    icon: Users,
+    children: [
+      { href: "/dashboard", label: "Dashboard Discípulos" },
+      { href: "/discipulos", label: "Lista Discípulos" },
+    ],
+  },
+  {
+    label: "Discipuladores",
+    icon: UserRoundCog,
+    children: [
+      { href: "/dashboard/discipuladores", label: "Dashboard Discipuladores" },
+      { href: "/discipuladores", label: "Lista Discipuladores" },
+    ],
+  },
   { href: "/tareas", label: "Tareas", icon: ClipboardCheck },
   { href: "/seguimiento", label: "Seguimiento", icon: BookOpen },
   { href: "/evangelismo", label: "Evangelismo", icon: Heart },
@@ -51,8 +91,14 @@ export const discipuloMenuItems: NavItem[] = [
 ];
 
 export const discipuladorMenuItems: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: Gauge },
-  { href: "/discipulos", label: "Discípulos", icon: Users },
+  {
+    label: "Discípulos",
+    icon: Users,
+    children: [
+      { href: "/dashboard", label: "Dashboard Discípulos" },
+      { href: "/discipulos", label: "Lista Discípulos" },
+    ],
+  },
   { href: "/tareas", label: "Tareas", icon: ClipboardCheck },
   { href: "/seguimiento", label: "Seguimiento", icon: BookOpen },
   { href: "/evangelismo", label: "Evangelismo", icon: Heart },

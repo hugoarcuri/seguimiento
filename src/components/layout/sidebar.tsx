@@ -8,11 +8,81 @@ import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/useUser";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { PanelLeft, PanelLeftClose } from "lucide-react";
-import { adminMenuItems, discipuloMenuItems, discipuladorMenuItems } from "@/lib/constants/navigation";
+import { ChevronDown, PanelLeft, PanelLeftClose } from "lucide-react";
+import { adminMenuItems, discipuloMenuItems, discipuladorMenuItems, isNavGroup, navHrefs, type NavGroup } from "@/lib/constants/navigation";
 import { findActiveHref, BASE_PATH } from "@/lib/constants/paths";
 
 const STORAGE_KEY = "sidebar-colapsado";
+
+function SidebarGroup({
+  group,
+  collapsed,
+  activeHref,
+}: {
+  group: NavGroup;
+  collapsed: boolean;
+  activeHref: string | null;
+}) {
+  const isActive = group.children.some((child) => child.href === activeHref);
+  const [userOpen, setUserOpen] = useState<boolean | null>(null);
+  const open = userOpen ?? isActive;
+
+  const toggle = () => setUserOpen((o) => (o === null ? !isActive : !o));
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={toggle}
+        title={group.label}
+        aria-expanded={open}
+        className={cn(
+          "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+          collapsed ? "justify-center px-0" : "justify-start px-3",
+          isActive
+            ? "text-foreground"
+            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+        )}
+      >
+        <group.icon className="h-5 w-5 shrink-0" />
+        {!collapsed && (
+          <>
+            <span className="flex-1 text-left">{group.label}</span>
+            <ChevronDown
+              className={cn("h-4 w-4 shrink-0 transition-transform", open && "rotate-180")}
+            />
+          </>
+        )}
+      </button>
+      {open && (
+        <div className="space-y-1 mt-1">
+          {group.children.map((child) => {
+            const childActive = activeHref === child.href;
+            return (
+              <Link
+                key={child.href}
+                href={child.href}
+                title={child.label}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg py-2 text-sm font-medium transition-colors",
+                  collapsed ? "justify-center px-0" : "justify-start pl-11 pr-3",
+                  childActive
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                )}
+              >
+                {!collapsed && (
+                  <span className={cn("h-1.5 w-1.5 rounded-full", childActive ? "bg-current" : "bg-muted-foreground/50")} />
+                )}
+                {child.label}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -33,7 +103,7 @@ export function Sidebar() {
 
   if (loading) return null;
 
-  const activeHref = findActiveHref(pathname, menuItems.map((i) => i.href));
+  const activeHref = findActiveHref(pathname, navHrefs(menuItems));
 
   return (
     <aside
@@ -72,6 +142,16 @@ export function Sidebar() {
       <ScrollArea className="flex-1 py-4">
         <nav className={cn("space-y-1", collapsed ? "px-2" : "px-2 lg:px-3")}>
           {menuItems.map((item) => {
+            if (isNavGroup(item)) {
+              return (
+                <SidebarGroup
+                  key={item.label}
+                  group={item}
+                  collapsed={collapsed}
+                  activeHref={activeHref}
+                />
+              );
+            }
             const isActive = activeHref === item.href;
             return (
               <Link
