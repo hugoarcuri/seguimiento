@@ -452,13 +452,13 @@ export function DiscipuloDetailClient({
               </Button>
             </Link>
           )}
-          <Link
-            href={`/discipulos/editar?id=${discipulo.id}`}
-            className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/80 min-h-11 md:min-h-8 gap-1.5 px-3 text-sm font-medium shrink-0"
+          <Button
+            render={<Link href={`/discipulos/editar?id=${discipulo.id}`} />}
+            className="gap-1.5 shrink-0"
           >
             <Edit className="h-4 w-4" />
             Editar
-          </Link>
+          </Button>
         </div>
       </div>
 

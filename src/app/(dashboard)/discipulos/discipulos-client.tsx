@@ -355,13 +355,14 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
                 )}
               </>
             )}
-            <Link
-              href="/discipulos/nuevo"
-              className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/80 min-h-11 md:min-h-8 gap-1 px-2 text-xs font-medium"
+            <Button
+              render={<Link href="/discipulos/nuevo" />}
+              size="sm"
+              className="gap-1 px-2 text-xs font-medium"
             >
               <UserPlus className="h-3.5 w-3.5" />
               Nuevo
-            </Link>
+            </Button>
             <ImportarDiscipulos etapas={etapas} onImportado={onCambio} />
           </div>
         </div>

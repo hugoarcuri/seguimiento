@@ -38,17 +38,20 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "hidden md:flex flex-col border-r bg-card transition-[width] duration-200",
+        "hidden md:flex flex-col border-r bg-sidebar text-sidebar-foreground transition-[width] duration-200",
         collapsed ? "w-16" : "w-64"
       )}
     >
       <div className={cn("border-b", collapsed ? "p-4" : "p-4 lg:p-6")}>
         <Link
           href="/dashboard"
-          className={cn("flex items-center gap-2", collapsed ? "justify-center" : "justify-start")}
+          className={cn("flex items-center gap-2.5", collapsed ? "justify-center" : "justify-start")}
         >
-          <Image src={`${BASE_PATH}/logo.png`} alt="Logo" width={32} height={32} className="rounded" />
-          <span className={cn("font-semibold text-lg", collapsed && "hidden")}>Discipulado</span>
+          <span className="relative inline-flex shrink-0">
+            <Image src={`${BASE_PATH}/logo.png`} alt="Logo" width={32} height={32} className="rounded-xl" />
+            <span aria-hidden className="absolute -inset-1 -z-10 rounded-2xl bg-gradient-to-br from-primary/30 to-transparent blur-sm" />
+          </span>
+          <span className={cn("font-heading text-lg tracking-tight", collapsed && "hidden")}>Discipulado</span>
         </Link>
       </div>
       <div className="border-b p-2">
@@ -79,15 +82,23 @@ export function Sidebar() {
                 href={item.href}
                 title={item.label}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                  "group/nav flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
                   collapsed ? "justify-center" : "justify-start",
                   isActive
-                    ? "bg-primary text-primary-foreground"
+                    ? "bg-primary/10 text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] font-semibold"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 )}
               >
-                <item.icon className="h-5 w-5 shrink-0" />
+                <item.icon
+                  className={cn(
+                    "h-5 w-5 shrink-0 transition-transform duration-150 group-hover/nav:scale-110",
+                    isActive && "text-primary"
+                  )}
+                />
                 <span className={cn(collapsed && "hidden")}>{item.label}</span>
+                {isActive && (
+                  <span aria-hidden className={cn("h-1.5 w-1.5 shrink-0 rounded-full bg-primary transition-opacity", collapsed ? "absolute" : "ml-auto")} />
+                )}
               </Link>
             );
           })}

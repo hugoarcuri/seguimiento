@@ -72,13 +72,17 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-      <Card className="w-full max-w-sm">
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-background via-background to-muted p-4">
+      <div aria-hidden className="pointer-events-none absolute -top-40 -right-32 h-[30rem] w-[30rem] rounded-full bg-primary/10 blur-3xl" />
+      <div aria-hidden className="pointer-events-none absolute -bottom-44 -left-28 h-[26rem] w-[26rem] rounded-full bg-primary/10 blur-3xl" />
+      <Card className="relative w-full max-w-sm shadow-pop ring-1 ring-primary/10">
         <CardHeader className="text-center space-y-2">
           <div className="flex justify-center mb-2">
-            <Image src={`${BASE_PATH}/logo.png`} alt="JH" width={48} height={48} className="rounded" />
+            <span className="relative inline-flex shrink-0 rounded-2xl bg-primary/10 p-3 ring-1 ring-primary/20">
+              <Image src={`${BASE_PATH}/logo.png`} alt="JH" width={48} height={48} className="rounded-xl" />
+            </span>
           </div>
-          <CardTitle className="text-2xl font-bold">Crear Cuenta</CardTitle>
+          <CardTitle className="font-heading text-3xl tracking-tight">Crear Cuenta</CardTitle>
           <CardDescription>Regístrate en el sistema de discipulado</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
