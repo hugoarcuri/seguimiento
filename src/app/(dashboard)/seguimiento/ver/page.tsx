@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import {
   ArrowLeft, Loader2, Save, Plus, Trash2, User, CalendarDays, UserCheck, TrendingUp,
   Phone, Mail, MapPin, Church, Pencil, CalendarPlus, Check, AlertTriangle,
+  Users, Sparkles, GraduationCap, Briefcase, Home, ClipboardList, type LucideIcon,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -26,6 +27,7 @@ import { estadoEncuentrosMes, contarEncuentrosMes, SALUD_CONFIG } from "@/lib/di
 import {
   CAMPOS_EVALUACION, codificarCampoEvaluacion, decodificarCampoEvaluacion,
   OBJETIVOS_SUGERIDOS, calcularProgreso,
+  type CampoEvaluacionDef,
 } from "../seguimiento-constants";
 import type {
   Seguimiento, SeguimientoEvaluacion, SeguimientoObjetivo, SeguimientoObservacion, SeguimientoHistorial,
@@ -38,6 +40,28 @@ const draftVacio = (): EvalDraft => {
   const d: EvalDraft = {};
   CAMPOS_EVALUACION.forEach((c) => { d[c.key] = { opcion: "", detalle: "" }; });
   return d;
+};
+
+const ICONO_CAMPO: Record<string, LucideIcon> = {
+  habitos_pecaminosos: AlertTriangle,
+  don_espiritual: Sparkles,
+  ministerio: Church,
+  relacion_autoridad: Users,
+  estudia: GraduationCap,
+  trabaja: Briefcase,
+  convive_con: Home,
+};
+
+const numeroCampo = (key: string): string =>
+  String(CAMPOS_EVALUACION.findIndex((c) => c.key === key) + 1).padStart(2, "0");
+
+const campoRespondido = (campo: CampoEvaluacionDef, draft: { opcion: string; detalle: string }): boolean => {
+  if (!campo.opciones) return draft.detalle.trim().length > 0;
+  if (campo.detalleSi) {
+    if (draft.opcion === campo.detalleSi) return draft.detalle.trim().length > 0;
+    return draft.opcion.trim().length > 0;
+  }
+  return draft.opcion.trim().length > 0;
 };
 
 const historialLabel: Record<string, string> = {
@@ -612,98 +636,150 @@ function SeguimientoDetalle({ id }: { id: string }) {
 
         <TabsContent value="evaluacion" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Evaluación</CardTitle>
+            <CardHeader className="border-b bg-muted/40">
+              <CardTitle className="text-base flex items-center gap-2">
+                <ClipboardList className="h-5 w-5 text-primary" />
+                Evaluación
+              </CardTitle>
               <CardDescription>Completá los datos del crecimiento espiritual del discípulo.</CardDescription>
+              {(() => {
+                const camposConOpciones = CAMPOS_EVALUACION.filter((c) => c.key !== "habitos_pecaminosos");
+                const respondidos = camposConOpciones.filter((c) => campoRespondido(c, evalDraft[c.key] || { opcion: "", detalle: "" })).length;
+                const total = camposConOpciones.length;
+                const pct = Math.round((respondidos / total) * 100);
+                return (
+                  <div className="mt-2">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                      <span>Progreso del formulario</span>
+                      <span className="font-medium text-foreground">{respondidos} de {total} campos</span>
+                    </div>
+                    <Progress value={pct} className="h-2" />
+                  </div>
+                );
+              })()}
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-4">
               {CAMPOS_EVALUACION.map((campo) => {
                 const draft = evalDraft[campo.key] || { opcion: "", detalle: "" };
                 const esTextoLibre = !campo.opciones;
                 const mostrarDetalle = !!campo.detalleSi && draft.opcion === campo.detalleSi;
+                const respondido = campoRespondido(campo, draft);
+                const Icono = ICONO_CAMPO[campo.key] || User;
                 if (campo.key === "habitos_pecaminosos") {
                   return (
-                    <div key={campo.key} className="space-y-2">
-                      <Label>{campo.label}</Label>
-                      {habitosDraft.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">Sin hábitos cargados. Agregá los que quieras trabajar.</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {habitosDraft.map((h, i) => (
-                            <div key={i} className="flex items-center gap-2">
-                              <Input
-                                value={h}
-                                placeholder={`Hábito ${i + 1}`}
-                                onChange={(e) => setHabitosDraft((prev) => prev.map((x, j) => (j === i ? e.target.value : x)))}
-                              />
-                              <Button type="button" variant="ghost" size="icon" title="Quitar hábito" onClick={() => setHabitosDraft((prev) => prev.filter((_, j) => j !== i))}>
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
+                    <div key={campo.key} className="rounded-lg border bg-muted/30 p-3 sm:p-4 space-y-2">
+                      <div className="flex items-start gap-2.5">
+                        <span className="shrink-0 flex h-7 w-7 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400">
+                          <Icono className="h-4 w-4" />
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <Label className="text-sm font-semibold flex items-center gap-2">
+                            <span className="text-[10px] font-mono text-muted-foreground">{numeroCampo(campo.key)}</span>
+                            {campo.label}
+                          </Label>
+                          {habitosDraft.length === 0 ? (
+                            <p className="text-sm text-muted-foreground mt-1">Sin hábitos cargados. Agregá los que quieras trabajar.</p>
+                          ) : (
+                            <div className="space-y-2 mt-2">
+                              {habitosDraft.map((h, i) => (
+                                <div key={i} className="flex items-center gap-2">
+                                  <Input
+                                    value={h}
+                                    placeholder={`Hábito ${i + 1}`}
+                                    onChange={(e) => setHabitosDraft((prev) => prev.map((x, j) => (j === i ? e.target.value : x)))}
+                                  />
+                                  <Button type="button" variant="ghost" size="icon" title="Quitar hábito" onClick={() => setHabitosDraft((prev) => prev.filter((_, j) => j !== i))}>
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </div>
+                              ))}
                             </div>
-                          ))}
+                          )}
+                          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => setHabitosDraft((prev) => [...prev, ""])}>
+                            <Plus className="mr-1 h-4 w-4" /> Agregar hábito
+                          </Button>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Cada hábito aparece en la pestaña &quot;Objetivos&quot; para marcarlo como cumplido.
+                          </p>
                         </div>
-                      )}
-                      <Button type="button" variant="outline" size="sm" onClick={() => setHabitosDraft((prev) => [...prev, ""])}>
-                        <Plus className="mr-1 h-4 w-4" /> Agregar hábito
-                      </Button>
-                      <p className="text-xs text-muted-foreground">
-                        Cada hábito aparece en la pestaña &quot;Objetivos&quot; para marcarlo como cumplido.
-                      </p>
+                      </div>
                     </div>
                   );
                 }
                 return (
-                  <div key={campo.key} className="space-y-2">
-                    <Label htmlFor={`eval-${campo.key}`}>{campo.label}</Label>
-                    {esTextoLibre ? (
-                      <Input
-                        id={`eval-${campo.key}`}
-                        placeholder={campo.placeholder}
-                        value={draft.detalle}
-                        onChange={(e) => setEvalDraft((prev) => ({ ...prev, [campo.key]: { ...prev[campo.key], detalle: e.target.value } }))}
-                      />
-                    ) : campo.detalleSi ? (
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                        <Select
-                          value={draft.opcion}
-                          onValueChange={(v) => setEvalDraft((prev) => ({ ...prev, [campo.key]: { ...prev[campo.key], opcion: v ?? "" } }))}
-                        >
-                          <SelectTrigger id={`eval-${campo.key}`} className="w-full sm:w-56">
-                            <SelectValue placeholder="Seleccionar..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {campo.opciones!.map((op) => (
-                              <SelectItem key={op} value={op}>{op}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {mostrarDetalle && (
+                  <div key={campo.key} className="rounded-lg border p-3 sm:p-4 space-y-2">
+                    <div className="flex items-start gap-2.5">
+                      <span className="shrink-0 flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary">
+                        <Icono className="h-4 w-4" />
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <Label htmlFor={`eval-${campo.key}`} className="text-sm font-semibold flex items-center gap-2">
+                          <span className="text-[10px] font-mono text-muted-foreground">{numeroCampo(campo.key)}</span>
+                          {campo.label}
+                        </Label>
+                        {esTextoLibre ? (
                           <Input
+                            id={`eval-${campo.key}`}
+                            placeholder={campo.placeholder}
+                            className="mt-2"
                             value={draft.detalle}
-                            placeholder={campo.detallePlaceholder}
                             onChange={(e) => setEvalDraft((prev) => ({ ...prev, [campo.key]: { ...prev[campo.key], detalle: e.target.value } }))}
                           />
+                        ) : campo.detalleSi ? (
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center mt-2">
+                            <Select
+                              value={draft.opcion}
+                              onValueChange={(v) => setEvalDraft((prev) => ({ ...prev, [campo.key]: { ...prev[campo.key], opcion: v ?? "" } }))}
+                            >
+                              <SelectTrigger id={`eval-${campo.key}`} className="w-full sm:w-56">
+                                <SelectValue placeholder="Seleccionar..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {campo.opciones!.map((op) => (
+                                  <SelectItem key={op} value={op}>{op}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {mostrarDetalle && (
+                              <Input
+                                value={draft.detalle}
+                                placeholder={campo.detallePlaceholder}
+                                onChange={(e) => setEvalDraft((prev) => ({ ...prev, [campo.key]: { ...prev[campo.key], detalle: e.target.value } }))}
+                              />
+                            )}
+                          </div>
+                        ) : (
+                          <Select
+                            value={draft.opcion}
+                            onValueChange={(v) => setEvalDraft((prev) => ({ ...prev, [campo.key]: { ...prev[campo.key], opcion: v ?? "" } }))}
+                          >
+                            <SelectTrigger id={`eval-${campo.key}`} className="w-full mt-2">
+                              <SelectValue placeholder="Seleccionar..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {campo.opciones!.map((op) => (
+                                <SelectItem key={op} value={op}>{op}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         )}
                       </div>
-                    ) : (
-                      <Select
-                        value={draft.opcion}
-                        onValueChange={(v) => setEvalDraft((prev) => ({ ...prev, [campo.key]: { ...prev[campo.key], opcion: v ?? "" } }))}
-                      >
-                        <SelectTrigger id={`eval-${campo.key}`} className="w-full">
-                          <SelectValue placeholder="Seleccionar..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {campo.opciones!.map((op) => (
-                            <SelectItem key={op} value={op}>{op}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
+                    </div>
+                    <div className="flex justify-end">
+                      {respondido ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                          <Check className="h-3.5 w-3.5" /> Completado
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+                          <AlertTriangle className="h-3.5 w-3.5" /> Pendiente
+                        </span>
+                      )}
+                    </div>
                   </div>
                 );
               })}
-              <div className="flex justify-end">
+              <div className="flex justify-end border-t pt-4">
                 <Button onClick={guardarEvaluacion} disabled={guardando}>
                   {guardando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   <Save className="mr-2 h-4 w-4" />
@@ -711,7 +787,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
                 </Button>
               </div>
               {evaluacion && (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground text-right">
                   Última evaluación: {format(new Date(evaluacion.fecha + "T12:00:00"), "dd/MM/yyyy")}
                 </p>
               )}
