@@ -71,10 +71,14 @@ function SidebarGroup({
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 )}
               >
-                {!collapsed && (
-                  <span className={cn("h-1.5 w-1.5 rounded-full", childActive ? "bg-current" : "bg-muted-foreground/50")} />
+                {collapsed ? (
+                  <child.icon className="h-5 w-5 shrink-0" />
+                ) : (
+                  <>
+                    <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", childActive ? "bg-current" : "bg-muted-foreground/50")} />
+                    <span className="truncate">{child.label}</span>
+                  </>
                 )}
-                {child.label}
               </Link>
             );
           })}

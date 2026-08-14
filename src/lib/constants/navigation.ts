@@ -11,6 +11,8 @@ import {
   Heart,
   BookOpen,
   FileBarChart,
+  LayoutDashboard,
+  List,
 } from "lucide-react";
 
 export interface NavLink {
@@ -22,6 +24,7 @@ export interface NavLink {
 export interface NavChild {
   href: string;
   label: string;
+  icon: LucideIcon;
 }
 
 export interface NavGroup {
@@ -59,16 +62,16 @@ export const adminMenuItems: NavItem[] = [
     label: "Discípulos",
     icon: Users,
     children: [
-      { href: "/dashboard", label: "Dashboard Discípulos" },
-      { href: "/discipulos", label: "Lista Discípulos" },
+      { href: "/dashboard", label: "Dashboard Discípulos", icon: LayoutDashboard },
+      { href: "/discipulos", label: "Lista Discípulos", icon: List },
     ],
   },
   {
     label: "Discipuladores",
     icon: UserRoundCog,
     children: [
-      { href: "/dashboard/discipuladores", label: "Dashboard Discipuladores" },
-      { href: "/discipuladores", label: "Lista Discipuladores" },
+      { href: "/dashboard/discipuladores", label: "Dashboard Discipuladores", icon: LayoutDashboard },
+      { href: "/discipuladores", label: "Lista Discipuladores", icon: List },
     ],
   },
   { href: "/tareas", label: "Tareas", icon: ClipboardCheck },
@@ -95,8 +98,8 @@ export const discipuladorMenuItems: NavItem[] = [
     label: "Discípulos",
     icon: Users,
     children: [
-      { href: "/dashboard", label: "Dashboard Discípulos" },
-      { href: "/discipulos", label: "Lista Discípulos" },
+      { href: "/dashboard", label: "Dashboard Discípulos", icon: LayoutDashboard },
+      { href: "/discipulos", label: "Lista Discípulos", icon: List },
     ],
   },
   { href: "/tareas", label: "Tareas", icon: ClipboardCheck },
