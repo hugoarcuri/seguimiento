@@ -36,14 +36,14 @@ function SidebarGroup({
           <button
             type="button"
             className={cn(
-              "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[11px] font-medium transition-colors",
+              "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
               collapsed ? "justify-center px-0" : "justify-start",
               isActive
                 ? "text-foreground"
                 : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             )}
           >
-            <group.icon className="h-5 w-5 shrink-0" />
+            <group.icon className="h-6 w-6 shrink-0" />
             {!collapsed && (
               <>
                 <span className="flex-1 text-left">{group.label}</span>
@@ -155,14 +155,14 @@ export function Sidebar() {
                 href={item.href}
                 title={item.label}
                 className={cn(
-                  "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[11px] font-medium transition-colors",
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                   collapsed ? "justify-center" : "justify-start",
                   isActive
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 )}
               >
-                <item.icon className="h-5 w-5 shrink-0" />
+                <item.icon className="h-6 w-6 shrink-0" />
                 <span className={cn(collapsed && "hidden")}>{item.label}</span>
               </Link>
             );

@@ -35,11 +35,11 @@ function MobileGroup({
         onClick={toggle}
         aria-expanded={open}
         className={cn(
-          "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[11px] font-medium transition-colors",
+          "flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors",
           isActive ? "text-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
         )}
       >
-        <group.icon className="h-5 w-5 shrink-0" />
+        <group.icon className="h-6 w-6 shrink-0" />
         <span className="flex-1 text-left">{group.label}</span>
         <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform", open && "rotate-180")} />
       </button>
@@ -117,13 +117,13 @@ export function MobileSidebar() {
                 href={item.href}
                 onClick={() => setOpen(false)}
                 className={cn(
-                  "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[11px] font-medium transition-colors",
+                  "flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors",
                   isActive
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 )}
               >
-                <item.icon className="h-5 w-5 shrink-0" />
+                <item.icon className="h-6 w-6 shrink-0" />
                 {item.label}
               </Link>
             );
