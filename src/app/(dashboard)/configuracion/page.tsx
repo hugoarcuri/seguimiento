@@ -10,23 +10,24 @@ import { UserCog, Shield, Crown, Mail, Calendar, ListTree, UserPlus, Copy, Check
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { EtapasEditor } from "./etapas-editor";
-import { RegistroDiscipuladorForm } from "./registro-discipulador-form";
 import { useRequireRol } from "@/hooks/useRequireRol";
 import { APP_URL } from "@/lib/constants/paths";
 
 export default function ConfiguracionPage() {
   const { user } = useUser();
   const { permitido, loading: autorizando } = useRequireRol(["admin", "discipulo"]);
-  const [copiado, setCopiado] = useState(false);
+  const [copiadoDiscipulo, setCopiadoDiscipulo] = useState(false);
+  const [copiadoDiscipulador, setCopiadoDiscipulador] = useState(false);
 
-  const linkRegistro = `${APP_URL}/registro/`;
+  const linkRegistroDiscipulo = `${APP_URL}/registro/`;
+  const linkRegistroDiscipulador = `${APP_URL}/registro-discipulador/`;
 
-  const copiarLink = async () => {
+  const copiarLink = async (texto: string, que: "discipulo" | "discipulador") => {
     try {
-      await navigator.clipboard.writeText(linkRegistro);
-      setCopiado(true);
+      await navigator.clipboard.writeText(texto);
+      if (que === "discipulo") { setCopiadoDiscipulo(true); setTimeout(() => setCopiadoDiscipulo(false), 2000); }
+      else { setCopiadoDiscipulador(true); setTimeout(() => setCopiadoDiscipulador(false), 2000); }
       toast.success("Link copiado al portapapeles");
-      setTimeout(() => setCopiado(false), 2000);
     } catch {
       toast.error("No se pudo copiar el link");
     }
@@ -82,29 +83,49 @@ export default function ConfiguracionPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <UserPlus className="h-5 w-5 text-muted-foreground" />
-              <CardTitle>Link de Registro</CardTitle>
-            </div>
-            <CardDescription>
-              Compartí este link para que nuevos discípulos se registren
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Al registrarse, el discípulo crea su cuenta y completa sus datos personales y espirituales.
-            </p>
-            <div className="flex gap-2">
-              <Input readOnly value={linkRegistro} className="text-xs font-mono" />
-              <Button variant="outline" size="sm" onClick={copiarLink} className="shrink-0">
-                {copiado ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                <span className="ml-1 hidden sm:inline">{copiado ? "Copiado" : "Copiar"}</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <UserPlus className="h-5 w-5 text-muted-foreground" />
+                <CardTitle>Link de Registro — Discípulos</CardTitle>
+              </div>
+              <CardDescription>
+                Compartí este link para que nuevos discípulos se registren
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-2">
+                <Input readOnly value={linkRegistroDiscipulo} className="text-xs font-mono" />
+                <Button variant="outline" size="sm" onClick={() => copiarLink(linkRegistroDiscipulo, "discipulo")} className="shrink-0">
+                  {copiadoDiscipulo ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  <span className="ml-1 hidden sm:inline">{copiadoDiscipulo ? "Copiado" : "Copiar"}</span>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <UserPlus className="h-5 w-5 text-muted-foreground" />
+                <CardTitle>Link de Registro — Discipuladores</CardTitle>
+              </div>
+              <CardDescription>
+                Compartí este link para que nuevos discipuladores se registren
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-2">
+                <Input readOnly value={linkRegistroDiscipulador} className="text-xs font-mono" />
+                <Button variant="outline" size="sm" onClick={() => copiarLink(linkRegistroDiscipulador, "discipulador")} className="shrink-0">
+                  {copiadoDiscipulador ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  <span className="ml-1 hidden sm:inline">{copiadoDiscipulador ? "Copiado" : "Copiar"}</span>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {user?.rol === "admin" && (
@@ -120,10 +141,6 @@ export default function ConfiguracionPage() {
           </div>
           <EtapasEditor />
         </div>
-      )}
-
-      {user?.rol === "admin" && (
-        <RegistroDiscipuladorForm />
       )}
     </div>
   );
