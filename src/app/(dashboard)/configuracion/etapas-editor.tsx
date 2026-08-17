@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowDown, ArrowUp, Loader2, Save } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 import { useEtapas } from "@/hooks/useEtapas";
 import type { Etapa } from "@/types/database";
@@ -22,16 +22,20 @@ function EtapaEditorRow({
   etapa,
   index,
   total,
+  expanded,
   reordenando,
   guardando,
+  onToggle,
   onGuardar,
   onReordenar,
 }: {
   etapa: Etapa;
   index: number;
   total: number;
+  expanded: boolean;
   reordenando: boolean;
   guardando: boolean;
+  onToggle: () => void;
   onGuardar: (id: number, draft: Draft) => Promise<void>;
   onReordenar: (idx: number, dir: -1 | 1) => Promise<void>;
 }) {
@@ -47,77 +51,88 @@ function EtapaEditorRow({
   };
 
   return (
-    <div className="rounded-lg border p-4 space-y-3">
-      <div className="flex items-center justify-between gap-2">
+    <div className="rounded-lg border overflow-hidden">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center justify-between gap-2 px-4 py-3 hover:bg-muted/50 transition-colors text-left"
+      >
         <div className="flex min-w-0 items-center gap-2">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
             {etapa.id}
           </span>
-          <p className="truncate font-medium">Etapa {index + 1}</p>
+          <p className="truncate font-medium">Etapa {index + 1}: {etapa.nombre}</p>
         </div>
-        <div className="flex shrink-0 gap-1">
-          <Button
-            variant="outline"
-            size="icon"
-            title="Subir"
-            disabled={reordenando || index === 0}
-            onClick={() => onReordenar(index, -1)}
-          >
-            <ArrowUp className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            title="Bajar"
-            disabled={reordenando || index === total - 1}
-            onClick={() => onReordenar(index, 1)}
-          >
-            <ArrowDown className="h-4 w-4" />
-          </Button>
+        <div className="flex shrink-0 items-center gap-1">
+          {expanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
         </div>
-      </div>
-      <div className="space-y-2">
-        <div className="space-y-1">
-          <Label htmlFor={`etapa-nombre-${etapa.id}`}>Nombre</Label>
-          <Input
-            id={`etapa-nombre-${etapa.id}`}
-            value={draft.nombre}
-            onChange={(ev) => actualizar("nombre", ev.target.value)}
-          />
+      </button>
+      {expanded && (
+        <div className="px-4 pb-4 space-y-3 border-t">
+          <div className="flex items-center justify-end gap-1 pt-2">
+            <Button
+              variant="outline"
+              size="icon"
+              title="Subir"
+              disabled={reordenando || index === 0}
+              onClick={() => onReordenar(index, -1)}
+            >
+              <ArrowUp className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              title="Bajar"
+              disabled={reordenando || index === total - 1}
+              onClick={() => onReordenar(index, 1)}
+            >
+              <ArrowDown className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="space-y-2">
+            <div className="space-y-1">
+              <Label htmlFor={`etapa-nombre-${etapa.id}`}>Nombre</Label>
+              <Input
+                id={`etapa-nombre-${etapa.id}`}
+                value={draft.nombre}
+                onChange={(ev) => actualizar("nombre", ev.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor={`etapa-desc-${etapa.id}`}>Descripción</Label>
+              <Input
+                id={`etapa-desc-${etapa.id}`}
+                value={draft.descripcion}
+                onChange={(ev) => actualizar("descripcion", ev.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor={`etapa-obj-${etapa.id}`}>Objetivos (uno por línea)</Label>
+              <Textarea
+                id={`etapa-obj-${etapa.id}`}
+                rows={4}
+                value={draft.objetivos}
+                onChange={(ev) => actualizar("objetivos", ev.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor={`etapa-mat-${etapa.id}`}>Material recomendado</Label>
+              <Input
+                id={`etapa-mat-${etapa.id}`}
+                value={draft.material_recomendado}
+                onChange={(ev) => actualizar("material_recomendado", ev.target.value)}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={() => onGuardar(etapa.id, draft)} disabled={guardando}>
+              {guardando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Save className="mr-2 h-4 w-4" />
+              Guardar
+            </Button>
+          </div>
         </div>
-        <div className="space-y-1">
-          <Label htmlFor={`etapa-desc-${etapa.id}`}>Descripción</Label>
-          <Input
-            id={`etapa-desc-${etapa.id}`}
-            value={draft.descripcion}
-            onChange={(ev) => actualizar("descripcion", ev.target.value)}
-          />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor={`etapa-obj-${etapa.id}`}>Objetivos (uno por línea)</Label>
-          <Textarea
-            id={`etapa-obj-${etapa.id}`}
-            rows={4}
-            value={draft.objetivos}
-            onChange={(ev) => actualizar("objetivos", ev.target.value)}
-          />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor={`etapa-mat-${etapa.id}`}>Material recomendado</Label>
-          <Input
-            id={`etapa-mat-${etapa.id}`}
-            value={draft.material_recomendado}
-            onChange={(ev) => actualizar("material_recomendado", ev.target.value)}
-          />
-        </div>
-      </div>
-      <div className="flex justify-end">
-        <Button onClick={() => onGuardar(etapa.id, draft)} disabled={guardando}>
-          {guardando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          <Save className="mr-2 h-4 w-4" />
-          Guardar
-        </Button>
-      </div>
+      )}
     </div>
   );
 }
@@ -126,6 +141,16 @@ export function EtapasEditor() {
   const { etapas, refresh } = useEtapas();
   const [guardandoId, setGuardandoId] = useState<number | null>(null);
   const [reordenando, setReordenando] = useState(false);
+  const [expandidas, setExpandidas] = useState<Set<number>>(new Set());
+
+  const toggleEtapa = (id: number) => {
+    setExpandidas((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const guardar = async (id: number, draft: Draft) => {
     setGuardandoId(id);
@@ -182,8 +207,10 @@ export function EtapasEditor() {
             etapa={e}
             index={i}
             total={etapas.length}
+            expanded={expandidas.has(e.id)}
             reordenando={reordenando}
             guardando={guardandoId === e.id}
+            onToggle={() => toggleEtapa(e.id)}
             onGuardar={guardar}
             onReordenar={reordenar}
           />
