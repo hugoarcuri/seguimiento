@@ -53,7 +53,7 @@ function MobileGroup({
                 href={child.href}
                 onClick={onNavigate}
                 className={cn(
-                  "flex items-center gap-2 rounded-lg py-1.5 pl-11 pr-3 text-[11px] font-medium transition-colors",
+                  "flex items-center gap-2 rounded-lg py-1.5 pl-11 pr-3 text-[13px] font-medium transition-colors",
                   childActive
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"

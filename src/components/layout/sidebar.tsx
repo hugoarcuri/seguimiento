@@ -58,7 +58,7 @@ function SidebarGroup({
                 key={child.href}
                 href={child.href}
                 className={cn(
-                  "flex items-center gap-2 rounded-lg py-2 pl-11 pr-3 text-[11px] font-medium transition-colors",
+                  "flex items-center gap-2 rounded-lg py-2 pl-11 pr-3 text-[13px] font-medium transition-colors",
                   childActive
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
