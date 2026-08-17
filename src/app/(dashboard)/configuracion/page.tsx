@@ -10,6 +10,7 @@ import { UserCog, Shield, Crown, Mail, Calendar, ListTree, UserPlus, Copy, Check
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { EtapasEditor } from "./etapas-editor";
+import { RegistroDiscipuladorForm } from "./registro-discipulador-form";
 import { useRequireRol } from "@/hooks/useRequireRol";
 import { APP_URL } from "@/lib/constants/paths";
 
@@ -119,6 +120,10 @@ export default function ConfiguracionPage() {
           </div>
           <EtapasEditor />
         </div>
+      )}
+
+      {user?.rol === "admin" && (
+        <RegistroDiscipuladorForm />
       )}
     </div>
   );
