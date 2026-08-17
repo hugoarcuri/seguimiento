@@ -255,7 +255,7 @@ export default function SeguimientoPage() {
               <Label htmlFor="buscar" className="text-xs text-muted-foreground">Buscar</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input id="buscar" placeholder="Por nombre..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+                <Input id="buscar" className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
               </div>
             </div>
               <div className="w-full space-y-1 sm:w-44">
