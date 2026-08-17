@@ -9,6 +9,7 @@ export interface Profile {
   telefono?: string;
   avatar_url?: string;
   fecha_nacimiento?: string;
+  fecha_conversion?: string;
   don_espiritual?: string;
   fortalezas?: string;
   debilidades?: string;
