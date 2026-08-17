@@ -1,16 +1,35 @@
 "use client";
 
+import { useState } from "react";
 import { useUser } from "@/hooks/useUser";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { UserCog, Shield, Crown, Mail, Calendar, ListTree } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { UserCog, Shield, Crown, Mail, Calendar, ListTree, UserPlus, Copy, Check } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 import { EtapasEditor } from "./etapas-editor";
 import { useRequireRol } from "@/hooks/useRequireRol";
+import { APP_URL } from "@/lib/constants/paths";
 
 export default function ConfiguracionPage() {
   const { user } = useUser();
   const { permitido, loading: autorizando } = useRequireRol(["admin", "discipulo"]);
+  const [copiado, setCopiado] = useState(false);
+
+  const linkRegistro = `${APP_URL}/seguimiento/registro/`;
+
+  const copiarLink = async () => {
+    try {
+      await navigator.clipboard.writeText(linkRegistro);
+      setCopiado(true);
+      toast.success("Link copiado al portapapeles");
+      setTimeout(() => setCopiado(false), 2000);
+    } catch {
+      toast.error("No se pudo copiar el link");
+    }
+  };
 
   if (autorizando) return <div className="flex items-center justify-center min-h-[50vh]"><p className="text-muted-foreground">Cargando...</p></div>;
   if (!permitido) return null;
@@ -65,37 +84,23 @@ export default function ConfiguracionPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-muted-foreground" />
-              <CardTitle>Roles y Permisos</CardTitle>
+              <UserPlus className="h-5 w-5 text-muted-foreground" />
+              <CardTitle>Link de Registro</CardTitle>
             </div>
             <CardDescription>
-              Información sobre los roles del sistema
+              Compartí este link para que nuevos discípulos se registren
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Badge>Administrador / Líder</Badge>
-              </div>
-              <ul className="text-sm text-muted-foreground space-y-1 ml-4 list-disc">
-                <li>Crear, editar y eliminar discípulos</li>
-                <li>Registrar citas en la agenda</li>
-                <li>Ver estadísticas y reportes</li>
-                <li>Administrar materiales</li>
-                <li>Gestionar pedidos de oración</li>
-              </ul>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">Discípulo</Badge>
-              </div>
-              <ul className="text-sm text-muted-foreground space-y-1 ml-4 list-disc">
-                <li>Ver perfil y progreso</li>
-                <li>Ver materiales asignados</li>
-                <li>Confirmar asistencia</li>
-                <li>Completar tareas</li>
-                <li>Actualizar información personal</li>
-              </ul>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Al registrarse, el discípulo crea su cuenta y completa sus datos personales y espirituales.
+            </p>
+            <div className="flex gap-2">
+              <Input readOnly value={linkRegistro} className="text-xs font-mono" />
+              <Button variant="outline" size="sm" onClick={copiarLink} className="shrink-0">
+                {copiado ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                <span className="ml-1 hidden sm:inline">{copiado ? "Copiado" : "Copiar"}</span>
+              </Button>
             </div>
           </CardContent>
         </Card>

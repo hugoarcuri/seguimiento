@@ -34,3 +34,6 @@ enable_signup = true
 
 [functions.create-discipulador]
 verify_jwt = true
+
+[functions.registro-discipulo]
+verify_jwt = false
