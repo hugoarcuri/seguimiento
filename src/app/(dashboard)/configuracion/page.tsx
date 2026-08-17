@@ -18,7 +18,7 @@ export default function ConfiguracionPage() {
   const { permitido, loading: autorizando } = useRequireRol(["admin", "discipulo"]);
   const [copiado, setCopiado] = useState(false);
 
-  const linkRegistro = `${APP_URL}/seguimiento/registro/`;
+  const linkRegistro = `${APP_URL}/registro/`;
 
   const copiarLink = async () => {
     try {
