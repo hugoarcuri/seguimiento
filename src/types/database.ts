@@ -37,7 +37,7 @@ export interface Discipulo {
   avatar_url?: string;
   observaciones?: string;
   convive_con?: string;
-  estudia?: boolean;
+  estudia?: string;
   trabaja?: string;
   created_at: string;
   updated_at: string;

@@ -104,7 +104,7 @@ export default function RegistroPage() {
                 Tu cuenta fue creada. Ya podés iniciar sesión con tu email y contraseña.
               </p>
             </div>
-            <Link href={`${BASE_PATH}/login/`} className="inline-flex items-center justify-center w-full rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors mt-4">
+            <Link href="/login/" className="inline-flex items-center justify-center w-full rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors mt-4">
               Ir a iniciar sesión
             </Link>
           </CardContent>
@@ -250,7 +250,7 @@ export default function RegistroPage() {
         <div className="px-6 pb-6">
           <p className="text-sm text-center text-muted-foreground">
             ¿Ya tenés cuenta?{" "}
-            <Link href={`${BASE_PATH}/login`} className="text-primary hover:underline">Iniciar sesión</Link>
+            <Link href="/login" className="text-primary hover:underline">Iniciar sesión</Link>
           </p>
         </div>
       </Card>

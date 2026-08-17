@@ -1,6 +1,6 @@
 -- Agregar columnas de estudio y trabajo
 ALTER TABLE discipulos
-  ADD COLUMN IF NOT EXISTS estudia boolean,
+  ADD COLUMN IF NOT EXISTS estudia text,
   ADD COLUMN IF NOT EXISTS trabaja text;
 
 -- Trigger: auto-crear discípulo al registrarse desde el formulario público
@@ -26,10 +26,10 @@ BEGIN
       NULLIF(NEW.raw_user_meta_data->>'convive_con', ''),
       NULLIF(NEW.raw_user_meta_data->>'don_espiritual', ''),
       NULLIF(NEW.raw_user_meta_data->>'ministerio', ''),
-      CASE WHEN NEW.raw_user_meta_data ? 'estudia' THEN (NEW.raw_user_meta_data->>'estudia')::boolean ELSE NULL END,
+      NULLIF(NEW.raw_user_meta_data->>'estudia', ''),
       NULLIF(NEW.raw_user_meta_data->>'trabaja', ''),
       1,
-      'activo'::discipulos.estado
+      'activo'
     )
     ON CONFLICT (id) DO NOTHING;
   END IF;
