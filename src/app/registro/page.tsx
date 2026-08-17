@@ -61,28 +61,29 @@ export default function RegistroPage() {
     setLoading(true);
     const supabase = createClient();
 
-    const payload = {
+    const { error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      nombre: nombre.trim(),
-      apellido: apellido.trim(),
-      sexo: sexo || null,
-      fecha_nacimiento: fechaNacimiento || null,
-      telefono: telefono.trim() || null,
-      direccion: direccion.trim() || null,
-      convive_con: conviveCon.trim() || null,
-      don_espiritual: donConoce === "si" ? (donDetalle.trim() || "Sí") : donConoce === "no" ? "No lo conoce" : null,
-      ministerio: ministerio.trim() || null,
-      estudia: estudia === "si" ? (estudiaDetalle.trim() || "Sí") : estudia === "no" ? "No" : null,
-      trabaja: trabaja === "si" ? (trabajaDetalle.trim() || "Sí") : trabaja === "no" ? "No" : null,
-    };
-
-    const { data, error } = await supabase.functions.invoke("registro-discipulo", {
-      body: payload,
+      options: {
+        data: {
+          registro_discipulo: true,
+          nombre: nombre.trim(),
+          apellido: apellido.trim(),
+          sexo: sexo || null,
+          fecha_nacimiento: fechaNacimiento || null,
+          telefono: telefono.trim() || null,
+          direccion: direccion.trim() || null,
+          convive_con: conviveCon.trim() || null,
+          don_espiritual: donConoce === "si" ? (donDetalle.trim() || "Sí") : donConoce === "no" ? "No lo conoce" : null,
+          ministerio: ministerio.trim() || null,
+          estudia: estudia === "si" ? (estudiaDetalle.trim() || "Sí") : estudia === "no" ? "No" : null,
+          trabaja: trabaja === "si" ? (trabajaDetalle.trim() || "Sí") : trabaja === "no" ? "No" : null,
+        },
+      },
     });
 
-    if (error || data?.error) {
-      toast.error(data?.error || "Error al registrar. Intentá de nuevo.");
+    if (error) {
+      toast.error(error.message);
       setLoading(false);
       return;
     }
