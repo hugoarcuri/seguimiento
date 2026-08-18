@@ -85,7 +85,6 @@ export function EstudiosBiblicosClient({ puedeVerGuia }: Props) {
                     src={pdfUrl}
                     className="w-full h-[500px] rounded-lg border"
                     title={`Paso ${paso.numero} - ${paso.titulo}`}
-                    type="application/pdf"
                   />
 
                   {puedeVerGuia && (
