@@ -21,8 +21,8 @@ function RolBadge({ rol }: { rol?: string }) {
   if (!rol) return null;
   const Icon = rolIcon[rol as keyof typeof rolIcon] || Shield;
   return (
-    <Badge variant={rol === "admin" ? "default" : "secondary"} className="mt-1 capitalize gap-1">
-      <Icon className="h-3 w-3" />
+    <Badge variant={rol === "admin" ? "default" : "secondary"} className="mt-2 capitalize gap-1.5 text-sm px-3 py-1">
+      <Icon className="h-4 w-4" />
       {ROL_LABELS[rol] || rol}
     </Badge>
   );
