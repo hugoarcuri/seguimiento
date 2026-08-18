@@ -44,6 +44,7 @@ export default function SeguimientoPage() {
   const [discipuladores, setDiscipuladores] = useState<Array<{ id: string; nombre: string; apellido: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [esDiscipulador, setEsDiscipulador] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>("");
 
   const [search, setSearch] = useState("");
@@ -66,6 +67,7 @@ export default function SeguimientoPage() {
     const { data: profile } = await supabase.from("profiles").select("rol").eq("id", authUser.id).single();
     const admin = profile?.rol === "admin";
     setIsAdmin(admin);
+    setEsDiscipulador(profile?.rol === "discipulador");
 
     let discipulosQuery = supabase
       .from("discipulos")
@@ -243,9 +245,11 @@ export default function SeguimientoPage() {
             <Trash2 className="mr-2 h-4 w-4" /> Eliminar ({selectedIds.length})
           </Button>
         )}
-        <Button onClick={() => { setEditing(null); setDialogOpen(true); }}>
-          <Plus className="mr-2 h-4 w-4" /> Nuevo Seguimiento
-        </Button>
+        {(isAdmin || esDiscipulador) && (
+          <Button onClick={() => { setEditing(null); setDialogOpen(true); }}>
+            <Plus className="mr-2 h-4 w-4" /> Nuevo Seguimiento
+          </Button>
+        )}
       </div>
 
       <Card>

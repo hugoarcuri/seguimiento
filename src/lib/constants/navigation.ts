@@ -89,8 +89,6 @@ export const discipuloMenuItems: NavItem[] = [
   { href: "/evangelismo", label: "Evangelismo", icon: Flame },
   { href: "/oracion", label: "Oración", icon: MessagesSquare },
   { href: "/estudios-biblicos", label: "Estudios Bíblicos", icon: BookOpen },
-  { href: "/perfil", label: "Mi Perfil", icon: User },
-  { href: "/configuracion", label: "Configuración", icon: Settings },
 ];
 
 export const discipuladorMenuItems: NavItem[] = [
