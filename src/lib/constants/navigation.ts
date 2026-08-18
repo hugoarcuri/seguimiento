@@ -84,7 +84,7 @@ export const adminMenuItems: NavItem[] = [
 ];
 
 export const discipuloMenuItems: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: Gauge },
+  { href: "/mi-crecimiento", label: "Mi Crecimiento", icon: Gauge },
   { href: "/seguimiento", label: "Seguimiento", icon: Map },
   { href: "/evangelismo", label: "Evangelismo", icon: Flame },
   { href: "/oracion", label: "Oración", icon: MessagesSquare },

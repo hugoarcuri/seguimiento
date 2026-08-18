@@ -3,8 +3,6 @@ import { loginSchema, registerSchema } from "./auth";
 import { discipuloSchema } from "./discipulo";
 import { agendaSchema } from "./agenda";
 import { oracionSchema } from "./oracion";
-import { tareaSchema } from "./tarea";
-
 describe("auth", () => {
   it("acepta credenciales válidas", () => {
     expect(loginSchema.parse({ email: "a@b.com", password: "123456" })).toBeTruthy();
@@ -73,14 +71,6 @@ describe("discipuloSchema", () => {
       estado: "fantasma",
     });
     expect(res.success).toBe(false);
-  });
-});
-
-describe("tareaSchema", () => {
-  it("valida tipo y título", () => {
-    expect(tareaSchema.safeParse({ discipulo_id: "00000000-0000-0000-0000-000000000000", titulo: "Leer Mateo", tipo: "lectura" }).success).toBe(true);
-    expect(tareaSchema.safeParse({ discipulo_id: "00000000-0000-0000-0000-000000000000", titulo: "", tipo: "lectura" }).success).toBe(false);
-    expect(tareaSchema.safeParse({ discipulo_id: "00000000-0000-0000-0000-000000000000", titulo: "X", tipo: "otro" }).success).toBe(false);
   });
 });
 

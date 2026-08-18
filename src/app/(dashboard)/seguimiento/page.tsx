@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Loader2, Search, Pencil, Eye, ArrowUpDown, CalendarPlus, Trash2, Download } from "lucide-react";
+import { Plus, Loader2, Search, Pencil, Eye, ArrowUpDown, CalendarPlus, Trash2, Download, BookOpen, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -345,6 +345,16 @@ export default function SeguimientoPage() {
                           </Button>
                         </div>
                       </div>
+                      {s.etapa === 2 && (
+                        <div className="flex gap-1.5">
+                          <Link href="/estudios-biblicos" className="inline-flex items-center gap-1 rounded-md border bg-background px-2.5 py-1 text-xs font-medium hover:bg-accent transition-colors">
+                            <BookOpen className="h-3.5 w-3.5" /> Ver material
+                          </Link>
+                          <Link href={`/seguimiento/ver?id=${s.id}`} className="inline-flex items-center gap-1 rounded-md border bg-background px-2.5 py-1 text-xs font-medium hover:bg-accent transition-colors">
+                            <FileText className="h-3.5 w-3.5" /> Notas del discipulador
+                          </Link>
+                        </div>
+                      )}
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge variant="outline">{etapas.find((e) => e.id === s.etapa)?.nombre || `Etapa ${s.etapa}`}</Badge>
                         <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold", cfg.badge)}>
@@ -487,6 +497,20 @@ export default function SeguimientoPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
+                          {s.etapa === 2 && (
+                            <>
+                              <Link href="/estudios-biblicos">
+                                <Button variant="ghost" size="icon" title="Ver material">
+                                  <BookOpen className="h-4 w-4" />
+                                </Button>
+                              </Link>
+                              <Link href={`/seguimiento/ver?id=${s.id}`}>
+                                <Button variant="ghost" size="icon" title="Notas del discipulador">
+                                  <FileText className="h-4 w-4" />
+                                </Button>
+                              </Link>
+                            </>
+                          )}
                           <Link href={`/seguimiento/ver?id=${s.id}`}>
                             <Button variant="ghost" size="icon" title="Ver">
                               <Eye className="h-4 w-4" />
