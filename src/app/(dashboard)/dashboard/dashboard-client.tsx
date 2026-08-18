@@ -174,7 +174,7 @@ function BarraProgreso({ value, bar, className }: { value: number; bar: string; 
 const ACTIVIDAD_ICONOS: Record<ActividadItem["tipo"], { icon: typeof Users; cls: string }> = {
   reunion: { icon: CalendarCheck, cls: "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400" },
   avance: { icon: TrendingUp, cls: "bg-violet-100 text-violet-600 dark:bg-violet-950/60 dark:text-violet-400" },
-  nuevo_discipulo: { icon: UserPlus, cls: "bg-amber-100 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400" },
+  nuevo_miembro: { icon: UserPlus, cls: "bg-amber-100 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400" },
   reunion_programada: { icon: Clock, cls: "bg-orange-100 text-orange-600 dark:bg-orange-950/60 dark:text-orange-400" },
   sin_actividad: { icon: AlertTriangle, cls: "bg-red-100 text-red-600 dark:bg-red-950/60 dark:text-red-400" },
 };

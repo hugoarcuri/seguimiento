@@ -54,7 +54,7 @@ import {
   type Periodo,
 } from "./constants";
 
-export interface DiscipuloDetalle {
+export interface MiembroDetalle {
   id: string;
   nombre: string;
   apellido: string;
@@ -69,7 +69,7 @@ export interface DiscipuloDetalle {
 
 export interface ReunionItem {
   id: string;
-  discipulo: string;
+  miembro: string;
   fecha: string;
   tema: string | null;
 }
@@ -90,7 +90,7 @@ export interface DiscipuladorResumen {
   diasUltimaReunion: number | null;
   listosAvanzar: number;
   detalle: {
-    discipulos: DiscipuloDetalle[];
+    miembros: MiembroDetalle[];
     reunionesRecientes: ReunionItem[];
     alerta: string | null;
   };
@@ -110,7 +110,7 @@ export interface AtencionItem {
 
 export interface ActividadItem {
   id: string;
-  tipo: "reunion" | "reunion_programada" | "nuevo_discipulo" | "tarea" | "sin_actividad";
+  tipo: "reunion" | "reunion_programada" | "nuevo_miembro" | "tarea" | "sin_actividad";
   discipulador_id?: string;
   discipulador: string;
   descripcion: string;
@@ -120,7 +120,7 @@ export interface ActividadItem {
 export interface PuntoGrafico {
   etiqueta: string;
   reuniones: number;
-  discipulosActivos: number;
+  miembrosActivos: number;
 }
 
 export interface ProgresoEtapa {
@@ -134,7 +134,7 @@ export interface DiscipuladoresDashboardData {
   kpis: {
     discipuladoresActivos: number;
     pctActivos: number;
-    discipulosActivos: number;
+    miembrosActivos: number;
     nuevosEnPeriodo: number;
     reunionesRealizadas: number;
     objetivoReuniones: number;
@@ -211,12 +211,12 @@ function BarraProgreso({ value, bar, className }: { value: number; bar: string; 
 const ACTIVIDAD_ICONOS: Record<ActividadItem["tipo"], { icon: typeof Users; cls: string }> = {
   reunion: { icon: CalendarCheck, cls: "bg-blue-100 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400" },
   reunion_programada: { icon: Clock, cls: "bg-indigo-100 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400" },
-  nuevo_discipulo: { icon: UserPlus, cls: "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400" },
+  nuevo_miembro: { icon: UserPlus, cls: "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400" },
   tarea: { icon: CheckCircle2, cls: "bg-violet-100 text-violet-600 dark:bg-violet-950/60 dark:text-violet-400" },
   sin_actividad: { icon: AlertTriangle, cls: "bg-red-100 text-red-600 dark:bg-red-950/60 dark:text-red-400" },
 };
 
-type TipoGrafico = "reuniones" | "discipulos" | "etapas";
+type TipoGrafico = "reuniones" | "miembros" | "etapas";
 
 export function DiscipuladoresDashboardClient({
   data,
@@ -257,18 +257,18 @@ export function DiscipuladoresDashboardClient({
       href: "/discipuladores",
     },
     {
-      title: "Discípulos activos",
-      value: kpis.discipulosActivos,
+      title: "Miembros activos",
+      value: kpis.miembrosActivos,
       description: `+${kpis.nuevosEnPeriodo} nuevos en el período`,
       icon: Users,
       color: "text-emerald-600",
       bg: "bg-emerald-50 dark:bg-emerald-950",
-      href: "/discipulos",
+      href: "/miembros",
     },
     {
       title: "Reuniones realizadas",
       value: kpis.reunionesRealizadas,
-      description: `${kpis.reunionesPct}% del objetivo (${kpis.objetivoReuniones} discípulos)`,
+      description: `${kpis.reunionesPct}% del objetivo (${kpis.objetivoReuniones} miembros)`,
       icon: CalendarCheck,
       color: "text-indigo-600",
       bg: "bg-indigo-50 dark:bg-indigo-950",
@@ -302,7 +302,7 @@ export function DiscipuladoresDashboardClient({
         <div>
           <h1 className="text-2xl font-bold lg:text-xl">Dashboard de Discipuladores</h1>
           <p className="text-sm text-muted-foreground">
-            Resumen del avance, seguimiento y acompañamiento de los discipuladores y sus discípulos.
+            Resumen del avance, seguimiento y acompañamiento de los discipuladores y sus miembros.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -387,7 +387,7 @@ export function DiscipuladoresDashboardClient({
               <TableHeader>
                 <TableRow>
                   <TableHead>Discipulador</TableHead>
-                  <TableHead className="text-center">Discípulos</TableHead>
+                  <TableHead className="text-center">Miembros</TableHead>
                   <TableHead>Progreso promedio</TableHead>
                   <TableHead>Reuniones</TableHead>
                   <TableHead>Estado</TableHead>
@@ -454,7 +454,7 @@ export function DiscipuladoresDashboardClient({
             <div className="flex rounded-lg border bg-muted p-0.5">
               {([
                 { value: "reuniones", label: "Reuniones" },
-                { value: "discipulos", label: "Discípulos" },
+                { value: "miembros", label: "Miembros" },
                 { value: "etapas", label: "Por etapa" },
               ] as { value: TipoGrafico; label: string }[]).map((t) => (
                 <Button
@@ -497,7 +497,7 @@ export function DiscipuladoresDashboardClient({
                     {tipoGrafico === "reuniones" ? (
                       <Line type="monotone" dataKey="reuniones" name="Reuniones" stroke="#3b82f6" strokeWidth={2} dot={{ r: 2 }} />
                     ) : (
-                      <Line type="monotone" dataKey="discipulosActivos" name="Discípulos activos" stroke="#10b981" strokeWidth={2} dot={{ r: 2 }} />
+                      <Line type="monotone" dataKey="miembrosActivos" name="Miembros activos" stroke="#10b981" strokeWidth={2} dot={{ r: 2 }} />
                     )}
                   </LineChart>
                 </ResponsiveContainer>
@@ -554,7 +554,7 @@ export function DiscipuladoresDashboardClient({
                         <EstadoBadge estado={d.estado} />
                       </div>
                       <p className="mt-0.5 text-[11px] text-muted-foreground">
-                        {d.enRiesgo > 0 && `${d.enRiesgo} discípulo(s) en riesgo`}
+                        {d.enRiesgo > 0 && `${d.enRiesgo} miembro(s) en riesgo`}
                         {d.enRiesgo > 0 && d.diasUltimaReunion !== null && " · "}
                         {d.diasUltimaReunion !== null
                           ? `Última reunión: hace ${d.diasUltimaReunion} días`
@@ -653,7 +653,7 @@ function DetalleDiscipulador({ disc }: { disc: DiscipuladorResumen }) {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <div className="rounded-lg border p-2 text-center">
             <p className="text-lg font-bold tabular-nums">{disc.activos}</p>
-            <p className="text-[10px] text-muted-foreground">Discípulos</p>
+            <p className="text-[10px] text-muted-foreground">Miembros</p>
           </div>
           <div className="rounded-lg border p-2 text-center">
             <p className="text-lg font-bold tabular-nums">{disc.progresoPromedio !== null ? `${disc.progresoPromedio}%` : "—"}</p>
@@ -671,21 +671,21 @@ function DetalleDiscipulador({ disc }: { disc: DiscipuladorResumen }) {
 
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-sm font-semibold">Discípulos asignados</h3>
-            <span className="text-xs text-muted-foreground">{disc.detalle.discipulos.length}</span>
+            <h3 className="text-sm font-semibold">Miembros asignados</h3>
+            <span className="text-xs text-muted-foreground">{disc.detalle.miembros.length}</span>
           </div>
-          {disc.detalle.discipulos.length === 0 ? (
-            <p className="py-2 text-sm text-muted-foreground">Sin discípulos asignados</p>
+          {disc.detalle.miembros.length === 0 ? (
+            <p className="py-2 text-sm text-muted-foreground">Sin miembros asignados</p>
           ) : (
             <div className="space-y-2">
-              {disc.detalle.discipulos.map((d) => (
+              {disc.detalle.miembros.map((d) => (
                 <div key={d.id} className="rounded-lg border p-2">
                   <div className="flex items-start gap-2.5">
                     <Avatar persona={d} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <Link
-                          href={`/discipulos/ver?id=${d.id}`}
+                           href={`/miembros/ver?id=${d.id}`}
                           className="min-w-0 flex-1 truncate text-sm font-medium hover:underline"
                         >
                           {d.apellido}, {d.nombre}
@@ -744,7 +744,7 @@ function DetalleDiscipulador({ disc }: { disc: DiscipuladorResumen }) {
               {disc.detalle.reunionesRecientes.map((r) => (
                 <div key={r.id} className="rounded-lg border p-2">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="truncate text-sm font-medium">{r.discipulo}</p>
+                    <p className="truncate text-sm font-medium">{r.miembro}</p>
                     <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
                       {format(new Date(r.fecha + "T00:00:00"), "dd/MM/yyyy", { locale: es })}
                     </span>

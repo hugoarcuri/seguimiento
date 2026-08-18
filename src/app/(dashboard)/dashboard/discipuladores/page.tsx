@@ -175,7 +175,7 @@ export default function DiscipuladoresDashboardPage() {
     };
 
     const activos = miembros.filter((d) => d.estado === "activo");
-    const discipulosActivosAsignados = activos.filter((d) => d.lider_id);
+    const miembrosActivosAsignados = activos.filter((d) => d.lider_id);
 
     const porLider = new Map<string, MiembroRaw[]>();
     for (const d of miembros) {
@@ -186,8 +186,8 @@ export default function DiscipuladoresDashboardPage() {
     }
 
     const tabla = discipuladores.map((disc) => {
-      const susDiscipulos = porLider.get(disc.id) || [];
-      const susActivos = susDiscipulos.filter((d) => d.estado === "activo");
+      const susMiembros = porLider.get(disc.id) || [];
+      const susActivos = susMiembros.filter((d) => d.estado === "activo");
       const conSeg = susActivos.map((d) => ({ d, seg: segPorMiembro.get(d.id) }));
       const progresos = conSeg.filter((x) => x.seg && x.seg.estado === "activo" && x.seg.progreso != null).map((x) => x.seg!.progreso);
       const progresoPromedio = progresos.length ? Math.round(progresos.reduce((a, b) => a + b, 0) / progresos.length) : null;
@@ -209,20 +209,20 @@ export default function DiscipuladoresDashboardPage() {
         ? Math.min(...fechasEncuentro.map((f) => diasDesde(f)))
         : null;
 
-      const susIds = new Set(susDiscipulos.map((d) => d.id));
+      const susIds = new Set(susMiembros.map((d) => d.id));
       const reunionesRecientes = agenda
-        .filter((a) => susIds.has(a.discipulo_id))
+        .filter((a) => susIds.has(a.miembro_id))
         .slice(0, 5)
         .map((a) => ({
           id: a.id,
-          discipulo: a.discipulos ? nombreCompleto(a.discipulos.nombre, a.discipulos.apellido) : "—",
+          miembro: a.miembros ? nombreCompleto(a.miembros.nombre, a.miembros.apellido) : "—",
           fecha: a.fecha,
           tema: a.tema_tratado || null,
         }));
 
       const alerta = (() => {
         if (estado === "critico") return "Situación crítica: revisá a este discipulador hoy mismo.";
-        if (estado === "necesita_ayuda") return "Necesita acompañamiento: hay discípulos con progreso bajo o sin reuniones.";
+        if (estado === "necesita_ayuda") return "Necesita acompañamiento: hay miembros con progreso bajo o sin reuniones.";
         if (estado === "en_riesgo") return "En riesgo: conviene acercarse y acompañar.";
         return null;
       })();
@@ -243,8 +243,8 @@ export default function DiscipuladoresDashboardPage() {
         diasUltimaReunion,
         listosAvanzar,
         detalle: {
-          discipulos: susDiscipulos.map((d) => {
-            const seg = segPorDiscipulo.get(d.id);
+          miembros: susMiembros.map((d) => {
+            const seg = segPorMiembro.get(d.id);
             const f = ultimoEncuentro.get(d.id);
             const etapa = etapas.find((e) => e.id === d.etapa_id);
             return {
@@ -269,8 +269,8 @@ export default function DiscipuladoresDashboardPage() {
     const actividad: DiscipuladoresDashboardData["actividad"] = [];
 
     for (const a of agenda) {
-      const d = a.discipulo_id ? discipuloNombre.get(a.discipulo_id) : undefined;
-      const nombreD = d ? nombreCompleto(d.nombre, d.apellido) : "un discípulo";
+      const d = a.miembro_id ? miembroNombre.get(a.miembro_id) : undefined;
+      const nombreD = d ? nombreCompleto(d.nombre, d.apellido) : "un miembro";
       if (a.realizada && enPeriodoFecha(a.fecha) && a.fecha <= hoy.toISOString().slice(0, 10)) {
         actividad.push({
           id: `r-${a.id}`,
@@ -292,11 +292,11 @@ export default function DiscipuladoresDashboardPage() {
       }
     }
 
-    for (const d of discipulos) {
+    for (const d of miembros) {
       if (enPeriodoDate(new Date(d.created_at))) {
         actividad.push({
           id: `n-${d.id}`,
-          tipo: "nuevo_discipulo",
+          tipo: "nuevo_miembro",
           discipulador_id: d.lider_id || undefined,
           discipulador: nombreLider(d.lider_id),
           descripcion: `agregó a ${nombreCompleto(d.nombre, d.apellido)}`,
@@ -307,13 +307,13 @@ export default function DiscipuladoresDashboardPage() {
 
     for (const t of tareas) {
       if (t.estado === "completada" && t.completed_at && enPeriodoDate(new Date(t.completed_at))) {
-        const d = t.discipulo_id ? discipuloNombre.get(t.discipulo_id) : undefined;
+        const d = t.miembro_id ? miembroNombre.get(t.miembro_id) : undefined;
         actividad.push({
           id: `t-${t.id}`,
           tipo: "tarea",
           discipulador_id: t.lider_id || undefined,
           discipulador: nombreLider(t.lider_id),
-          descripcion: `${d ? nombreCompleto(d.nombre, d.apellido) : "Un discípulo"} completó "${t.titulo}"`,
+          descripcion: `${d ? nombreCompleto(d.nombre, d.apellido) : "Un miembro"} completó "${t.titulo}"`,
           fecha: t.completed_at,
         });
       }
@@ -326,7 +326,7 @@ export default function DiscipuladoresDashboardPage() {
           tipo: "sin_actividad",
           discipulador_id: disc.id,
           discipulador: `${disc.nombre} ${disc.apellido}`,
-          descripcion: `tiene ${disc.sinContacto} discípulo(s) sin actividad`,
+          descripcion: `tiene ${disc.sinContacto} miembro(s) sin actividad`,
           fecha: hoy.toISOString(),
         });
       }
@@ -362,7 +362,7 @@ export default function DiscipuladoresDashboardPage() {
       serie.push({
         etiqueta,
         reuniones: agenda.filter((a) => a.realizada && a.fecha <= finISO && a.fecha >= t.toISOString().slice(0, 10)).length,
-        discipulosActivos: discipulos.filter((d) => {
+        miembrosActivos: miembros.filter((d) => {
           const c = new Date(d.created_at);
           return c <= fin && c >= t && d.estado === "activo";
         }).length,
@@ -371,8 +371,8 @@ export default function DiscipuladoresDashboardPage() {
 
     const progresoPorEtapa = etapas
       .map((e) => {
-        const segs = segPorDiscipulo;
-        const ids = discipulos.filter((d) => d.etapa_id === e.id).map((d) => d.id);
+        const segs = segPorMiembro;
+        const ids = miembros.filter((d) => d.etapa_id === e.id).map((d) => d.id);
         const progs = ids
           .map((id) => segs.get(id))
           .filter((s): s is SeguimientoRaw => Boolean(s) && s?.estado === "activo")
@@ -395,17 +395,17 @@ export default function DiscipuladoresDashboardPage() {
       : null;
 
     const reunionesRealizadas = agenda.filter((a) => a.realizada && a.fecha <= hoy.toISOString().slice(0, 10) && enPeriodoFecha(a.fecha)).length;
-    const objetivoReuniones = discipulosActivosAsignados.length;
+    const objetivoReuniones = miembrosActivosAsignados.length;
     const reunionesPctGlobal = objetivoReuniones ? Math.min(100, Math.round((reunionesRealizadas / objetivoReuniones) * 100)) : 0;
 
-    const nuevosEnPeriodo = discipulos.filter((d) => enPeriodoDate(new Date(d.created_at))).length;
+    const nuevosEnPeriodo = miembros.filter((d) => enPeriodoDate(new Date(d.created_at))).length;
 
     return {
       periodo,
       kpis: {
         discipuladoresActivos,
         pctActivos,
-        discipulosActivos: discipulosActivosAsignados.length,
+        miembrosActivos: miembrosActivosAsignados.length,
         nuevosEnPeriodo,
         reunionesRealizadas,
         objetivoReuniones,

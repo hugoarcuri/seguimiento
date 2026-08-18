@@ -359,7 +359,7 @@ export default function DashboardPage() {
       const etiqueta = bucketDias >= 30 ? format(t, "MMM yyyy", { locale: es }) : format(t, "d MMM", { locale: es });
 
       const reuniones = agendaVisibles.filter((a) => a.fecha <= finISO && a.fecha >= tISO && a.realizada).length;
-      const discipulosActivos = miembrosVisibles.filter(
+      const miembrosActivos = miembrosVisibles.filter(
         (d) => d.estado === "activo" && (d.created_at || "").slice(0, 10) <= finISO
       ).length;
       const progs = seguimientoIds
@@ -367,7 +367,7 @@ export default function DashboardPage() {
         .filter((p): p is number => p !== null);
       const progreso = progs.length ? Math.round(progs.reduce((a, b) => a + b, 0) / progs.length) : null;
 
-      serie.push({ etiqueta, reuniones, discipulosActivos, progreso });
+      serie.push({ etiqueta, reuniones, miembrosActivos, progreso });
     }
 
     const miembroPorId = new Map(miembrosVisibles.map((d) => [d.id, d]));
@@ -467,7 +467,7 @@ export default function DashboardPage() {
     return {
       periodo,
       kpis: {
-        discipulosActivos: activos.length,
+        miembrosActivos: activos.length,
         totalAsignados: miembrosVisibles.length,
         pausados,
         retirados,
