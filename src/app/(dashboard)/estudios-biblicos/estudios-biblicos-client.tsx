@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ESTUDIOS_BIBLICOS, NIVEL_LABEL } from "@/lib/constants/estudios-biblicos";
+import { BASE_PATH } from "@/lib/constants/paths";
 import { Card, CardContent } from "@/components/ui/card";
 import { ChevronDown, ChevronRight, Download, Eye, GraduationCap } from "lucide-react";
 
@@ -33,7 +34,7 @@ export function EstudiosBiblicosClient({ puedeVerGuia }: Props) {
         {ESTUDIOS_BIBLICOS.map((paso) => {
           const abierto = pasoAbierto === paso.numero;
           const guiaVisible = guiaAbierta === paso.numero;
-          const pdfUrl = `/estudios-biblicos/nivel-1/${paso.archivo}`;
+          const pdfUrl = `${BASE_PATH}/estudios-biblicos/nivel-1/${paso.archivo}`;
 
           return (
             <Card key={paso.numero} className="overflow-hidden">
@@ -84,6 +85,7 @@ export function EstudiosBiblicosClient({ puedeVerGuia }: Props) {
                     src={pdfUrl}
                     className="w-full h-[500px] rounded-lg border"
                     title={`Paso ${paso.numero} - ${paso.titulo}`}
+                    type="application/pdf"
                   />
 
                   {puedeVerGuia && (
