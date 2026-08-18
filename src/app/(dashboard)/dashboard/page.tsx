@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { DashboardClient, type DashboardData, type ActividadItem, type EstadoDiscipulo } from "./dashboard-client";
 import { useEtapas } from "@/hooks/useEtapas";
@@ -101,9 +102,16 @@ interface RawData {
 
 export default function DashboardPage() {
   const { etapas } = useEtapas();
-  const { user } = useUser();
+  const { user, loading: loadingUser } = useUser();
+  const router = useRouter();
   const [periodo, setPeriodo] = useState<Periodo>(DEFAULT_PERIODO);
   const [raw, setRaw] = useState<RawData | null>(null);
+
+  useEffect(() => {
+    if (!loadingUser && user?.rol === "discipulo") {
+      router.replace("/mi-crecimiento");
+    }
+  }, [user, loadingUser, router]);
 
   useEffect(() => {
     const supabase = createClient();
