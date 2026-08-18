@@ -2,14 +2,14 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
-import type { Discipulo } from "@/types/database";
+import type { Miembro } from "@/types/database";
 
-let cachedDiscipulo: Discipulo | null = null;
+let cachedMiembro: Miembro | null = null;
 let cachedUserId: string | null = null;
 
-export function useDiscipuloActual() {
-  const [discipulo, setDiscipulo] = useState<Discipulo | null>(cachedDiscipulo);
-  const [loading, setLoading] = useState(cachedDiscipulo === null);
+export function useMiembroActual() {
+  const [miembro, setMiembro] = useState<Miembro | null>(cachedMiembro);
+  const [loading, setLoading] = useState(cachedMiembro === null);
 
   useEffect(() => {
     let mounted = true;
@@ -19,21 +19,31 @@ export function useDiscipuloActual() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!mounted || !user) { if (mounted) setLoading(false); return; }
 
-      if (cachedUserId === user.id && cachedDiscipulo) {
+      if (cachedUserId === user.id && cachedMiembro) {
         if (mounted) setLoading(false);
         return;
       }
 
-      const { data } = await supabase
-        .from("discipulos")
-        .select("*")
-        .eq("user_id", user.id)
-        .single();
+      const { data: miembroId } = await supabase.rpc("ensure_miembro_discipulo");
 
       if (!mounted) return;
-      cachedUserId = user.id;
-      cachedDiscipulo = (data as Discipulo) || null;
-      setDiscipulo(cachedDiscipulo);
+
+      if (miembroId) {
+        const { data } = await supabase
+          .from("miembros")
+          .select("*")
+          .eq("id", miembroId)
+          .single();
+
+        if (!mounted) return;
+        cachedUserId = user.id;
+        cachedMiembro = (data as Miembro) || null;
+        setMiembro(cachedMiembro);
+      } else {
+        cachedUserId = user.id;
+        cachedMiembro = null;
+        setMiembro(null);
+      }
       setLoading(false);
     })();
 
@@ -45,16 +55,26 @@ export function useDiscipuloActual() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data } = await supabase
-      .from("discipulos")
-      .select("*")
-      .eq("user_id", user.id)
-      .single();
+    const { data: miembroId } = await supabase.rpc("ensure_miembro_discipulo");
 
-    cachedUserId = user.id;
-    cachedDiscipulo = (data as Discipulo) || null;
-    setDiscipulo(cachedDiscipulo);
+    if (miembroId) {
+      const { data } = await supabase
+        .from("miembros")
+        .select("*")
+        .eq("id", miembroId)
+        .single();
+
+      cachedUserId = user.id;
+      cachedMiembro = (data as Miembro) || null;
+      setMiembro(cachedMiembro);
+    } else {
+      cachedUserId = user.id;
+      cachedMiembro = null;
+      setMiembro(null);
+    }
   };
 
-  return { discipulo, loading, refresh };
+  return { miembro, loading, refresh };
 }
+
+export const useDiscipuloActual = useMiembroActual;
