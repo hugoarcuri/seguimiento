@@ -34,12 +34,12 @@ import {
   ORDEN_SALUD,
   ACCION_LABEL,
   UMBRALES_SALUD,
-  type SaludDiscipulo,
+  type SaludMiembro,
 } from "@/lib/discipulo-health";
-import { ImportarDiscipulos } from "./importar-discipulos";
-import { DiscipuloDetailClient, type DetalleDiscipulo } from "./discipulo-detail-client";
-import type { DiscipuloRadar } from "./radar-data";
-import type { Discipulo, Etapa, Seguimiento, SeguimientoEvaluacion, SeguimientoObjetivo } from "@/types/database";
+import { ImportarMiembros } from "./importar-discipulos";
+import { MiembroDetailClient, type DetalleMiembro } from "./discipulo-detail-client";
+import type { MiembroRadar } from "./radar-data";
+import type { Miembro, Etapa, Seguimiento, SeguimientoEvaluacion, SeguimientoObjetivo } from "@/types/database";
 
 const DIAS_CUMPLEANOS = 7;
 
@@ -67,51 +67,51 @@ function getAvatarColor(id: string): string {
 
 type Foco = "todos" | "urgentes" | "sin_contacto" | "bautismo" | "membresia";
 
-interface DiscipulosClientProps {
-  discipulos: DiscipuloRadar[];
+interface MiembrosClientProps {
+  miembros: MiembroRadar[];
   etapas: Etapa[];
   esAdmin: boolean;
   onCambio?: () => void;
 }
 
-export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: DiscipulosClientProps) {
+export function MiembrosClient({ miembros, etapas, esAdmin, onCambio }: MiembrosClientProps) {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [etapaFilter, setEtapaFilter] = useState<number | null>(null);
   const [foco, setFoco] = useState<Foco>("todos");
-  const [colapsados, setColapsados] = useState<Set<SaludDiscipulo>>(new Set(["al_dia"]));
+  const [colapsados, setColapsados] = useState<Set<SaludMiembro>>(new Set(["al_dia"]));
   const [listaReducida, setListaReducida] = useState(false);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
-  const [detalle, setDetalle] = useState<DetalleDiscipulo | null>(null);
+  const [detalle, setDetalle] = useState<DetalleMiembro | null>(null);
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState<string | null>(null);
 
-  const [encuentroDialog, setEncuentroDialog] = useState<DiscipuloRadar | null>(null);
+  const [encuentroDialog, setEncuentroDialog] = useState<MiembroRadar | null>(null);
   const [encuentroDraft, setEncuentroDraft] = useState({ fecha: new Date().toISOString().split("T")[0], hora: "", lugar: "", tema_tratado: "", notas: "" });
   const [encuentroGuardando, setEncuentroGuardando] = useState(false);
   const [iniciandoSeg, setIniciandoSeg] = useState<string | null>(null);
 
-  const discipulosRef = useRef(discipulos);
-  useEffect(() => { discipulosRef.current = discipulos; }, [discipulos]);
+  const miembrosRef = useRef(miembros);
+  useEffect(() => { miembrosRef.current = miembros; }, [miembros]);
 
   const conteos = useMemo(() => {
-    const n = (pred: (d: DiscipuloRadar) => boolean) => discipulos.filter(pred).length;
+    const n = (pred: (d: MiembroRadar) => boolean) => miembros.filter(pred).length;
     return {
       urgentes: n((d) => d.salud.salud === "critico"),
       sin_contacto: n((d) => d.salud.alertas.some((a) => a.tipo === "sin_contacto")),
       bautismo: n((d) => d.salud.alertas.some((a) => a.tipo === "bautismo_pendiente")),
       membresia: n((d) => d.salud.alertas.some((a) => a.tipo === "membresia_pendiente")),
     };
-  }, [discipulos]);
+  }, [miembros]);
 
   const filtrados = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return discipulos.filter((d) => {
+    return miembros.filter((d) => {
       if (etapaFilter !== null && d.etapa_id !== etapaFilter) return false;
       if (q) {
         const nombre = `${d.apellido} ${d.nombre}`.toLowerCase();
@@ -123,7 +123,7 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
       if (foco === "urgentes") return d.salud.salud === "critico";
       return d.salud.alertas.some((a) => a.tipo === foco);
     });
-  }, [discipulos, search, etapaFilter, foco]);
+  }, [miembros, search, etapaFilter, foco]);
 
   const grupos = ORDEN_SALUD
     .map((salud) => ({ salud, items: filtrados.filter((d) => d.salud.salud === salud) }))
@@ -134,22 +134,22 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
     setSelectedId(id);
     const supabase = createClient();
     const [dRes, eRes, oRes, tRes, tlRes, segRes] = await Promise.all([
-      supabase.from("discipulos").select("*").eq("id", id).single(),
-      supabase.from("agenda").select("*").eq("discipulo_id", id).order("fecha", { ascending: false }),
-      supabase.from("oraciones").select("*").eq("discipulo_id", id).order("fecha", { ascending: false }),
-      supabase.from("tareas").select("*").eq("discipulo_id", id).order("created_at", { ascending: false }),
-      supabase.from("timeline").select("*").eq("discipulo_id", id).order("created_at", { ascending: false }),
-      supabase.from("seguimientos").select("*").eq("discipulo_id", id).order("created_at", { ascending: false }),
+      supabase.from("miembros").select("*").eq("id", id).single(),
+      supabase.from("agenda").select("*").eq("miembro_id", id).order("fecha", { ascending: false }),
+      supabase.from("oraciones").select("*").eq("miembro_id", id).order("fecha", { ascending: false }),
+      supabase.from("tareas").select("*").eq("miembro_id", id).order("created_at", { ascending: false }),
+      supabase.from("timeline").select("*").eq("miembro_id", id).order("created_at", { ascending: false }),
+      supabase.from("seguimientos").select("*").eq("miembro_id", id).order("created_at", { ascending: false }),
     ]);
     if (!dRes.data) { setLoadingDetail(false); return; }
-    const discipulo = dRes.data as Discipulo;
+    const miembro = dRes.data as Miembro;
     let discipulador: { nombre: string; apellido: string } | null = null;
     let discipuladores: Array<{ id: string; nombre: string; apellido: string }> = [];
-    if (discipulo.lider_id) {
+    if (miembro.lider_id) {
       const { data: liderRes } = await supabase
         .from("profiles")
         .select("nombre, apellido")
-        .eq("id", discipulo.lider_id)
+        .eq("id", miembro.lider_id)
         .maybeSingle();
       if (liderRes) discipulador = liderRes as { nombre: string; apellido: string };
     }
@@ -172,7 +172,7 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
       objetivos = (objRes.data as SeguimientoObjetivo[]) || [];
     }
     setDetalle({
-      discipulo: dRes.data,
+      miembro: dRes.data,
       etapas,
       agendas: eRes.data || [],
       oraciones: oRes.data || [],
@@ -183,7 +183,7 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
       objetivos,
       discipulador,
       discipuladores,
-      salud: discipulosRef.current.find((r) => r.id === id)?.salud ?? null,
+      salud: miembrosRef.current.find((r) => r.id === id)?.salud ?? null,
       onCambio,
     });
     setLoadingDetail(false);
@@ -191,13 +191,13 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
 
   const handleDelete = async (id: string) => {
     const supabase = createClient();
-    const { error } = await supabase.from("discipulos").delete().eq("id", id);
+    const { error } = await supabase.from("miembros").delete().eq("id", id);
     if (error) {
-      toast.error(error.message === 'new row violates row-level security policy for table "discipulos"'
-        ? "Solo los administradores pueden eliminar discípulos"
+      toast.error(error.message === 'new row violates row-level security policy for table "miembros"'
+        ? "Solo los administradores pueden eliminar miembros"
         : `Error al eliminar: ${error.message}`);
     } else {
-      toast.success("Discípulo eliminado");
+      toast.success("Miembro eliminado");
       setDeleteDialog(null);
       if (selectedId === id) { setSelectedId(null); setDetalle(null); }
       onCambio?.();
@@ -208,15 +208,15 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
     if (!selectedIds.length || bulkDeleting) return;
     setBulkDeleting(true);
     const supabase = createClient();
-    const { error } = await supabase.from("discipulos").delete().in("id", selectedIds);
+    const { error } = await supabase.from("miembros").delete().in("id", selectedIds);
     setBulkDeleting(false);
     if (error) {
       toast.error(error.message.includes("row-level security policy")
-        ? "Solo los administradores pueden eliminar discípulos"
+        ? "Solo los administradores pueden eliminar miembros"
         : `Error al eliminar: ${error.message}`);
       return;
     }
-    toast.success(`${selectedIds.length} discípulo(s) eliminado(s)`);
+    toast.success(`${selectedIds.length} miembro(s) eliminado(s)`);
     setBulkDeleteOpen(false);
     setSelectedIds([]);
     onCambio?.();
@@ -236,7 +236,7 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
   };
 
   const exportarSeleccionados = () => {
-    const sel = discipulos.filter((d) => selectedIds.includes(d.id));
+    const sel = miembros.filter((d) => selectedIds.includes(d.id));
     if (sel.length === 0) return;
     const filas = sel.map((d) => ({
       Apellido: d.apellido,
@@ -253,18 +253,18 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = "discipulos.csv";
+    a.download = "miembros.csv";
     a.click();
     URL.revokeObjectURL(a.href);
-    toast.success(`${sel.length} discípulos exportados`);
+    toast.success(`${sel.length} miembros exportados`);
   };
 
-  const iniciarSeguimiento = async (d: DiscipuloRadar) => {
+  const iniciarSeguimiento = async (d: MiembroRadar) => {
     setIniciandoSeg(d.id);
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("seguimientos").insert({
-      discipulo_id: d.id,
+      miembro_id: d.id,
       discipulador_id: d.lider_id || user?.id || "",
       etapa: d.etapa_id,
       estado: "activo",
@@ -277,7 +277,7 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
     onCambio?.();
   };
 
-  const ejecutarAccion = (d: DiscipuloRadar) => {
+  const ejecutarAccion = (d: MiembroRadar) => {
     switch (d.salud.accion) {
       case "agendar_encuentro":
         setEncuentroDialog(d);
@@ -290,7 +290,7 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
         return;
       case "pastorear_bautismo":
       case "pastorear_membresia":
-        router.push(`/discipulos/editar?id=${d.id}`);
+        router.push(`/miembros/editar?id=${d.id}`);
         return;
       case "iniciar_seguimiento":
         iniciarSeguimiento(d);
@@ -311,7 +311,7 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("agenda").insert({
-      discipulo_id: encuentroDialog.id,
+      miembro_id: encuentroDialog.id,
       lider_id: user?.id || encuentroDialog.lider_id || null,
       fecha: encuentroDraft.fecha,
       realizada: false,
@@ -340,8 +340,8 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
       <div className={cn("w-full lg:shrink-0 flex flex-col gap-3", listaReducida ? "lg:w-[250px]" : "lg:w-[440px]")}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-xl font-bold">Discípulos</h1>
-            <p className="text-xs text-muted-foreground">{filtrados.length} de {discipulos.length}</p>
+            <h1 className="text-xl font-bold">Miembros</h1>
+            <p className="text-xs text-muted-foreground">{filtrados.length} de {miembros.length}</p>
           </div>
           <div className="flex flex-wrap gap-1">
             <button
@@ -368,13 +368,13 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
               </>
             )}
             <Link
-              href="/discipulos/nuevo"
+              href="/miembros/nuevo"
               className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/80 min-h-11 md:min-h-8 gap-1 px-2 text-xs font-medium"
             >
               <UserPlus className="h-3.5 w-3.5" />
               Nuevo
             </Link>
-            <ImportarDiscipulos etapas={etapas} onImportado={onCambio} />
+            <ImportarMiembros etapas={etapas} onImportado={onCambio} />
           </div>
         </div>
 
@@ -447,7 +447,7 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
 
         <div className="flex-1 overflow-y-auto -mx-1 px-1 space-y-2">
           {grupos.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">No se encontraron discípulos</p>
+            <p className="text-sm text-muted-foreground text-center py-8">No se encontraron miembros</p>
           ) : (
             grupos.map((g) => {
               const cfg = SALUD_CONFIG[g.salud];
@@ -570,8 +570,8 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
 
       {/* PANEL DERECHO */}
       <div className="flex-1 min-w-0 overflow-y-auto @container">
-        {selectedId && detalle?.discipulo.id === selectedId ? (
-          <DiscipuloDetailClient key={selectedId} {...detalle} />
+        {selectedId && detalle?.miembro.id === selectedId ? (
+          <MiembroDetailClient key={selectedId} {...detalle} />
         ) : selectedId && loadingDetail ? (
           <div className="flex items-center justify-center h-full">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -579,7 +579,7 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
         ) : (
           <div className="flex items-center justify-center h-full">
             <div className="text-center space-y-2 max-w-sm">
-              <p className="text-muted-foreground text-sm">Seleccioná un discípulo para ver su panorama pastoral</p>
+              <p className="text-muted-foreground text-sm">Seleccioná un miembro para ver su panorama pastoral</p>
               <p className="text-xs text-muted-foreground">Los grupos de color muestran quién necesita tu atención hoy.</p>
             </div>
           </div>
@@ -590,7 +590,7 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
       <Dialog open={!!deleteDialog} onOpenChange={() => setDeleteDialog(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Eliminar Discípulo</DialogTitle>
+            <DialogTitle>Eliminar Miembro</DialogTitle>
             <DialogDescription>¿Estás seguro? Esta acción no se puede deshacer.</DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -604,9 +604,9 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
       <Dialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Eliminar discípulos</DialogTitle>
+            <DialogTitle>Eliminar miembros</DialogTitle>
             <DialogDescription>
-              ¿Eliminar {selectedIds.length} discípulo(s) seleccionado(s)? Esta acción no se puede deshacer.
+              ¿Eliminar {selectedIds.length} miembro(s) seleccionado(s)? Esta acción no se puede deshacer.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -659,3 +659,5 @@ export function DiscipulosClient({ discipulos, etapas, esAdmin, onCambio }: Disc
     </div>
   );
 }
+
+export { MiembrosClient as DiscipulosClient };

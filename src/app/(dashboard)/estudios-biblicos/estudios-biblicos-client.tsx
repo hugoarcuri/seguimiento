@@ -95,7 +95,7 @@ export function EstudiosBiblicosClient({ puedeVerGuia }: Props) {
                         className="flex w-full items-center gap-2 rounded-lg border p-3 text-left hover:bg-accent/50 transition-colors"
                       >
                         <GraduationCap className="h-4 w-4 shrink-0 text-primary" />
-                        <span className="text-sm font-medium flex-1">Guía del discipulador</span>
+                        <span className="text-sm font-medium flex-1">Guía del Miembro</span>
                         {guiaVisible ? (
                           <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
                         ) : (

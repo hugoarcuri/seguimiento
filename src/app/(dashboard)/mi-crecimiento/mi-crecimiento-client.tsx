@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { useDiscipuloActual } from "@/hooks/useDiscipuloActual";
+import { useMiembroActual } from "@/hooks/useDiscipuloActual";
 import { useEtapas } from "@/hooks/useEtapas";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,7 +28,7 @@ import type {
 type Encuentro = Agenda;
 
 export function MiCrecimientoClient() {
-  const { discipulo, loading: loadingDiscipulo } = useDiscipuloActual();
+  const { miembro: discipulo, loading: loadingDiscipulo } = useMiembroActual();
   const { etapas } = useEtapas();
 
   const [seguimiento, setSeguimiento] = useState<Seguimiento | null>(null);
@@ -47,10 +47,10 @@ export function MiCrecimientoClient() {
     let cancelado = false;
     (async () => {
       const [segRes, encRes, tarRes, oraRes] = await Promise.all([
-        supabase.from("seguimientos").select("*").eq("discipulo_id", discipulo.id).order("created_at", { ascending: false }),
-        supabase.from("agenda").select("*").eq("discipulo_id", discipulo.id).order("fecha", { ascending: false }).limit(10),
-        supabase.from("tareas").select("*").eq("discipulo_id", discipulo.id).order("created_at", { ascending: false }),
-        supabase.from("oraciones").select("*").eq("discipulo_id", discipulo.id).order("fecha", { ascending: false }),
+        supabase.from("seguimientos").select("*").eq("miembro_id", discipulo.id).order("created_at", { ascending: false }),
+        supabase.from("agenda").select("*").eq("miembro_id", discipulo.id).order("fecha", { ascending: false }).limit(10),
+        supabase.from("tareas").select("*").eq("miembro_id", discipulo.id).order("created_at", { ascending: false }),
+        supabase.from("oraciones").select("*").eq("miembro_id", discipulo.id).order("fecha", { ascending: false }),
       ]);
       if (cancelado) return;
       const segs = (segRes.data || []) as Seguimiento[];
@@ -99,7 +99,7 @@ export function MiCrecimientoClient() {
   if (!discipulo) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-        <p className="text-muted-foreground">No se encontró tu perfil de discípulo</p>
+        <p className="text-muted-foreground">No se encontró tu perfil de miembro</p>
         <Link href="/configuracion"><Button variant="outline">Ir a Configuración</Button></Link>
       </div>
     );

@@ -2,19 +2,19 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useUser } from "@/hooks/useUser";
-import { cargarRadar, type DiscipuloRadar } from "./radar-data";
-import { DiscipulosClient } from "./discipulos-client";
+import { cargarRadar, type MiembroRadar } from "./radar-data";
+import { MiembrosClient } from "./discipulos-client";
 import type { Etapa } from "@/types/database";
 
-export default function DiscipulosPage() {
+export default function MiembrosPage() {
   const { user } = useUser();
-  const [discipulos, setDiscipulos] = useState<DiscipuloRadar[]>([]);
+  const [miembros, setMiembros] = useState<MiembroRadar[]>([]);
   const [etapas, setEtapas] = useState<Etapa[]>([]);
   const [loading, setLoading] = useState(true);
 
   const cargarDatos = useCallback(async () => {
-    const { discipulos: lista, etapas: etapasLista } = await cargarRadar();
-    setDiscipulos(lista);
+    const { miembros: lista, etapas: etapasLista } = await cargarRadar();
+    setMiembros(lista);
     setEtapas(etapasLista);
   }, []);
 
@@ -33,8 +33,8 @@ export default function DiscipulosPage() {
   if (loading) return <div className="flex items-center justify-center min-h-[50vh]"><p className="text-muted-foreground">Cargando...</p></div>;
 
   return (
-    <DiscipulosClient
-      discipulos={discipulos}
+    <MiembrosClient
+      miembros={miembros}
       etapas={etapas}
       esAdmin={user?.rol === "admin"}
       onCambio={cargarDatos}

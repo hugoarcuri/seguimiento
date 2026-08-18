@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const agendaSchema = z.object({
-  discipulo_id: z.string().uuid("Seleccioná un discípulo"),
+  miembro_id: z.string().uuid("Seleccioná un miembro"),
   fecha: z.string().min(1, "La fecha es requerida"),
   hora: z.string().optional().nullable(),
   lugar: z.string().optional().nullable(),

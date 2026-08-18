@@ -64,7 +64,7 @@ export const adminMenuItems: NavItem[] = [
     icon: Users,
     children: [
       { href: "/dashboard", label: "Dashboard Miembros", icon: LayoutDashboard },
-      { href: "/discipulos", label: "Lista Miembros", icon: List },
+      { href: "/miembros", label: "Lista Miembros", icon: List },
     ],
   },
   {
@@ -98,7 +98,7 @@ export const discipuladorMenuItems: NavItem[] = [
     icon: Users,
     children: [
       { href: "/dashboard", label: "Dashboard Miembros", icon: LayoutDashboard },
-      { href: "/discipulos", label: "Lista Miembros", icon: List },
+      { href: "/miembros", label: "Lista Miembros", icon: List },
     ],
   },
   { href: "/seguimiento", label: "Seguimiento", icon: Map },

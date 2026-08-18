@@ -3,7 +3,7 @@ import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
-export interface DiscipuloReporte {
+export interface MiembroReporte {
   id: string;
   nombre: string;
   apellido: string;
@@ -18,10 +18,11 @@ export interface DiscipuloReporte {
   bautizado: boolean;
   esMiembro: boolean;
 }
+export type DiscipuloReporte = MiembroReporte;
 
 export interface EncuentroReporte {
   id: string;
-  discipulo: string;
+  miembro: string;
   fecha: string;
   tema: string | null;
   realizada: boolean;
@@ -29,7 +30,7 @@ export interface EncuentroReporte {
 
 export interface TareaReporte {
   id: string;
-  discipulo: string;
+  miembro: string;
   titulo: string;
   tipo: string;
   estado: string;
@@ -37,7 +38,7 @@ export interface TareaReporte {
 }
 
 export interface ObjetivoReporte {
-  discipulo: string;
+  miembro: string;
   descripcion: string;
   completado: boolean;
 }
@@ -61,8 +62,8 @@ export interface ReporteData {
   desde: string;
   hasta: string;
   kpis: {
-    discipulosTotal: number;
-    discipulosActivos: number;
+    miembrosTotal: number;
+    miembrosActivos: number;
     encuentrosPeriodo: number;
     progresoPromedio: number | null;
     tareasPendientes: number;
@@ -71,7 +72,7 @@ export interface ReporteData {
     objetivosPendientes: number;
     personasEvangelismo: number;
   };
-  discipulos: DiscipuloReporte[];
+  miembros: MiembroReporte[];
   encuentros: EncuentroReporte[];
   tareas: TareaReporte[];
   objetivos: ObjetivoReporte[];
@@ -134,7 +135,7 @@ export function generarReportePDF(data: ReporteData): void {
   tabla(
     ["Métrica", "Valor"],
     [
-      ["Discípulos (total / activos)", `${data.kpis.discipulosTotal} / ${data.kpis.discipulosActivos}`],
+      ["Miembros (total / activos)", `${data.kpis.miembrosTotal} / ${data.kpis.miembrosActivos}`],
       ["Encuentros en el período", `${data.kpis.encuentrosPeriodo}`],
       ["Progreso promedio de seguimiento", data.kpis.progresoPromedio !== null ? `${data.kpis.progresoPromedio}%` : "—"],
       ["Tareas pendientes", `${data.kpis.tareasPendientes}`],
@@ -144,11 +145,11 @@ export function generarReportePDF(data: ReporteData): void {
     ]
   );
 
-  // Discípulos
-  agregarTitulo("Discípulos");
+  // Miembros
+  agregarTitulo("Miembros");
   tabla(
     ["Nombre", "Etapa", "Estado", "Salud", "Progreso", "Encuentros", "Última reunión", "Tareas pend."],
-    data.discipulos.map((d) => [
+    data.miembros.map((d) => [
       `${d.apellido}, ${d.nombre}`,
       d.etapa,
       d.estado,
@@ -163,27 +164,27 @@ export function generarReportePDF(data: ReporteData): void {
   // Encuentros
   agregarTitulo("Encuentros del período");
   tabla(
-    ["Fecha", "Discípulo", "Tema", "Realizado"],
+    ["Fecha", "Miembro", "Tema", "Realizado"],
     data.encuentros.length > 0
-      ? data.encuentros.map((e) => [fFecha(e.fecha), e.discipulo, e.tema || "—", e.realizada ? "Sí" : "No"])
+      ? data.encuentros.map((e) => [fFecha(e.fecha), e.miembro, e.tema || "—", e.realizada ? "Sí" : "No"])
       : [["—", "No hay encuentros en el período", "", ""]]
   );
 
   // Tareas
   agregarTitulo("Tareas");
   tabla(
-    ["Título", "Discípulo", "Tipo", "Estado", "Fecha límite"],
+    ["Título", "Miembro", "Tipo", "Estado", "Fecha límite"],
     data.tareas.length > 0
-      ? data.tareas.map((t) => [t.titulo, t.discipulo, t.tipo, t.estado, fFecha(t.fechaLimite)])
+      ? data.tareas.map((t) => [t.titulo, t.miembro, t.tipo, t.estado, fFecha(t.fechaLimite)])
       : [["—", "No hay tareas", "", "", ""]]
   );
 
   // Objetivos
   agregarTitulo("Objetivos de seguimiento");
   tabla(
-    ["Discípulo", "Objetivo", "Estado"],
+    ["Miembro", "Objetivo", "Estado"],
     data.objetivos.length > 0
-      ? data.objetivos.map((o) => [o.discipulo, o.descripcion, o.completado ? "Completado" : "Pendiente"])
+      ? data.objetivos.map((o) => [o.miembro, o.descripcion, o.completado ? "Completado" : "Pendiente"])
       : [["—", "No hay objetivos de seguimiento", ""]]
   );
 

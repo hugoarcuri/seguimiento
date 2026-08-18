@@ -17,7 +17,7 @@ export interface PersonaData {
   estado: string;
   fecha_inicio_estado: string;
   fecha_creacion?: string;
-  discipulo_id?: string;
+  miembro_id?: string;
   creado_por?: string;
 }
 

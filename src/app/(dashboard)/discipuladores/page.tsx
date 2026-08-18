@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { DiscipuladoresClient } from "./discipuladores-client";
 import type { Profile, Discipulo, Etapa } from "@/types/database";
 import { useRequireRol } from "@/hooks/useRequireRol";
+import { useSyncMiembros } from "@/hooks/useSyncMiembros";
 
 export default function DiscipuladoresPage() {
   const { permitido, loading: autorizando } = useRequireRol(["admin"]);
@@ -12,6 +13,8 @@ export default function DiscipuladoresPage() {
   const [discipulos, setDiscipulos] = useState<Discipulo[]>([]);
   const [etapas, setEtapas] = useState<Etapa[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useSyncMiembros();
 
   const cargarDatos = useCallback(async () => {
     const supabase = createClient();

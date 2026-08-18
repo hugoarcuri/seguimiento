@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { loginSchema, registerSchema } from "./auth";
-import { discipuloSchema } from "./discipulo";
+import { miembroSchema } from "./discipulo";
 import { agendaSchema } from "./agenda";
 import { oracionSchema } from "./oracion";
 describe("auth", () => {
@@ -25,14 +25,14 @@ describe("auth", () => {
   });
 });
 
-describe("discipuloSchema", () => {
+describe("miembroSchema", () => {
   it("requiere nombre, apellido, etapa y estado", () => {
-    const res = discipuloSchema.safeParse({});
+    const res = miembroSchema.safeParse({});
     expect(res.success).toBe(false);
   });
 
-  it("acepta un discípulo completo", () => {
-    const res = discipuloSchema.safeParse({
+  it("acepta un miembro completo", () => {
+    const res = miembroSchema.safeParse({
       nombre: "Juan",
       apellido: "Pérez",
       etapa_id: 1,
@@ -42,7 +42,7 @@ describe("discipuloSchema", () => {
   });
 
   it("acepta email vacío como sin email", () => {
-    const res = discipuloSchema.safeParse({
+    const res = miembroSchema.safeParse({
       nombre: "Juan",
       apellido: "Pérez",
       etapa_id: 2,
@@ -53,7 +53,7 @@ describe("discipuloSchema", () => {
   });
 
   it("rechaza un email mal formado", () => {
-    const res = discipuloSchema.safeParse({
+    const res = miembroSchema.safeParse({
       nombre: "Juan",
       apellido: "Pérez",
       etapa_id: 2,
@@ -64,7 +64,7 @@ describe("discipuloSchema", () => {
   });
 
   it("rechaza estados fuera del enum", () => {
-    const res = discipuloSchema.safeParse({
+    const res = miembroSchema.safeParse({
       nombre: "Juan",
       apellido: "Pérez",
       etapa_id: 2,

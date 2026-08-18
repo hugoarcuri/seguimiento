@@ -29,7 +29,7 @@ import { useEtapas } from "@/hooks/useEtapas";
 import type { Seguimiento } from "@/types/database";
 
 type SeguimientoFila = Seguimiento & {
-  discipulos?: { id: string; nombre: string; apellido: string; avatar_url?: string | null; estado?: string; lider_id?: string | null };
+  miembros?: { id: string; nombre: string; apellido: string; avatar_url?: string | null; estado?: string; lider_id?: string | null };
 };
 
 type EncuentroProximo = { fecha: string; hora?: string; tema_tratado?: string; esFuturo: boolean };
@@ -38,9 +38,9 @@ export default function SeguimientoPage() {
   const supabase = useMemo(() => createClient(), []);
   const { etapas } = useEtapas();
   const [seguimientos, setSeguimientos] = useState<SeguimientoFila[]>([]);
-  const [proximoEncuentroPorDiscipulo, setProximoEncuentroPorDiscipulo] = useState<Record<string, EncuentroProximo>>({});
-  const [encuentrosMesPorDiscipulo, setEncuentrosMesPorDiscipulo] = useState<Record<string, number>>({});
-  const [discipulos, setDiscipulos] = useState<Array<{ id: string; nombre: string; apellido: string }>>([]);
+  const [proximoEncuentroPorMiembro, setProximoEncuentroPorMiembro] = useState<Record<string, EncuentroProximo>>({});
+  const [encuentrosMesPorMiembro, setEncuentrosMesPorMiembro] = useState<Record<string, number>>({});
+  const [miembros, setMiembros] = useState<Array<{ id: string; nombre: string; apellido: string }>>([]);
   const [discipuladores, setDiscipuladores] = useState<Array<{ id: string; nombre: string; apellido: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -64,62 +64,64 @@ export default function SeguimientoPage() {
     if (!authUser) return;
     setCurrentUserId(authUser.id);
 
+    await supabase.rpc("admin_sync_miembros_discipulos");
+
     const { data: profile } = await supabase.from("profiles").select("rol").eq("id", authUser.id).single();
     const admin = profile?.rol === "admin";
     setIsAdmin(admin);
     setEsDiscipulador(profile?.rol === "discipulador");
 
-    let discipulosQuery = supabase
-      .from("discipulos")
+    let miembrosQuery = supabase
+      .from("miembros")
       .select("id, nombre, apellido")
       .order("apellido", { ascending: true });
-    if (!admin) discipulosQuery = discipulosQuery.eq("lider_id", authUser.id);
+    if (!admin) miembrosQuery = miembrosQuery.eq("lider_id", authUser.id);
 
-    const [seguimientosRes, discipulosRes, discipuladoresRes] = await Promise.all([
+    const [seguimientosRes, miembrosRes, discipuladoresRes] = await Promise.all([
       supabase
         .from("seguimientos")
-        .select("*, discipulos:discipulo_id(nombre, apellido, avatar_url, lider_id)")
+        .select("*, miembros:miembro_id(nombre, apellido, avatar_url, lider_id)")
         .order("ultima_actualizacion", { ascending: false }),
-      discipulosQuery,
+      miembrosQuery,
       supabase.from("profiles").select("id, nombre, apellido").order("apellido", { ascending: true }),
     ]);
     const seguimientosData = (seguimientosRes.data as SeguimientoFila[]) || [];
     setSeguimientos(seguimientosData);
-    setDiscipulos(discipulosRes.data || []);
+    setMiembros(miembrosRes.data || []);
     setDiscipuladores(discipuladoresRes.data || []);
 
-    const ids = [...new Set(seguimientosData.map((s) => s.discipulo_id))];
+    const ids = [...new Set(seguimientosData.map((s) => s.miembro_id))];
     if (ids.length) {
       const { data: agendaData } = await supabase
         .from("agenda")
-        .select("discipulo_id, fecha, hora, tema_tratado, realizada")
-        .in("discipulo_id", ids)
+        .select("miembro_id, fecha, hora, tema_tratado, realizada")
+        .in("miembro_id", ids)
         .order("fecha", { ascending: true });
       const hoy = new Date().toISOString().split("T")[0];
       const mapa: Record<string, EncuentroProximo> = {};
-      const fechasPorDiscipulo: Record<string, { fecha: string; realizada?: boolean }[]> = {};
+      const fechasPorMiembro: Record<string, { fecha: string; realizada?: boolean }[]> = {};
       for (const a of agendaData || []) {
-        if (!a.discipulo_id) continue;
+        if (!a.miembro_id) continue;
         const esFuturo = !a.realizada && a.fecha >= hoy;
         const item: EncuentroProximo = { fecha: a.fecha, hora: a.hora ?? undefined, tema_tratado: a.tema_tratado ?? undefined, esFuturo };
-        const actual = mapa[a.discipulo_id];
+        const actual = mapa[a.miembro_id];
         if (!actual) {
-          mapa[a.discipulo_id] = item;
+          mapa[a.miembro_id] = item;
         } else if (actual.esFuturo !== esFuturo) {
-          if (esFuturo) mapa[a.discipulo_id] = item;
+          if (esFuturo) mapa[a.miembro_id] = item;
         } else if (actual.esFuturo ? a.fecha < actual.fecha : a.fecha > actual.fecha) {
-          mapa[a.discipulo_id] = item;
+          mapa[a.miembro_id] = item;
         }
-        (fechasPorDiscipulo[a.discipulo_id] ||= []).push({ fecha: a.fecha, realizada: a.realizada });
+        (fechasPorMiembro[a.miembro_id] ||= []).push({ fecha: a.fecha, realizada: a.realizada });
       }
-      setProximoEncuentroPorDiscipulo(mapa);
+      setProximoEncuentroPorMiembro(mapa);
       const encuentrosMap: Record<string, number> = {};
-      for (const [id, fechas] of Object.entries(fechasPorDiscipulo)) {
+      for (const [id, fechas] of Object.entries(fechasPorMiembro)) {
         encuentrosMap[id] = contarEncuentrosMes(fechas);
       }
-      setEncuentrosMesPorDiscipulo(encuentrosMap);
+      setEncuentrosMesPorMiembro(encuentrosMap);
     } else {
-      setProximoEncuentroPorDiscipulo({});
+      setProximoEncuentroPorMiembro({});
     }
     setLoading(false);
   }, [supabase]);
@@ -136,11 +138,11 @@ export default function SeguimientoPage() {
     })();
   }, [fetchData]);
 
-  const onValidarUnico = useCallback(async (discipuloId: string) => {
+  const onValidarUnico = useCallback(async (miembroId: string) => {
     const { data } = await supabase
       .from("seguimientos")
       .select("id")
-      .eq("discipulo_id", discipuloId)
+      .eq("miembro_id", miembroId)
       .eq("estado", "activo")
       .maybeSingle();
     return !data;
@@ -151,9 +153,9 @@ export default function SeguimientoPage() {
     return [...seguimientos]
       .filter((s) => {
         if (etapaFiltro && s.etapa !== Number(etapaFiltro)) return false;
-        if (discipuladorFiltro && s.discipulos?.lider_id !== discipuladorFiltro) return false;
+        if (discipuladorFiltro && s.miembros?.lider_id !== discipuladorFiltro) return false;
         if (q) {
-          const nombre = `${s.discipulos?.apellido || ""} ${s.discipulos?.nombre || ""}`.toLowerCase();
+          const nombre = `${s.miembros?.apellido || ""} ${s.miembros?.nombre || ""}`.toLowerCase();
           if (!nombre.includes(q)) return false;
         }
         return true;
@@ -201,7 +203,7 @@ export default function SeguimientoPage() {
       toast.error(`Error al eliminar: ${error.message}`);
       return;
     }
-    const nombre = eliminarUno.discipulos ? `${eliminarUno.discipulos.apellido}, ${eliminarUno.discipulos.nombre}` : "el seguimiento";
+    const nombre = eliminarUno.miembros ? `${eliminarUno.miembros.apellido}, ${eliminarUno.miembros.nombre}` : "el seguimiento";
     toast.success(`Seguimiento de ${nombre} eliminado`);
     setEliminarUno(null);
     fetchData();
@@ -211,10 +213,10 @@ export default function SeguimientoPage() {
     const sel = filtrados.filter((s) => selectedIds.includes(s.id));
     if (sel.length === 0) return;
     const filas = sel.map((s) => {
-      const prox = proximoEncuentroPorDiscipulo[s.discipulo_id];
-      const lider = discipuladores.find((p) => p.id === s.discipulos?.lider_id);
+      const prox = proximoEncuentroPorMiembro[s.miembro_id];
+      const lider = discipuladores.find((p) => p.id === s.miembros?.lider_id);
       return {
-        "Discípulo": s.discipulos ? `${s.discipulos.apellido}, ${s.discipulos.nombre}` : "",
+        "Miembro": s.miembros ? `${s.miembros.apellido}, ${s.miembros.nombre}` : "",
         "Discipulador": lider ? `${lider.apellido}, ${lider.nombre}` : "",
         "Etapa": etapas.find((e) => e.id === s.etapa)?.nombre || `Etapa ${s.etapa}`,
         "Progreso": `${s.etapa}/${etapas.length}`,
@@ -233,7 +235,7 @@ export default function SeguimientoPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold">Seguimiento</h1>
-          <p className="text-muted-foreground">Crecimiento espiritual de cada discípulo</p>
+          <p className="text-muted-foreground">Crecimiento espiritual de cada miembro</p>
         </div>
         {selectedIds.length > 0 && (
           <Button variant="outline" onClick={exportarSeleccionados}>
@@ -301,9 +303,9 @@ export default function SeguimientoPage() {
             ) : (
               <div className="space-y-3 p-3">
                 {filtrados.map((s) => {
-                  const prox = proximoEncuentroPorDiscipulo[s.discipulo_id];
-                  const lider = discipuladores.find((p) => p.id === s.discipulos?.lider_id);
-                  const estado = estadoEncuentrosMes(encuentrosMesPorDiscipulo[s.discipulo_id] || 0);
+                  const prox = proximoEncuentroPorMiembro[s.miembro_id];
+                   const lider = discipuladores.find((p) => p.id === s.miembros?.lider_id);
+                   const estado = estadoEncuentrosMes(encuentrosMesPorMiembro[s.miembro_id] || 0);
                   const cfg = SALUD_CONFIG[estado];
                   const etapaIdx = etapas.findIndex((ev) => ev.id === s.etapa);
                   return (
@@ -318,17 +320,17 @@ export default function SeguimientoPage() {
                             title="Seleccionar"
                             className="size-4 shrink-0 cursor-pointer accent-primary mt-1"
                           />
-                          {s.discipulos?.avatar_url ? (
-                            <img src={s.discipulos.avatar_url} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
+                          {s.miembros?.avatar_url ? (
+                            <img src={s.miembros.avatar_url} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
                           ) : (
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-                              {(s.discipulos?.nombre?.[0] || "").toUpperCase()}
-                              {(s.discipulos?.apellido?.[0] || "").toUpperCase()}
+                              {(s.miembros?.nombre?.[0] || "").toUpperCase()}
+                              {(s.miembros?.apellido?.[0] || "").toUpperCase()}
                             </div>
                           )}
                           <div className="min-w-0">
                             <p className="font-semibold truncate">
-                              {s.discipulos ? `${s.discipulos.apellido}, ${s.discipulos.nombre}` : "—"}
+                              {s.miembros ? `${s.miembros.apellido}, ${s.miembros.nombre}` : "—"}
                             </p>
                             <p className="text-xs text-muted-foreground truncate">
                               {lider ? `${lider.apellido}, ${lider.nombre}` : "—"}
@@ -365,7 +367,7 @@ export default function SeguimientoPage() {
                           <span className={cn("h-1.5 w-1.5 rounded-full bg-white/80")} />
                           {cfg.etiqueta}
                         </span>
-                        <span className="text-[11px] text-muted-foreground">{encuentrosMesPorDiscipulo[s.discipulo_id] || 0} encuentro(s) este mes</span>
+                               <span className="text-[11px] text-muted-foreground">{encuentrosMesPorMiembro[s.miembro_id] || 0} encuentro(s) este mes</span>
                       </div>
                       <div className="flex items-center gap-2" title="Etapa del discipulado (1 a 5)">
                         <div className="flex flex-1 items-center gap-0.5">
@@ -408,7 +410,7 @@ export default function SeguimientoPage() {
                       />
                     )}
                   </TableHead>
-                  <TableHead>Discípulo</TableHead>
+                   <TableHead>Miembro</TableHead>
                   <TableHead>Discipulador</TableHead>
                   <TableHead>Etapa</TableHead>
                   <TableHead>Progreso</TableHead>
@@ -425,8 +427,8 @@ export default function SeguimientoPage() {
                   </TableRow>
                 ) : (
                   filtrados.map((s) => {
-                    const prox = proximoEncuentroPorDiscipulo[s.discipulo_id];
-                    const lider = discipuladores.find((p) => p.id === s.discipulos?.lider_id);
+                    const prox = proximoEncuentroPorMiembro[s.miembro_id];
+                     const lider = discipuladores.find((p) => p.id === s.miembros?.lider_id);
                     return (
                     <TableRow key={s.id}>
                       <TableCell className="w-10">
@@ -441,16 +443,16 @@ export default function SeguimientoPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2.5">
-                          {s.discipulos?.avatar_url ? (
-                            <img src={s.discipulos.avatar_url} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
+                          {s.miembros?.avatar_url ? (
+                            <img src={s.miembros.avatar_url} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
                           ) : (
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-                              {(s.discipulos?.nombre?.[0] || "").toUpperCase()}
-                              {(s.discipulos?.apellido?.[0] || "").toUpperCase()}
+                              {(s.miembros?.nombre?.[0] || "").toUpperCase()}
+                              {(s.miembros?.apellido?.[0] || "").toUpperCase()}
                             </div>
                           )}
                           <p className="text-base font-semibold">
-                            {s.discipulos ? `${s.discipulos.apellido}, ${s.discipulos.nombre}` : "—"}
+                            {s.miembros ? `${s.miembros.apellido}, ${s.miembros.nombre}` : "—"}
                           </p>
                         </div>
                       </TableCell>
@@ -472,7 +474,7 @@ export default function SeguimientoPage() {
                       </TableCell>
                       <TableCell>
                         {(() => {
-                          const estado = estadoEncuentrosMes(encuentrosMesPorDiscipulo[s.discipulo_id] || 0);
+                          const estado = estadoEncuentrosMes(encuentrosMesPorMiembro[s.miembro_id] || 0);
                           const cfg = SALUD_CONFIG[estado];
                           return (
                             <div className="flex flex-col items-start gap-0.5">
@@ -480,7 +482,7 @@ export default function SeguimientoPage() {
                                 <span className={cn("h-1.5 w-1.5 rounded-full bg-white/80")} />
                                 {cfg.etiqueta}
                               </span>
-                              <span className="text-[11px] text-muted-foreground">{encuentrosMesPorDiscipulo[s.discipulo_id] || 0} encuentro(s) este mes</span>
+                        <span className="text-[11px] text-muted-foreground">{encuentrosMesPorMiembro[s.miembro_id] || 0} encuentro(s) este mes</span>
                             </div>
                           );
                         })()}
@@ -543,7 +545,7 @@ export default function SeguimientoPage() {
         onOpenChange={setDialogOpen}
         editing={editing}
         onSaved={fetchData}
-        discipulos={discipulos}
+        discipulos={miembros}
         discipuladores={discipuladores}
         etapas={etapas}
         defaultDiscipuladorId={isAdmin ? undefined : currentUserId}
@@ -572,7 +574,7 @@ export default function SeguimientoPage() {
           <DialogHeader>
             <DialogTitle>Eliminar seguimiento</DialogTitle>
             <DialogDescription>
-              ¿Eliminar el seguimiento de {eliminarUno?.discipulos ? `${eliminarUno.discipulos.apellido}, ${eliminarUno.discipulos.nombre}` : "este discípulo"}? Esta acción no se puede deshacer.
+              ¿Eliminar el seguimiento de {eliminarUno?.miembros ? `${eliminarUno.miembros.apellido}, ${eliminarUno.miembros.nombre}` : "este miembro"}? Esta acción no se puede deshacer.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

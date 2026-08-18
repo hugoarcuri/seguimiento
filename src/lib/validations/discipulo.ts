@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const discipuloSchema = z.object({
+export const miembroSchema = z.object({
   lider_id: z.string().optional().nullable(),
   apellido: z.string().min(1, "El apellido es requerido"),
   nombre: z.string().min(1, "El nombre es requerido"),
@@ -22,4 +22,6 @@ export const discipuloSchema = z.object({
   convive_con: z.string().optional().nullable(),
 });
 
-export type DiscipuloInput = z.infer<typeof discipuloSchema>;
+export type MiembroInput = z.infer<typeof miembroSchema>;
+export const discipuloSchema = miembroSchema;
+export type DiscipuloInput = MiembroInput;

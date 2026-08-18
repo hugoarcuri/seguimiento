@@ -1,5 +1,5 @@
-// Deterministic color per discípulo within the site's red/warm gamut (hue 0-40)
-export function getDiscipuloColor(id: string): { fg: string; bg: string } {
+// Deterministic color per miembro within the site's red/warm gamut (hue 0-40)
+export function getMiembroColor(id: string): { fg: string; bg: string } {
   let hash = 0;
   for (let i = 0; i < id.length; i++) {
     hash = ((hash << 5) - hash) + id.charCodeAt(i);
@@ -11,3 +11,4 @@ export function getDiscipuloColor(id: string): { fg: string; bg: string } {
     bg: `oklch(0.88 0.07 ${hue})`,
   };
 }
+export const getDiscipuloColor = getMiembroColor;

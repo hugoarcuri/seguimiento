@@ -15,7 +15,7 @@ import { format, differenceInDays } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { descargarCSV } from "@/lib/csv";
-import { getDiscipuloColor } from "@/lib/discipulo-color";
+import { getMiembroColor } from "@/lib/discipulo-color";
 import { estadosMeta, eventosEvangelismo, actosServicio } from "./tipos-estados";
 import type { PersonaData, EventoData } from "./tipos-estados";
 import { ObservacionInput } from "./observacion-input";
@@ -23,7 +23,7 @@ import { ObservacionInput } from "./observacion-input";
 export default function EvangelismoPage() {
   const supabase = useMemo(() => createClient(), []);
   const [user, setUser] = useState<{ id: string } | null>(null);
-  const [discipulos, setDiscipulos] = useState<Array<{ id: string; nombre: string; apellido: string }>>([]);
+  const [miembros, setMiembros] = useState<Array<{ id: string; nombre: string; apellido: string }>>([]);
   const [personas, setPersonas] = useState<PersonaData[]>([]);
   const [eventos, setEventos] = useState<EventoData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,7 +31,7 @@ export default function EvangelismoPage() {
   const [search, setSearch] = useState("");
 
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [nuevaPersona, setNuevaPersona] = useState({ discipulo_id: "", nombre: "", apellido: "", telefono: "", edad: "", observaciones: "" });
+  const [nuevaPersona, setNuevaPersona] = useState({ miembro_id: "", nombre: "", apellido: "", telefono: "", edad: "", observaciones: "" });
   const [selectedPersona, setSelectedPersona] = useState<PersonaData | null>(null);
 
   const [dragItem, setDragItem] = useState<PersonaData | null>(null);
@@ -43,11 +43,11 @@ export default function EvangelismoPage() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user));
     Promise.all([
-      supabase.from("discipulos").select("*, etapas:etapa_id(*)").order("apellido"),
+      supabase.from("miembros").select("*, etapas:etapa_id(*)").order("apellido"),
       supabase.from("acompanamiento_evangelistico").select("*").order("fecha_inicio_estado", { ascending: false }),
       supabase.from("eventos_evangelismo").select("*").order("fecha", { ascending: false }),
     ]).then(([dRes, pRes, eRes]) => {
-      setDiscipulos(dRes.data || []);
+      setMiembros(dRes.data || []);
       setPersonas((pRes.data || []) as PersonaData[]);
       setEventos((eRes.data || []) as EventoData[]);
       setLoading(false);
@@ -78,7 +78,7 @@ export default function EvangelismoPage() {
   const handleAddPersona = async () => {
     if (!user || !nuevaPersona.nombre.trim() || !nuevaPersona.apellido.trim()) return;
     const { error } = await supabase.from("acompanamiento_evangelistico").insert({
-      discipulo_id: nuevaPersona.discipulo_id || null,
+      miembro_id: nuevaPersona.miembro_id || null,
       creado_por: user.id,
       nombre: nuevaPersona.nombre.trim(),
       apellido: nuevaPersona.apellido.trim(),
@@ -90,7 +90,7 @@ export default function EvangelismoPage() {
     if (error) { toast.error("Error al agregar: " + error.message); console.error("INSERT ERROR", JSON.stringify(error, null, 2)); return; }
 
     setShowAddDialog(false);
-    setNuevaPersona({ discipulo_id: "", nombre: "", apellido: "", telefono: "", edad: "", observaciones: "" });
+    setNuevaPersona({ miembro_id: "", nombre: "", apellido: "", telefono: "", edad: "", observaciones: "" });
     toast.success("Persona agregada");
 
     // Refetch list
@@ -198,7 +198,7 @@ export default function EvangelismoPage() {
     const sel = personas.filter((p) => selectedIds.includes(p.id));
     if (sel.length === 0) return;
     const filas = sel.map((p) => {
-      const d = discipulos.find((x) => x.id === p.discipulo_id);
+      const d = miembros.find((x) => x.id === p.miembro_id);
       return {
         Nombre: p.nombre,
         Apellido: p.apellido,
@@ -207,7 +207,7 @@ export default function EvangelismoPage() {
         "Estado": estadosMeta[p.estado]?.label || p.estado,
         "Días en estado": diasEnEstado(p),
         "Observaciones": p.observaciones || "",
-        "Discípulo que ora": d ? `${d.nombre} ${d.apellido}` : "",
+        "Miembro que ora": d ? `${d.nombre} ${d.apellido}` : "",
       };
     });
     descargarCSV("evangelismo.csv", filas);
@@ -341,7 +341,7 @@ export default function EvangelismoPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-medium truncate">{p.nombre} {p.apellido}</p>
-                      {(() => { const d = discipulos.find((x) => x.id === p.discipulo_id); if (!d) return null; const c = getDiscipuloColor(d.id); return <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ color: c.fg, backgroundColor: c.bg }}>contacto de {d.nombre}</span>; })()}
+                      {(() => { const d = miembros.find((x) => x.id === p.miembro_id); if (!d) return null; const c = getMiembroColor(d.id); return <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ color: c.fg, backgroundColor: c.bg }}>contacto de {d.nombre}</span>; })()}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
                       <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden max-w-[200px]">
@@ -419,7 +419,7 @@ export default function EvangelismoPage() {
                           </span>
                           <GripVertical className="h-3 w-3 text-muted-foreground shrink-0" />
                           <p className="text-xs font-medium truncate flex-1">{p.nombre} {p.apellido}</p>
-                          {(() => { const d = discipulos.find((x) => x.id === p.discipulo_id); if (!d) return null; const c = getDiscipuloColor(d.id); return <span className="text-[9px] px-1 py-0.5 rounded-full hidden sm:inline font-medium" style={{ color: c.fg, backgroundColor: c.bg }}>{d.nombre}</span>; })()}
+                          {(() => { const d = miembros.find((x) => x.id === p.miembro_id); if (!d) return null; const c = getMiembroColor(d.id); return <span className="text-[9px] px-1 py-0.5 rounded-full hidden sm:inline font-medium" style={{ color: c.fg, backgroundColor: c.bg }}>{d.nombre}</span>; })()}
                           <Badge variant="outline" className="text-[10px] px-1">{dias}/30d</Badge>
                           <button type="button" aria-label={`Editar ${p.nombre} ${p.apellido}`} onClick={(e) => { e.stopPropagation(); setEditPersonaForm({ nombre: p.nombre, apellido: p.apellido, telefono: p.telefono || "", edad: p.edad?.toString() || "", observaciones: p.observaciones || "", estado: p.estado }); setShowEditDialog(p); }} className="text-blue-400 hover:text-blue-600 text-[10px] p-0.5"><Pencil className="h-3 w-3" /></button>
                           <button type="button" aria-label={`Eliminar ${p.nombre} ${p.apellido}`} onClick={(e) => { e.stopPropagation(); handleEliminarPersona(p.id); }} className="text-red-400 hover:text-red-600 text-[10px] p-0.5"><Trash2 className="h-3 w-3" /></button>
@@ -465,10 +465,10 @@ export default function EvangelismoPage() {
               </div>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Discípulo que ora (opcional)</Label>
-              <select className="w-full h-11 md:h-8 rounded-lg border border-input bg-transparent px-3 text-sm" value={nuevaPersona.discipulo_id} onChange={(e) => setNuevaPersona((p) => ({ ...p, discipulo_id: e.target.value }))}>
+              <Label className="text-xs">Miembro que ora (opcional)</Label>
+              <select className="w-full h-11 md:h-8 rounded-lg border border-input bg-transparent px-3 text-sm" value={nuevaPersona.miembro_id} onChange={(e) => setNuevaPersona((p) => ({ ...p, miembro_id: e.target.value }))}>
                 <option value="">Yo mismo (líder)</option>
-                {discipulos.map((d) => <option key={d.id} value={d.id}>{d.nombre} {d.apellido}</option>)}
+                {miembros.map((d) => <option key={d.id} value={d.id}>{d.nombre} {d.apellido}</option>)}
               </select>
             </div>
             <div className="space-y-1">
@@ -511,7 +511,7 @@ export default function EvangelismoPage() {
                     {p.edad && <div><span className="text-xs text-muted-foreground">Edad:</span> <p>{p.edad} años</p></div>}
                     <div><span className="text-xs text-muted-foreground">Estado:</span> <Badge variant="outline">{meta?.label}</Badge></div>
                     {p.fecha_creacion && <div><span className="text-xs text-muted-foreground">Agregado:</span> <p>{format(new Date(p.fecha_creacion), "dd/MM/yyyy")}</p></div>}
-                    {(() => { const d = discipulos.find((x) => x.id === p.discipulo_id); if (!d) return null; const c = getDiscipuloColor(d.id); return <div className="col-span-2"><span className="text-xs text-muted-foreground">Contacto de:</span> <p className="font-medium" style={{ color: c.fg }}>{d.nombre} {d.apellido}</p></div>; })()}
+                    {(() => { const d = miembros.find((x) => x.id === p.miembro_id); if (!d) return null; const c = getMiembroColor(d.id); return <div className="col-span-2"><span className="text-xs text-muted-foreground">Contacto de:</span> <p className="font-medium" style={{ color: c.fg }}>{d.nombre} {d.apellido}</p></div>; })()}
                     {p.observaciones && <div className="col-span-2"><span className="text-xs text-muted-foreground">Observaciones:</span> <p className="text-sm">{p.observaciones}</p></div>}
                   </div>
 

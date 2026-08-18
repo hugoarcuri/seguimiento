@@ -40,13 +40,13 @@ export function ReportesClient({
   periodo,
   onPeriodoChange,
 }: ReportesClientProps) {
-  const totalDiscipulos = data.kpis.discipulosTotal;
+  const totalMiembros = data.kpis.miembrosTotal;
 
   const kpis = useMemo(
     () => [
       {
-        label: "Discípulos activos",
-        valor: `${data.kpis.discipulosActivos} / ${totalDiscipulos}`,
+        label: "Miembros activos",
+        valor: `${data.kpis.miembrosActivos} / ${totalMiembros}`,
         icon: Users,
         color: "text-blue-600 dark:text-blue-400",
       },
@@ -81,7 +81,7 @@ export function ReportesClient({
         color: "text-rose-600 dark:text-rose-400",
       },
     ],
-    [data, totalDiscipulos]
+    [data, totalMiembros]
   );
 
   const descargar = () => generarReportePDF(data);
@@ -165,11 +165,11 @@ export function ReportesClient({
       <Card>
         <CardContent className="p-4 space-y-2">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold">Discípulos</h2>
-            <Badge variant="secondary" className="text-[10px]">{data.discipulos.length}</Badge>
+            <h2 className="text-sm font-semibold">Miembros</h2>
+            <Badge variant="secondary" className="text-[10px]">{data.miembros.length}</Badge>
           </div>
-          {data.discipulos.length === 0 ? (
-            <p className="text-xs text-muted-foreground">Este discipulador no tiene discípulos.</p>
+          {data.miembros.length === 0 ? (
+            <p className="text-xs text-muted-foreground">Este discipulador no tiene miembros.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
@@ -184,7 +184,7 @@ export function ReportesClient({
                   </tr>
                 </thead>
                 <tbody>
-                  {data.discipulos.map((d) => (
+                  {data.miembros.map((d) => (
                     <tr key={d.id} className="border-b border-muted/50">
                       <td className="py-1.5 pr-2 whitespace-nowrap">{d.apellido}, {d.nombre}</td>
                       <td className="py-1.5 pr-2">{d.etapa}</td>

@@ -19,11 +19,11 @@ interface SeguimientoFormProps {
   onOpenChange: (open: boolean) => void;
   editing: Seguimiento | null;
   onSaved: () => void;
-  discipulos: Array<{ id: string; nombre: string; apellido: string }>;
+  miembros: Array<{ id: string; nombre: string; apellido: string }>;
   discipuladores: Array<{ id: string; nombre: string; apellido: string }>;
   etapas: Etapa[];
   defaultDiscipuladorId?: string;
-  onValidarUnico?: (discipuloId: string) => Promise<boolean>;
+  onValidarUnico?: (miembroId: string) => Promise<boolean>;
 }
 
 export function SeguimientoForm({
@@ -31,7 +31,7 @@ export function SeguimientoForm({
   onOpenChange,
   editing,
   onSaved,
-  discipulos,
+  miembros,
   discipuladores,
   etapas,
   defaultDiscipuladorId,
@@ -40,7 +40,7 @@ export function SeguimientoForm({
   const form = useForm<SeguimientoInput>({
     resolver: zodResolver(seguimientoSchema),
     defaultValues: {
-      discipulo_id: "",
+      miembro_id: "",
       discipulador_id: "",
       etapa: 1,
       fecha_inicio: new Date().toISOString().split("T")[0],
@@ -51,14 +51,14 @@ export function SeguimientoForm({
     if (!open) return;
     if (editing) {
       form.reset({
-        discipulo_id: editing.discipulo_id,
+        miembro_id: editing.miembro_id,
         discipulador_id: editing.discipulador_id,
         etapa: editing.etapa,
         fecha_inicio: editing.fecha_inicio?.slice(0, 10) || new Date().toISOString().split("T")[0],
       });
     } else {
       form.reset({
-        discipulo_id: "",
+        miembro_id: "",
         discipulador_id: defaultDiscipuladorId || "",
         etapa: 1,
         fecha_inicio: new Date().toISOString().split("T")[0],
@@ -69,14 +69,14 @@ export function SeguimientoForm({
   const onSubmit = async (data: SeguimientoInput) => {
     const supabase = createClient();
     if (!editing && onValidarUnico) {
-      const disponible = await onValidarUnico(data.discipulo_id);
+      const disponible = await onValidarUnico(data.miembro_id);
       if (!disponible) {
-        toast.error("Este discípulo ya tiene un seguimiento activo");
+        toast.error("Este miembro ya tiene un seguimiento activo");
         return;
       }
     }
     const payload = {
-      discipulo_id: data.discipulo_id,
+      miembro_id: data.miembro_id,
       discipulador_id: data.discipulador_id,
       etapa: data.etapa,
       estado: "activo" as const,
@@ -90,7 +90,7 @@ export function SeguimientoForm({
     } else {
       const { error } = await supabase.from("seguimientos").insert({ ...payload, progreso: 0 });
       if (error) {
-        if (error.code === "23505") toast.error("Este discípulo ya tiene un seguimiento activo");
+        if (error.code === "23505") toast.error("Este miembro ya tiene un seguimiento activo");
         else toast.error("Error al crear el seguimiento");
         return;
       }
@@ -107,33 +107,33 @@ export function SeguimientoForm({
           <DialogTitle>{editing ? "Editar Seguimiento" : "Nuevo Seguimiento"}</DialogTitle>
           <DialogDescription>
             {editing
-              ? "Modificá los datos del seguimiento del discípulo."
-              : "Iniciá el seguimiento espiritual de un discípulo."}
+              ? "Modificá los datos del seguimiento del miembro."
+              : "Iniciá el seguimiento espiritual de un miembro."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label>Discípulo</Label>
+            <Label>Miembro</Label>
             <Controller
               control={form.control}
-              name="discipulo_id"
+              name="miembro_id"
               render={({ field }) => (
                   <Select
                     value={field.value || undefined}
                     disabled={!!editing}
                     onValueChange={(v) => field.onChange(v?.toString() ?? "")}
-                    items={discipulos.map((d) => ({ value: d.id, label: `${d.apellido}, ${d.nombre}` }))}
+                    items={miembros.map((d) => ({ value: d.id, label: `${d.apellido}, ${d.nombre}` }))}
                   >
-                  <SelectTrigger><SelectValue placeholder="Seleccionar discípulo" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar miembro" /></SelectTrigger>
                   <SelectContent>
-                    {discipulos.map((d) => (
+                    {miembros.map((d) => (
                       <SelectItem key={d.id} value={d.id}>{d.apellido}, {d.nombre}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               )}
             />
-            {form.formState.errors.discipulo_id && <p className="text-sm text-destructive">{form.formState.errors.discipulo_id.message}</p>}
+            {form.formState.errors.miembro_id && <p className="text-sm text-destructive">{form.formState.errors.miembro_id.message}</p>}
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

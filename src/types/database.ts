@@ -17,7 +17,7 @@ export interface Profile {
   updated_at: string;
 }
 
-export interface Discipulo {
+export interface Miembro {
   id: string;
   lider_id?: string | null;
   apellido: string;
@@ -43,10 +43,11 @@ export interface Discipulo {
   created_at: string;
   updated_at: string;
 }
+export type Discipulo = Miembro;
 
 export interface Agenda {
   id: string;
-  discipulo_id: string;
+  miembro_id: string;
   lider_id: string;
   fecha: string;
   hora: string;
@@ -63,7 +64,7 @@ export interface Agenda {
 
 export interface Oracion {
   id: string;
-  discipulo_id: string;
+  miembro_id: string;
   lider_id: string;
   fecha: string;
   pedido: string;
@@ -87,7 +88,7 @@ export interface Material {
 
 export interface Tarea {
   id: string;
-  discipulo_id: string;
+  miembro_id: string;
   lider_id: string;
   titulo: string;
   descripcion?: string;
@@ -101,7 +102,7 @@ export interface Tarea {
 
 export interface Timeline {
   id: string;
-  discipulo_id: string;
+  miembro_id: string;
   tipo: string;
   descripcion: string;
   metadata?: Record<string, unknown>;
@@ -126,7 +127,7 @@ export interface Configuracion {
 
 export interface Seguimiento {
   id: string;
-  discipulo_id: string;
+  miembro_id: string;
   discipulador_id: string;
   etapa: number;
   progreso: number;

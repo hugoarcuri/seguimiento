@@ -1,4 +1,4 @@
-export type SaludDiscipulo = "critico" | "en_proceso" | "al_dia";
+export type SaludMiembro = "critico" | "en_proceso" | "al_dia";
 
 export type AlertaTipo =
   | "sin_contacto"
@@ -17,7 +17,7 @@ export type AccionSugerida =
   | "iniciar_seguimiento"
   | "celebrar";
 
-export interface AlertaDiscipulo {
+export interface AlertaMiembro {
   tipo: AlertaTipo;
   mensaje: string;
   severidad: "alta" | "media" | "baja";
@@ -33,8 +33,8 @@ export interface InputSalud {
 }
 
 export interface SaludResultado {
-  salud: SaludDiscipulo;
-  alertas: AlertaDiscipulo[];
+  salud: SaludMiembro;
+  alertas: AlertaMiembro[];
   accion: AccionSugerida;
 }
 
@@ -44,7 +44,7 @@ export const UMBRALES_SALUD = {
 } as const;
 
 export const SALUD_CONFIG: Record<
-  SaludDiscipulo,
+  SaludMiembro,
   { etiqueta: string; orden: number; dot: string; badge: string; bar: string; border: string }
 > = {
   critico: {
@@ -83,9 +83,9 @@ export const ACCION_LABEL: Record<AccionSugerida, string> = {
   celebrar: "Ver detalle",
 };
 
-export const ORDEN_SALUD: SaludDiscipulo[] = ["critico", "en_proceso", "al_dia"];
+export const ORDEN_SALUD: SaludMiembro[] = ["critico", "en_proceso", "al_dia"];
 
-export function estadoEncuentrosMes(encuentrosMes: number): SaludDiscipulo {
+export function estadoEncuentrosMes(encuentrosMes: number): SaludMiembro {
   return encuentrosMes >= 2 ? "al_dia" : encuentrosMes === 1 ? "en_proceso" : "critico";
 }
 
@@ -102,7 +102,7 @@ export function contarEncuentrosMes(items: { fecha: string; realizada?: boolean 
 }
 
 export function calcularSalud(input: InputSalud): SaludResultado {
-  const alertas: AlertaDiscipulo[] = [];
+  const alertas: AlertaMiembro[] = [];
   const salud = estadoEncuentrosMes(input.encuentrosMes);
 
   if (input.encuentrosMes === 0) {
@@ -146,3 +146,7 @@ export function calcularSalud(input: InputSalud): SaludResultado {
 
   return { salud, alertas, accion };
 }
+
+// Backward-compat aliases
+export type SaludDiscipulo = SaludMiembro;
+export type AlertaDiscipulo = AlertaMiembro;

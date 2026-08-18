@@ -9,7 +9,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: [BASE_PATH + "/discipulos/ver", BASE_PATH + "/discipulos/editar"],
+        disallow: [BASE_PATH + "/miembros/ver", BASE_PATH + "/miembros/editar"],
       },
     ],
     sitemap: `${APP_URL}/sitemap.xml`,

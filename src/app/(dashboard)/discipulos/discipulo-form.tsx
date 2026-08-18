@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { discipuloSchema, type DiscipuloInput } from "@/lib/validations/discipulo";
+import { miembroSchema, type MiembroInput } from "@/lib/validations/discipulo";
 import { generarAvatarUrl, calcularEdad } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,10 +22,10 @@ import { toast } from "sonner";
 import { useState, useRef } from "react";
 import type { Etapa } from "@/types/database";
 
-interface DiscipuloFormProps {
+interface MiembroFormProps {
   etapas: Etapa[];
   discipuladores?: Array<{ id: string; nombre: string; apellido: string }>;
-  initialData?: DiscipuloInput & { id?: string };
+  initialData?: MiembroInput & { id?: string };
   isEditing?: boolean;
 }
 
@@ -80,12 +80,12 @@ function ChipGroup<T extends string>({
   );
 }
 
-export function DiscipuloForm({
+export function MiembroForm({
   etapas,
   discipuladores = [],
   initialData,
   isEditing,
-}: DiscipuloFormProps) {
+}: MiembroFormProps) {
   const router = useRouter();
   const [subiendoAvatar, setSubiendoAvatar] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -98,8 +98,8 @@ export function DiscipuloForm({
     setValue,
     watch,
     formState: { errors, isSubmitting },
-  } = useForm<DiscipuloInput>({
-    resolver: zodResolver(discipuloSchema),
+  } = useForm<MiembroInput>({
+    resolver: zodResolver(miembroSchema),
     defaultValues: initialData
       ? {
           ...initialData,
@@ -122,11 +122,11 @@ export function DiscipuloForm({
   const bautizado = !!watch("bautizado");
   const esMiembro = !!watch("es_miembro");
 
-  const uploadAvatar = async (file: File, discipuloId: string): Promise<string | null> => {
+  const uploadAvatar = async (file: File, miembroId: string): Promise<string | null> => {
     setSubiendoAvatar(true);
     const supabase = createClient();
     const ext = file.name.split(".").pop();
-    const path = `${discipuloId}.${ext}`;
+    const path = `${miembroId}.${ext}`;
     const { error: uploadError } = await supabase.storage
       .from("discipulo-avatars")
       .upload(path, file, { upsert: true });
@@ -146,7 +146,7 @@ export function DiscipuloForm({
     setPendingFile(file);
   };
 
-  const onSubmit = async (data: DiscipuloInput) => {
+  const onSubmit = async (data: MiembroInput) => {
     const supabase = createClient();
 
     const {
@@ -184,39 +184,39 @@ export function DiscipuloForm({
       }
 
       const { error } = await supabase
-        .from("discipulos")
+        .from("miembros")
         .update(payload)
         .eq("id", initialData.id);
 
       if (error) {
-        toast.error("Error al actualizar discípulo");
+        toast.error("Error al actualizar miembro");
       } else {
-        toast.success("Discípulo actualizado");
-        router.push("/discipulos");
+        toast.success("Miembro actualizado");
+        router.push("/miembros");
         router.refresh();
       }
     } else {
-      const { data: newDiscipulo, error } = await supabase
-        .from("discipulos")
+      const { data: newMiembro, error } = await supabase
+        .from("miembros")
         .insert({ ...payload, lider_id: data.lider_id || user.id })
         .select("id")
         .single();
 
       if (error) {
-        toast.error("Error al crear discípulo");
+        toast.error("Error al crear miembro");
       } else {
         if (pendingFile) {
-          const avatarUrl = await uploadAvatar(pendingFile, newDiscipulo.id);
+          const avatarUrl = await uploadAvatar(pendingFile, newMiembro.id);
           if (avatarUrl) {
             await supabase
-              .from("discipulos")
+              .from("miembros")
               .update({ avatar_url: avatarUrl })
-              .eq("id", newDiscipulo.id);
+              .eq("id", newMiembro.id);
           }
         }
 
         const seguimientoPayload = {
-          discipulo_id: newDiscipulo.id,
+          miembro_id: newMiembro.id,
           discipulador_id: data.lider_id || user.id,
           etapa: data.etapa_id || 1,
           estado: "activo" as const,
@@ -228,12 +228,12 @@ export function DiscipuloForm({
           .insert(seguimientoPayload);
 
         if (seguimientoError) {
-          toast.success("Discípulo creado exitosamente");
+          toast.success("Miembro creado exitosamente");
           toast.warning("No se pudo crear el seguimiento automáticamente");
         } else {
-          toast.success("Discípulo y seguimiento creados exitosamente");
+          toast.success("Miembro y seguimiento creados exitosamente");
         }
-        router.push("/discipulos");
+        router.push("/miembros");
         router.refresh();
       }
     }
@@ -264,11 +264,11 @@ export function DiscipuloForm({
         {isEditing ? (
           <div className="text-center">
             <h2 className="text-lg font-semibold leading-tight">{initialData?.nombre} {initialData?.apellido}</h2>
-            <p className="text-xs text-muted-foreground">Editar información del discípulo</p>
+            <p className="text-xs text-muted-foreground">Editar información del miembro</p>
           </div>
         ) : (
           <div className="text-center">
-            <h2 className="text-lg font-semibold leading-tight">Nuevo discípulo</h2>
+            <h2 className="text-lg font-semibold leading-tight">Nuevo miembro</h2>
             <p className="text-xs text-muted-foreground">Completá los datos para comenzar el seguimiento</p>
           </div>
         )}
@@ -411,12 +411,12 @@ export function DiscipuloForm({
 
       {/* STICKY FOOTER */}
       <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm pt-3 pb-2 mt-6 flex justify-end gap-3">
-        <Button type="button" variant="outline" size="sm" onClick={() => router.push("/discipulos")}>
+        <Button type="button" variant="outline" size="sm" onClick={() => router.push("/miembros")}>
           Cancelar
         </Button>
         <Button type="submit" size="sm" disabled={isSubmitting}>
           {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {isEditing ? "Guardar Cambios" : "Crear Discípulo"}
+          {isEditing ? "Guardar Cambios" : "Crear Miembro"}
         </Button>
       </div>
     </form>

@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { getDiscipuloColor } from "./discipulo-color";
+import { getMiembroColor } from "./discipulo-color";
 
-describe("getDiscipuloColor", () => {
+describe("getMiembroColor", () => {
   it("es determinista: mismo id, mismos colores", () => {
-    const a = getDiscipuloColor("abc-123");
-    const b = getDiscipuloColor("abc-123");
+    const a = getMiembroColor("abc-123");
+    const b = getMiembroColor("abc-123");
     expect(a).toEqual(b);
   });
 
   it("mantiene el matiz dentro de la gama rojo/cálido (0-40)", () => {
     const ids = ["uno", "dos", "tres", "cuatro", "cinco", "sien-siemens-magnet-12121"];
     for (const id of ids) {
-      const { fg, bg } = getDiscipuloColor(id);
+      const { fg, bg } = getMiembroColor(id);
       const hue = Number(fg.match(/oklch\(0\.50 0\.22 (\d+)\)/)?.[1]);
       expect(hue).toBeGreaterThanOrEqual(0);
       expect(hue).toBeLessThanOrEqual(40);
@@ -20,6 +20,6 @@ describe("getDiscipuloColor", () => {
   });
 
   it("devuelve colores distintos para ids distintos", () => {
-    expect(getDiscipuloColor("a")).not.toEqual(getDiscipuloColor("b"));
+    expect(getMiembroColor("a")).not.toEqual(getMiembroColor("b"));
   });
 });

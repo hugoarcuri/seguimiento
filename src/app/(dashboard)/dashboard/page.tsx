@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { DashboardClient, type DashboardData, type ActividadItem, type EstadoDiscipulo } from "./dashboard-client";
 import { useEtapas } from "@/hooks/useEtapas";
 import { useUser } from "@/hooks/useUser";
+import { useSyncMiembros } from "@/hooks/useSyncMiembros";
 import { differenceInCalendarDays, format } from "date-fns";
 import { es } from "date-fns/locale";
 import {
@@ -34,7 +35,7 @@ const ESTADO_RANK: Record<EstadoDiscipulo, number> = {
 
 const ESTADOS_PROBLEMA: EstadoDiscipulo[] = ["en_riesgo", "necesita_ayuda", "critico"];
 
-interface DiscipuloRaw {
+interface MiembroRaw {
   id: string;
   nombre: string;
   apellido: string;
@@ -55,7 +56,7 @@ interface PerfilRaw {
 
 interface SeguimientoRaw {
   id: string;
-  discipulo_id: string;
+  miembro_id: string;
   discipulador_id: string;
   etapa: number;
   progreso: number;
@@ -64,7 +65,7 @@ interface SeguimientoRaw {
 
 interface AgendaRaw {
   id: string;
-  discipulo_id: string;
+  miembro_id: string;
   lider_id: string;
   fecha: string;
   hora?: string | null;
@@ -83,7 +84,7 @@ interface ObjetivoRaw {
 
 interface TareaRaw {
   id: string;
-  discipulo_id: string;
+  miembro_id: string;
   lider_id: string;
   titulo: string;
   estado: string;
@@ -92,7 +93,7 @@ interface TareaRaw {
 }
 
 interface RawData {
-  discipulos: DiscipuloRaw[];
+  miembros: MiembroRaw[];
   perfiles: PerfilRaw[];
   seguimientos: SeguimientoRaw[];
   agenda: AgendaRaw[];
@@ -104,6 +105,7 @@ export default function DashboardPage() {
   const { etapas } = useEtapas();
   const { user, loading: loadingUser } = useUser();
   const router = useRouter();
+  useSyncMiembros();
   const [periodo, setPeriodo] = useState<Periodo>(DEFAULT_PERIODO);
   const [raw, setRaw] = useState<RawData | null>(null);
 
@@ -117,15 +119,15 @@ export default function DashboardPage() {
     const supabase = createClient();
 
     Promise.all([
-      supabase.from("discipulos").select("id, nombre, apellido, avatar_url, etapa_id, estado, lider_id, bautizado, es_miembro, created_at"),
+      supabase.from("miembros").select("id, nombre, apellido, avatar_url, etapa_id, estado, lider_id, bautizado, es_miembro, created_at"),
       supabase.from("profiles").select("id, nombre, apellido"),
-      supabase.from("seguimientos").select("id, discipulo_id, discipulador_id, etapa, progreso, estado"),
-      supabase.from("agenda").select("id, discipulo_id, lider_id, fecha, hora, tema_tratado, realizada"),
+      supabase.from("seguimientos").select("id, miembro_id, discipulador_id, etapa, progreso, estado"),
+      supabase.from("agenda").select("id, miembro_id, lider_id, fecha, hora, tema_tratado, realizada"),
       supabase.from("seguimiento_objetivos").select("id, seguimiento_id, descripcion, completado, fecha_cumplimiento, created_at"),
-      supabase.from("tareas").select("id, discipulo_id, lider_id, titulo, estado, completed_at, created_at"),
-    ]).then(([discipulosRes, perfilesRes, seguimientosRes, agendaRes, objetivosRes, tareasRes]) => {
+      supabase.from("tareas").select("id, miembro_id, lider_id, titulo, estado, completed_at, created_at"),
+    ]).then(([miembrosRes, perfilesRes, seguimientosRes, agendaRes, objetivosRes, tareasRes]) => {
       setRaw({
-        discipulos: (discipulosRes.data || []) as DiscipuloRaw[],
+        miembros: (miembrosRes.data || []) as MiembroRaw[],
         perfiles: (perfilesRes.data || []) as PerfilRaw[],
         seguimientos: (seguimientosRes.data || []) as SeguimientoRaw[],
         agenda: (agendaRes.data || []) as AgendaRaw[],
@@ -137,7 +139,7 @@ export default function DashboardPage() {
 
   const data = useMemo<DashboardData | null>(() => {
     if (!raw || etapas.length === 0) return null;
-    const { discipulos, perfiles, seguimientos, agenda, objetivos, tareas } = raw;
+    const { miembros, perfiles, seguimientos, agenda, objetivos, tareas } = raw;
 
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
@@ -145,11 +147,11 @@ export default function DashboardPage() {
 
     const esDiscipulador = user?.rol === "discipulador";
     const misIds = new Set(
-      esDiscipulador ? discipulos.filter((d) => d.lider_id === user?.id).map((d) => d.id) : []
+      esDiscipulador ? miembros.filter((d) => d.lider_id === user?.id).map((d) => d.id) : []
     );
-    const discipulosVisibles = esDiscipulador ? discipulos.filter((d) => misIds.has(d.id)) : discipulos;
-    const visibles = <T extends { discipulo_id: string }>(arr: T[]): T[] =>
-      esDiscipulador ? arr.filter((x) => misIds.has(x.discipulo_id)) : arr;
+    const miembrosVisibles = esDiscipulador ? miembros.filter((d) => misIds.has(d.id)) : miembros;
+    const visibles = <T extends { miembro_id: string }>(arr: T[]): T[] =>
+      esDiscipulador ? arr.filter((x) => misIds.has(x.miembro_id)) : arr;
     const seguimientosVisibles = visibles(seguimientos);
     const agendaVisibles = visibles(agenda);
     const tareasVisibles = visibles(tareas);
@@ -169,7 +171,7 @@ export default function DashboardPage() {
       inicio = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - dias);
     } else {
       const fechas = [
-        ...discipulosVisibles.map((d) => new Date(d.created_at)),
+        ...miembrosVisibles.map((d) => new Date(d.created_at)),
         ...agendaVisibles.map((a) => new Date(a.fecha + "T00:00:00")),
       ];
       inicio = fechas.length ? new Date(Math.min(...fechas.map((f) => f.getTime()))) : new Date(hoy.getTime() - 180 * 86400000);
@@ -190,22 +192,22 @@ export default function DashboardPage() {
       semanasObjetivo = Math.max(1, Math.ceil(diasTotales / 7));
     }
 
-    const segPorDiscipulo = new Map<string, SeguimientoRaw>();
+    const segPorMiembro = new Map<string, SeguimientoRaw>();
     for (const s of seguimientosVisibles) {
-      const existente = segPorDiscipulo.get(s.discipulo_id);
+      const existente = segPorMiembro.get(s.miembro_id);
       if (!existente || (s.estado === "activo" && existente.estado !== "activo")) {
-        segPorDiscipulo.set(s.discipulo_id, s);
+        segPorMiembro.set(s.miembro_id, s);
       }
     }
-    const segDiscipuloId = new Map(seguimientosVisibles.map((s) => [s.id, s.discipulo_id]));
+    const segMiembroId = new Map(seguimientosVisibles.map((s) => [s.id, s.miembro_id]));
 
     const ultimoEncuentro = new Map<string, string>();
     const reunionesEnPeriodo = new Map<string, number>();
     for (const a of agendaVisibles) {
       if (a.fecha > hoyISO || !a.realizada) continue;
-      if (!ultimoEncuentro.has(a.discipulo_id)) ultimoEncuentro.set(a.discipulo_id, a.fecha);
+      if (!ultimoEncuentro.has(a.miembro_id)) ultimoEncuentro.set(a.miembro_id, a.fecha);
       if (enPeriodoFecha(a.fecha)) {
-        reunionesEnPeriodo.set(a.discipulo_id, (reunionesEnPeriodo.get(a.discipulo_id) || 0) + 1);
+        reunionesEnPeriodo.set(a.miembro_id, (reunionesEnPeriodo.get(a.miembro_id) || 0) + 1);
       }
     }
 
@@ -215,9 +217,9 @@ export default function DashboardPage() {
       return p ? `${p.nombre} ${p.apellido}` : "Sin discipulador";
     };
 
-    const activos = discipulosVisibles.filter((d) => d.estado === "activo");
-    const pausados = discipulosVisibles.filter((d) => d.estado === "pausado").length;
-    const retirados = discipulosVisibles.filter((d) => d.estado === "retirado").length;
+    const activos = miembrosVisibles.filter((d) => d.estado === "activo");
+    const pausados = miembrosVisibles.filter((d) => d.estado === "pausado").length;
+    const retirados = miembrosVisibles.filter((d) => d.estado === "retirado").length;
 
     const progresoEnFecha = (objs: ObjetivoRaw[], fin: Date): number | null => {
       const finISO = fin.toISOString().slice(0, 10);
@@ -263,7 +265,7 @@ export default function DashboardPage() {
 
     const tabla = activos
       .map((d) => {
-        const seg = segPorDiscipulo.get(d.id);
+        const seg = segPorMiembro.get(d.id);
         const progreso = seg && seg.estado === "activo" && seg.progreso != null ? seg.progreso : null;
         const reuniones = reunionesEnPeriodo.get(d.id) || 0;
         const reunionPct = Math.min(100, Math.round((reuniones / semanasObjetivo) * 100));
@@ -357,7 +359,7 @@ export default function DashboardPage() {
       const etiqueta = bucketDias >= 30 ? format(t, "MMM yyyy", { locale: es }) : format(t, "d MMM", { locale: es });
 
       const reuniones = agendaVisibles.filter((a) => a.fecha <= finISO && a.fecha >= tISO && a.realizada).length;
-      const discipulosActivos = discipulosVisibles.filter(
+      const discipulosActivos = miembrosVisibles.filter(
         (d) => d.estado === "activo" && (d.created_at || "").slice(0, 10) <= finISO
       ).length;
       const progs = seguimientoIds
@@ -368,8 +370,8 @@ export default function DashboardPage() {
       serie.push({ etiqueta, reuniones, discipulosActivos, progreso });
     }
 
-    const discipuloPorId = new Map(discipulosVisibles.map((d) => [d.id, d]));
-    const nombreDiscipulo = (d?: DiscipuloRaw): string => (d ? `${d.apellido}, ${d.nombre}` : "un discípulo");
+    const miembroPorId = new Map(miembrosVisibles.map((d) => [d.id, d]));
+    const nombreMiembro = (d?: MiembroRaw): string => (d ? `${d.apellido}, ${d.nombre}` : "un miembro");
 
     const actividad: ActividadItem[] = [];
     const proxLimite = new Date(hoy.getTime() + 7 * 86400000).toISOString().slice(0, 10);
@@ -378,25 +380,25 @@ export default function DashboardPage() {
       if (a.fecha <= hoyISO) {
         if (!a.realizada) continue;
         if (!enPeriodoFecha(a.fecha)) continue;
-        const d = a.discipulo_id ? discipuloPorId.get(a.discipulo_id) : undefined;
+        const d = a.miembro_id ? miembroPorId.get(a.miembro_id) : undefined;
         actividad.push({
           id: `r-${a.id}`,
           tipo: "reunion",
           titulo: "Reunión registrada",
-          descripcion: `${nombreLider(a.lider_id)} se reunió con ${nombreDiscipulo(d)}`,
+          descripcion: `${nombreLider(a.lider_id)} se reunió con ${nombreMiembro(d)}`,
           fecha: a.fecha + "T00:00:00",
-          discipulo_id: a.discipulo_id,
+          miembro_id: a.miembro_id,
           hora: a.hora ? a.hora.slice(0, 5) : null,
         });
       } else if (a.fecha <= proxLimite) {
-        const d = a.discipulo_id ? discipuloPorId.get(a.discipulo_id) : undefined;
+        const d = a.miembro_id ? miembroPorId.get(a.miembro_id) : undefined;
         actividad.push({
           id: `p-${a.id}`,
           tipo: "reunion_programada",
           titulo: "Reunión programada",
-          descripcion: `${nombreDiscipulo(d)} tiene una reunión con ${nombreLider(a.lider_id)}`,
+          descripcion: `${nombreMiembro(d)} tiene una reunión con ${nombreLider(a.lider_id)}`,
           fecha: a.fecha + "T00:00:00",
-          discipulo_id: a.discipulo_id,
+          miembro_id: a.miembro_id,
           hora: a.hora ? a.hora.slice(0, 5) : null,
         });
       }
@@ -406,46 +408,46 @@ export default function DashboardPage() {
       if (!segVisiblesIds.has(o.seguimiento_id)) continue;
       if (!o.completado || !o.fecha_cumplimiento) continue;
       if (!enPeriodoFecha(o.fecha_cumplimiento)) continue;
-      const did = segDiscipuloId.get(o.seguimiento_id);
-      const d = did ? discipuloPorId.get(did) : undefined;
+      const did = segMiembroId.get(o.seguimiento_id);
+      const d = did ? miembroPorId.get(did) : undefined;
       actividad.push({
         id: `o-${o.id}`,
         tipo: "avance",
         titulo: "Avance registrado",
-        descripcion: `${nombreDiscipulo(d)} completó: ${o.descripcion}`,
+        descripcion: `${nombreMiembro(d)} completó: ${o.descripcion}`,
         fecha: o.fecha_cumplimiento + "T12:00:00",
-        discipulo_id: did,
+        miembro_id: did,
       });
     }
 
     for (const t of tareasVisibles) {
       if (t.estado !== "completada" || !t.completed_at) continue;
       if (!enPeriodoDate(new Date(t.completed_at))) continue;
-      const d = t.discipulo_id ? discipuloPorId.get(t.discipulo_id) : undefined;
+      const d = t.miembro_id ? miembroPorId.get(t.miembro_id) : undefined;
       actividad.push({
         id: `t-${t.id}`,
         tipo: "avance",
         titulo: "Tarea completada",
-        descripcion: `${nombreDiscipulo(d)} completó la tarea: ${t.titulo}`,
+        descripcion: `${nombreMiembro(d)} completó la tarea: ${t.titulo}`,
         fecha: t.completed_at,
-        discipulo_id: t.discipulo_id,
+        miembro_id: t.miembro_id,
       });
     }
 
-    for (const d of discipulosVisibles) {
+    for (const d of miembrosVisibles) {
       if (!enPeriodoDate(new Date(d.created_at))) continue;
       actividad.push({
         id: `n-${d.id}`,
-        tipo: "nuevo_discipulo",
-        titulo: "Nuevo discípulo",
-        descripcion: `${nombreLider(d.lider_id)} agregó a ${nombreDiscipulo(d)}`,
+        tipo: "nuevo_miembro",
+        titulo: "Nuevo miembro",
+        descripcion: `${nombreLider(d.lider_id)} agregó a ${nombreMiembro(d)}`,
         fecha: d.created_at,
-        discipulo_id: d.id,
+        miembro_id: d.id,
       });
     }
 
     for (const item of atencion.slice(0, 3)) {
-      const d = discipuloPorId.get(item.id);
+      const d = miembroPorId.get(item.id);
       const f = item.ultimaReunion ?? d?.created_at;
       if (!f) continue;
       const fecha = f.includes("T") ? f : f + "T00:00:00";
@@ -453,9 +455,9 @@ export default function DashboardPage() {
         id: `s-${item.id}`,
         tipo: "sin_actividad",
         titulo: "Sin actividad",
-        descripcion: `${nombreDiscipulo(d)} no tiene actividad reciente${item.diasSinContacto !== null ? ` (${item.diasSinContacto} días)` : ""}`,
+        descripcion: `${nombreMiembro(d)} no tiene actividad reciente${item.diasSinContacto !== null ? ` (${item.diasSinContacto} días)` : ""}`,
         fecha,
-        discipulo_id: item.id,
+        miembro_id: item.id,
         diasSinContacto: item.diasSinContacto,
       });
     }
@@ -466,7 +468,7 @@ export default function DashboardPage() {
       periodo,
       kpis: {
         discipulosActivos: activos.length,
-        totalAsignados: discipulosVisibles.length,
+        totalAsignados: miembrosVisibles.length,
         pausados,
         retirados,
         progresoPromedio,

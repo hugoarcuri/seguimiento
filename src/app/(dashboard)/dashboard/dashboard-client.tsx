@@ -43,7 +43,7 @@ import { ESTADOS_DISCIPULADOR, PERIODOS, type EstadoDiscipulador, type Periodo }
 
 export type EstadoDiscipulo = EstadoDiscipulador;
 
-export interface FilaDiscipulo {
+export interface FilaMiembro {
   id: string;
   nombre: string;
   apellido: string;
@@ -76,11 +76,11 @@ export interface AtencionItem {
 
 export interface ActividadItem {
   id: string;
-  tipo: "reunion" | "reunion_programada" | "avance" | "nuevo_discipulo" | "sin_actividad";
+  tipo: "reunion" | "reunion_programada" | "avance" | "nuevo_miembro" | "sin_actividad";
   titulo: string;
   descripcion: string;
   fecha: string;
-  discipulo_id?: string;
+  miembro_id?: string;
   hora?: string | null;
   diasSinContacto?: number | null;
 }
@@ -88,14 +88,14 @@ export interface ActividadItem {
 export interface PuntoSerie {
   etiqueta: string;
   reuniones: number;
-  discipulosActivos: number;
+  miembrosActivos: number;
   progreso: number | null;
 }
 
 export interface DashboardData {
   periodo: Periodo;
   kpis: {
-    discipulosActivos: number;
+    miembrosActivos: number;
     totalAsignados: number;
     pausados: number;
     retirados: number;
@@ -107,7 +107,7 @@ export interface DashboardData {
     enRiesgo: number;
     necesitanAtencion: number;
   };
-  tabla: FilaDiscipulo[];
+  tabla: FilaMiembro[];
   atencion: AtencionItem[];
   grafico: { serie: PuntoSerie[] };
   actividad: ActividadItem[];
@@ -192,7 +192,7 @@ function tiempoRelativo(iso: string, hora?: string | null): string {
   return formatDistanceToNow(f, { locale: es, addSuffix: true });
 }
 
-type TipoGrafico = "progreso" | "reuniones" | "discipulos";
+type TipoGrafico = "progreso" | "reuniones" | "miembros";
 
 export function DashboardClient({
   data,
@@ -243,15 +243,15 @@ export function DashboardClient({
   }[] = [
 
     {
-      title: "Discípulos activos",
-      value: kpis.discipulosActivos,
+      title: "Miembros activos",
+      value: kpis.miembrosActivos,
       description: esDiscipulador
         ? `${kpis.totalAsignados} asignados a vos`
         : `${kpis.totalAsignados} asignados · ${kpis.pausados} pausados · ${kpis.retirados} retirados`,
       icon: Users,
       color: "text-blue-600",
       bg: "bg-blue-50 dark:bg-blue-950",
-      href: "/discipulos",
+      href: "/miembros",
     },
     {
       title: "Progreso promedio",
@@ -297,9 +297,9 @@ export function DashboardClient({
       {/* HEADER */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold lg:text-xl">Dashboard Discípulos</h1>
+          <h1 className="text-2xl font-bold lg:text-xl">Dashboard Miembros</h1>
           <p className="text-sm text-muted-foreground">
-            Resumen del avance, seguimiento y reuniones de los discípulos.
+            Resumen del avance, seguimiento y reuniones de los miembros.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -374,7 +374,7 @@ export function DashboardClient({
           <CardHeader className="shrink-0 border-b border-border/40 pb-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <CardTitle className="text-base font-bold">Estado de discípulos</CardTitle>
+                <CardTitle className="text-base font-bold">Estado de miembros</CardTitle>
                 <CardDescription>Hacé clic en una fila para ver el detalle completo</CardDescription>
               </div>
               <Button
@@ -393,7 +393,7 @@ export function DashboardClient({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Discípulo</TableHead>
+                    <TableHead>Miembro</TableHead>
                     <TableHead>Discipulador</TableHead>
                     <TableHead>Progreso</TableHead>
                     <TableHead>Reuniones</TableHead>
@@ -405,7 +405,7 @@ export function DashboardClient({
                   {filasTabla.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
-                        {soloRiesgo ? "No hay discípulos en riesgo" : "No hay discípulos activos todavía."}
+                        {soloRiesgo ? "No hay miembros en riesgo" : "No hay miembros activos todavía."}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -414,7 +414,7 @@ export function DashboardClient({
                       return (
                         <TableRow
                           key={f.id}
-                          onClick={() => router.push(`/discipulos/ver?id=${f.id}`)}
+                          onClick={() => router.push(`/miembros/ver?id=${f.id}`)}
                           className="cursor-pointer"
                         >
                           <TableCell>
@@ -489,7 +489,7 @@ export function DashboardClient({
                 {([
                   { value: "progreso", label: "Progreso" },
                   { value: "reuniones", label: "Reuniones" },
-                  { value: "discipulos", label: "Discípulos" },
+                  { value: "miembros", label: "Miembros" },
                 ] as { value: TipoGrafico; label: string }[]).map((t) => (
                   <Button
                     key={t.value}
@@ -517,8 +517,8 @@ export function DashboardClient({
                     {tipoGrafico === "reuniones" && (
                       <Line type="monotone" dataKey="reuniones" name="Reuniones" stroke="#3b82f6" strokeWidth={2} dot={{ r: 2 }} />
                     )}
-                    {tipoGrafico === "discipulos" && (
-                      <Line type="monotone" dataKey="discipulosActivos" name="Discípulos activos" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 2 }} />
+                    {tipoGrafico === "miembros" && (
+                      <Line type="monotone" dataKey="miembrosActivos" name="Miembros activos" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 2 }} />
                     )}
                   </LineChart>
                 </ResponsiveContainer>
@@ -531,14 +531,14 @@ export function DashboardClient({
             <CardHeader className="shrink-0 border-b border-red-200/60 pb-2 dark:border-red-900/50">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
-                <CardTitle className="text-base font-bold min-w-0 flex-1">Discípulos que necesitan atención</CardTitle>
+                <CardTitle className="text-base font-bold min-w-0 flex-1">Miembros que necesitan atención</CardTitle>
                 <Badge variant="destructive" className="shrink-0">{data.atencion.length}</Badge>
               </div>
               <CardDescription>Solo quienes presentan problemas de progreso o reuniones</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
               {data.atencion.length === 0 ? (
-                <p className="py-3 text-sm text-muted-foreground">No hay discípulos que necesiten atención.</p>
+                <p className="py-3 text-sm text-muted-foreground">No hay miembros que necesiten atención.</p>
               ) : (
                 <>
                   {data.atencion.map((d) => {
@@ -546,7 +546,7 @@ export function DashboardClient({
                     return (
                       <button
                         key={d.id}
-                        onClick={() => router.push(`/discipulos/ver?id=${d.id}`)}
+                        onClick={() => router.push(`/miembros/ver?id=${d.id}`)}
                         className={cn("flex w-full items-center gap-2.5 rounded-lg border bg-card p-2.5 text-left transition-colors hover:border-primary/50", cfg.card)}
                       >
                         <Avatar persona={d} />
@@ -615,8 +615,8 @@ export function DashboardClient({
                     </span>
                   </div>
                 );
-                return a.discipulo_id ? (
-                  <Link key={a.id} href={`/discipulos/ver?id=${a.discipulo_id}`} className="block transition-colors hover:border-primary/50 rounded-lg">
+                return a.miembro_id ? (
+                  <Link key={a.id} href={`/miembros/ver?id=${a.miembro_id}`} className="block transition-colors hover:border-primary/50 rounded-lg">
                     {contenido}
                   </Link>
                 ) : (

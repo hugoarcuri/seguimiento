@@ -30,7 +30,7 @@ import {
 } from "../seguimiento-constants";
 import type {
   Seguimiento, SeguimientoEvaluacion, SeguimientoObjetivo, SeguimientoObservacion, SeguimientoHistorial,
-  Discipulo, Etapa, Agenda,
+  Miembro, Etapa, Agenda,
 } from "@/types/database";
 
 type EvalDraft = Record<string, { opcion: string; detalle: string }>;
@@ -75,7 +75,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
   const [loading, setLoading] = useState(true);
 
   const [seguimiento, setSeguimiento] = useState<(Seguimiento & {
-    discipulos?: Discipulo;
+    miembros?: Miembro;
     discipuladores?: { nombre: string; apellido: string };
   }) | null>(null);
   const [etapas, setEtapas] = useState<Etapa[]>([]);
@@ -104,7 +104,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
     const [segRes, evalRes, objRes, obsRes, histRes, etapasRes] = await Promise.all([
       supabase
         .from("seguimientos")
-        .select("*, discipulos:discipulo_id(*), discipuladores:discipulador_id(nombre, apellido)")
+        .select("*, miembros:miembro_id(*), discipuladores:discipulador_id(nombre, apellido)")
         .eq("id", id)
         .single(),
       supabase.from("seguimiento_evaluaciones").select("*").eq("seguimiento_id", id).maybeSingle(),
@@ -116,8 +116,8 @@ function SeguimientoDetalle({ id }: { id: string }) {
     setSeguimiento((segRes.data as typeof seguimiento) || null);
     setEtapas((etapasRes.data as Etapa[]) || []);
     const seg = segRes.data as typeof seguimiento;
-    if (seg?.discipulos?.id) {
-      const { data: agendaData } = await supabase.from("agenda").select("*").eq("discipulo_id", seg.discipulos.id).order("fecha", { ascending: false });
+    if (seg?.miembros?.id) {
+      const { data: agendaData } = await supabase.from("agenda").select("*").eq("miembro_id", seg.miembros.id).order("fecha", { ascending: false });
       setAgendas((agendaData as Agenda[]) || []);
     } else {
       setAgendas([]);
@@ -174,7 +174,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
       .from("seguimientos")
       .update({ progreso: prog, ultima_actualizacion: new Date().toISOString() })
       .eq("id", id)
-      .select("*, discipulos:discipulo_id(*), discipuladores:discipulador_id(nombre, apellido)")
+      .select("*, miembros:miembro_id(*), discipuladores:discipulador_id(nombre, apellido)")
       .single();
     if (!error && data) setSeguimiento(data as typeof seguimiento);
   }, [id, supabase]);
@@ -307,15 +307,15 @@ function SeguimientoDetalle({ id }: { id: string }) {
   };
 
   const guardarEncuentro = async () => {
-    const discipuloId = seguimiento?.discipulos?.id;
-    if (!discipuloId) { toast.error("No se encontró el discípulo"); return; }
+    const miembroId = seguimiento?.miembros?.id;
+    if (!miembroId) { toast.error("No se encontró el miembro"); return; }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { toast.error("Debés iniciar sesión"); return; }
     if (!encuentroDraft.fecha) { toast.error("Completá la fecha"); return; }
 
     setGuardandoEncuentro(true);
     const payload = {
-      discipulo_id: discipuloId,
+      miembro_id: miembroId,
       lider_id: user.id,
       fecha: encuentroDraft.fecha,
       tema_tratado: "",
@@ -364,7 +364,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
     </div>
   );
 
-  const nombreDiscipulo = seguimiento.discipulos ? `${seguimiento.discipulos.apellido}, ${seguimiento.discipulos.nombre}` : "—";
+  const nombreMiembro = seguimiento.miembros ? `${seguimiento.miembros.apellido}, ${seguimiento.miembros.nombre}` : "—";
   const nombreDiscipulador = seguimiento.discipuladores ? `${seguimiento.discipuladores.apellido}, ${seguimiento.discipuladores.nombre}` : "—";
   const encuentrosMes = contarEncuentrosMes(agendas.map((a) => ({ fecha: a.fecha, realizada: a.realizada })));
   const estadoSeguimiento = estadoEncuentrosMes(encuentrosMes);
@@ -379,7 +379,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
         </Link>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold truncate">{nombreDiscipulo}</h1>
+            <h1 className="text-2xl font-bold truncate">{nombreMiembro}</h1>
             <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold shrink-0", estadoSeguimientoCfg.badge)}>
               <span className={cn("h-1.5 w-1.5 rounded-full bg-white/80")} />
               {estadoSeguimientoCfg.etiqueta}
@@ -399,27 +399,27 @@ function SeguimientoDetalle({ id }: { id: string }) {
         </TabsList>
 
         <TabsContent value="resumen" className="space-y-4">
-          {seguimiento.etapa >= 2 && seguimiento.discipulos && (!seguimiento.discipulos.bautizado || !seguimiento.discipulos.es_miembro) && (
+          {seguimiento.etapa >= 2 && seguimiento.miembros && (!seguimiento.miembros.bautizado || !seguimiento.miembros.es_miembro) && (
             <div className="space-y-3 rounded-lg border border-amber-500/40 bg-amber-50 dark:bg-amber-950 p-4">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
                 <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Pasos pendientes del discipulado</p>
               </div>
               <ul className="space-y-1 text-sm text-amber-800 dark:text-amber-300">
-                {!seguimiento.discipulos.bautizado && (
+                {!seguimiento.miembros.bautizado && (
                   <li className="flex items-center gap-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" />
                     Pendiente: bautizarse
                   </li>
                 )}
-                {!seguimiento.discipulos.es_miembro && (
+                {!seguimiento.miembros.es_miembro && (
                   <li className="flex items-center gap-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" />
                     Pendiente: clase de membresía
                   </li>
                 )}
               </ul>
-              <Link href={`/discipulos/editar?id=${seguimiento.discipulos.id}`}>
+              <Link href={`/miembros/editar?id=${seguimiento.miembros.id}`}>
                 <Button variant="outline" size="sm">
                   <Pencil className="mr-2 h-3.5 w-3.5" /> Completar bautismo / membresía
                 </Button>
@@ -435,8 +435,8 @@ function SeguimientoDetalle({ id }: { id: string }) {
                 <div className="flex items-center gap-3">
                   <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"><User className="h-4 w-4 text-primary" /></div>
                   <div className="min-w-0">
-                    <p className="text-xs text-muted-foreground">Discípulo</p>
-                    <p className="text-sm font-medium truncate">{nombreDiscipulo}</p>
+                    <p className="text-xs text-muted-foreground">Miembro</p>
+                    <p className="text-sm font-medium truncate">{nombreMiembro}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -569,7 +569,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
                 <ClipboardList className="h-5 w-5 text-primary" />
                 Evaluación
               </CardTitle>
-              <CardDescription>Completá los datos del crecimiento espiritual del discípulo.</CardDescription>
+              <CardDescription>Completá los datos del crecimiento espiritual del miembro.</CardDescription>
               {(() => {
                 const camposConOpciones = CAMPOS_EVALUACION.filter((c) => c.key !== "habitos_pecaminosos");
                 const respondidos = camposConOpciones.filter((c) => campoRespondido(c, evalDraft[c.key] || { opcion: "", detalle: "" })).length;
@@ -735,7 +735,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
                   rows={3}
                   value={nuevaObservacion}
                   onChange={(e) => setNuevaObservacion(e.target.value)}
-                  placeholder="Escribí una observación sobre el crecimiento del discípulo..."
+                  placeholder="Escribí una observación sobre el crecimiento del miembro..."
                 />
               </div>
               <div className="flex justify-end">
@@ -855,7 +855,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
                   <CardTitle className="text-base">Encuentros</CardTitle>
-                  <CardDescription>Citas de discipulado del discípulo. {agendas.length} registros.</CardDescription>
+                  <CardDescription>Citas de discipulado del miembro. {agendas.length} registros.</CardDescription>
                 </div>
                 <Button size="sm" onClick={() => abrirEncuentro()} className="shrink-0">
                   <CalendarPlus className="mr-1 h-4 w-4" /> Nuevo encuentro
@@ -864,7 +864,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
             </CardHeader>
             <CardContent>
               {agendas.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-6">No hay encuentros registrados para este discípulo.</p>
+                <p className="text-sm text-muted-foreground text-center py-6">No hay encuentros registrados para este miembro.</p>
               ) : (
                 <div className="space-y-3">
                   {agendas.map((agenda) => (
