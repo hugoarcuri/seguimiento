@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { MiembroForm } from "../discipulo-form";
+import { MiembroForm } from "../miembro-form";
 import type { Etapa } from "@/types/database";
 
 export default function NuevoMiembroPage() {

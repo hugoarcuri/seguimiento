@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { MiembroForm } from "../discipulo-form";
+import { MiembroForm } from "../miembro-form";
 import type { Etapa, Miembro } from "@/types/database";
 
 function EditarMiembroContent() {

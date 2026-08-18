@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { MiembroDetailClient } from "../discipulo-detail-client";
+import { MiembroDetailClient } from "../miembro-detail-client";
 import { calcularSalud, contarEncuentrosMes } from "@/lib/discipulo-health";
 import type {
   Miembro, Etapa, Agenda, Oracion, Tarea, Timeline, Seguimiento,

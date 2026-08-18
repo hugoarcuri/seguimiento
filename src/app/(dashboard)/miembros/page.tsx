@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useUser } from "@/hooks/useUser";
 import { cargarRadar, type MiembroRadar } from "./radar-data";
-import { MiembrosClient } from "./discipulos-client";
+import { MiembrosClient } from "./miembros-client";
 import type { Etapa } from "@/types/database";
 
 export default function MiembrosPage() {

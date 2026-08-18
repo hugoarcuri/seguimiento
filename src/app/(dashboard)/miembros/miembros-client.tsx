@@ -36,8 +36,8 @@ import {
   UMBRALES_SALUD,
   type SaludMiembro,
 } from "@/lib/discipulo-health";
-import { ImportarMiembros } from "./importar-discipulos";
-import { MiembroDetailClient, type DetalleMiembro } from "./discipulo-detail-client";
+import { ImportarMiembros } from "./importar-miembros";
+import { MiembroDetailClient, type DetalleMiembro } from "./miembro-detail-client";
 import type { MiembroRadar } from "./radar-data";
 import type { Miembro, Etapa, Seguimiento, SeguimientoEvaluacion, SeguimientoObjetivo } from "@/types/database";
 
