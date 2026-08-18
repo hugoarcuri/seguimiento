@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   List,
   BookOpen,
+  BarChart3,
 } from "lucide-react";
 
 export interface NavLink {
@@ -101,6 +102,7 @@ export const discipuladorMenuItems: NavItem[] = [
     ],
   },
   { href: "/seguimiento", label: "Seguimiento", icon: Map },
+  { href: "/mi-desempeno", label: "Mi Desempeño", icon: BarChart3 },
   { href: "/evangelismo", label: "Evangelismo", icon: Flame },
   { href: "/agenda", label: "Agenda", icon: CalendarCheck },
   { href: "/oracion", label: "Oración", icon: MessagesSquare },
