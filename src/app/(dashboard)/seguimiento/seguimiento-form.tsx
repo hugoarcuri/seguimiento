@@ -66,17 +66,26 @@ export function SeguimientoForm({
     }
   }, [open, editing, defaultDiscipuladorId, form]);
 
-  const onSelectMiembro = useCallback((v: string | undefined, onChange: (v: string) => void) => {
+  const onSelectMiembro = useCallback(async (v: string | undefined, onChange: (v: string) => void) => {
     const val = v ?? "";
     onChange(val);
     if (editing || !val) return;
+    const fromProp = miembros.find((m) => m.id === val)?.etapa_id;
+    if (fromProp) {
+      form.setValue("etapa", fromProp, { shouldValidate: true, shouldDirty: true });
+      return;
+    }
     const supabase = createClient();
-    supabase.from("miembros").select("etapa_id").eq("id", val).single().then(({ data }) => {
-      if (data?.etapa_id) {
-        form.setValue("etapa", data.etapa_id, { shouldValidate: true, shouldDirty: true });
-      }
-    });
-  }, [editing, form]);
+    const { data } = await supabase.from("miembros").select("etapa_id").eq("id", val).single();
+    if (data?.etapa_id) {
+      form.setValue("etapa", data.etapa_id, { shouldValidate: true, shouldDirty: true });
+      return;
+    }
+    const { data: data2 } = await supabase.from("discipulos").select("etapa_id").eq("id", val).single();
+    if (data2?.etapa_id) {
+      form.setValue("etapa", data2.etapa_id, { shouldValidate: true, shouldDirty: true });
+    }
+  }, [editing, miembros, form]);
 
   const onSubmit = async (data: SeguimientoInput) => {
     const supabase = createClient();
