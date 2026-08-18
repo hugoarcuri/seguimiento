@@ -7,12 +7,12 @@ import {
   MessagesSquare,
   Settings,
   User,
-  ClipboardCheck,
   Flame,
   Map,
   FileBarChart,
   LayoutDashboard,
   List,
+  BookOpen,
 } from "lucide-react";
 
 export interface NavLink {
@@ -74,21 +74,21 @@ export const adminMenuItems: NavItem[] = [
       { href: "/discipuladores", label: "Lista Discipuladores", icon: List },
     ],
   },
-  { href: "/tareas", label: "Tareas", icon: ClipboardCheck },
   { href: "/seguimiento", label: "Seguimiento", icon: Map },
   { href: "/evangelismo", label: "Evangelismo", icon: Flame },
   { href: "/agenda", label: "Agenda", icon: CalendarCheck },
   { href: "/oracion", label: "Oración", icon: MessagesSquare },
+  { href: "/estudios-biblicos", label: "Estudios Bíblicos", icon: BookOpen },
   { href: "/reportes", label: "Reportes", icon: FileBarChart },
   { href: "/configuracion", label: "Configuración", icon: Settings },
 ];
 
 export const discipuloMenuItems: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: Gauge },
-  { href: "/tareas", label: "Tareas", icon: ClipboardCheck },
   { href: "/seguimiento", label: "Seguimiento", icon: Map },
   { href: "/evangelismo", label: "Evangelismo", icon: Flame },
   { href: "/oracion", label: "Oración", icon: MessagesSquare },
+  { href: "/estudios-biblicos", label: "Estudios Bíblicos", icon: BookOpen },
   { href: "/perfil", label: "Mi Perfil", icon: User },
   { href: "/configuracion", label: "Configuración", icon: Settings },
 ];
@@ -102,11 +102,11 @@ export const discipuladorMenuItems: NavItem[] = [
       { href: "/discipulos", label: "Lista Discípulos", icon: List },
     ],
   },
-  { href: "/tareas", label: "Tareas", icon: ClipboardCheck },
   { href: "/seguimiento", label: "Seguimiento", icon: Map },
   { href: "/evangelismo", label: "Evangelismo", icon: Flame },
   { href: "/agenda", label: "Agenda", icon: CalendarCheck },
   { href: "/oracion", label: "Oración", icon: MessagesSquare },
+  { href: "/estudios-biblicos", label: "Estudios Bíblicos", icon: BookOpen },
   { href: "/perfil", label: "Mi Perfil", icon: User },
 ];
 
