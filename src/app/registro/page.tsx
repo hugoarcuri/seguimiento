@@ -71,7 +71,7 @@ export default function RegistroPage() {
       password,
       options: {
         data: {
-          registro_discipulo: true,
+          registro_miembro: true,
           nombre: nombre.trim(),
           apellido: apellido.trim(),
           sexo: sexo || null,
@@ -127,7 +127,7 @@ export default function RegistroPage() {
           <div className="flex justify-center mb-1">
             <Image src={`${BASE_PATH}/logo.png`} alt="Discipulado" width={36} height={36} className="rounded" />
           </div>
-          <CardTitle className="text-lg font-bold">Registro de Discípulo</CardTitle>
+          <CardTitle className="text-lg font-bold">Registro de Miembro</CardTitle>
           <CardDescription className="text-xs">Completá tus datos para comenzar tu camino</CardDescription>
         </CardHeader>
         <form onSubmit={onSubmit}>

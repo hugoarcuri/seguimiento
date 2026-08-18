@@ -13,7 +13,7 @@ import { APP_URL } from "@/lib/constants/paths";
 
 export default function ConfiguracionPage() {
   const { user } = useUser();
-  const { permitido, loading: autorizando } = useRequireRol(["admin", "discipulo"]);
+  const { permitido, loading: autorizando } = useRequireRol(["admin", "miembro", "discipulo"]);
   const [copiadoDiscipulo, setCopiadoDiscipulo] = useState(false);
   const [copiadoDiscipulador, setCopiadoDiscipulador] = useState(false);
 
@@ -48,10 +48,10 @@ export default function ConfiguracionPage() {
           <CardHeader>
             <div className="flex items-center gap-2">
               <UserPlus className="h-5 w-5 text-muted-foreground" />
-              <CardTitle>Link de Registro — Discípulos</CardTitle>
+              <CardTitle>Link de Registro — Miembros</CardTitle>
             </div>
             <CardDescription>
-              Compartí este link para que nuevos discípulos se registren
+              Compartí este link para que nuevos miembros se registren
             </CardDescription>
           </CardHeader>
           <CardContent>

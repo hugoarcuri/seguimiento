@@ -18,7 +18,7 @@ import { FontControls } from "@/components/font-controls";
 import { PalettePicker } from "@/components/palette-picker";
 import { ROL_LABELS } from "@/lib/constants/navigation";
 
-const rolIcon = { admin: Crown, discipulador: UserCog, discipulo: Shield } as const;
+const rolIcon = { admin: Crown, discipulador: UserCog, miembro: Shield, discipulo: Shield } as const;
 
 export function Navbar() {
   const { user, logout } = useUser();
@@ -77,7 +77,7 @@ export function Navbar() {
                 <User className="mr-2 h-4 w-4" />
                 Mi Perfil
               </DropdownMenuItem>
-              {user?.rol !== "discipulador" && (
+              {user?.rol !== "discipulador" && user?.rol !== "miembro" && user?.rol !== "discipulo" && (
                 <DropdownMenuItem render={<Link href="/configuracion" />}>
                   <Settings className="mr-2 h-4 w-4" />
                   Configuración

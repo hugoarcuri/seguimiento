@@ -15,7 +15,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ROL_LABELS } from "@/lib/constants/navigation";
 
-const rolIcon = { admin: Crown, discipulador: UserCog, discipulo: Shield } as const;
+const rolIcon = { admin: Crown, discipulador: UserCog, miembro: Shield, discipulo: Shield } as const;
 
 function RolBadge({ rol }: { rol?: string }) {
   if (!rol) return null;

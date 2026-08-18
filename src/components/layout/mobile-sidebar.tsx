@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { FontControls } from "@/components/font-controls";
 import { ChevronDown, Menu } from "lucide-react";
-import { adminMenuItems, discipuloMenuItems, discipuladorMenuItems, isNavGroup, navHrefs, type NavGroup } from "@/lib/constants/navigation";
+import { adminMenuItems, miembroMenuItems, discipuladorMenuItems, isNavGroup, navHrefs, type NavGroup } from "@/lib/constants/navigation";
 import { findActiveHref, BASE_PATH } from "@/lib/constants/paths";
 
 function MobileGroup({
@@ -76,7 +76,7 @@ export function MobileSidebar() {
   const { user, loading } = useUser();
 
   const menuItems =
-    user?.rol === "admin" ? adminMenuItems : user?.rol === "discipulador" ? discipuladorMenuItems : discipuloMenuItems;
+    user?.rol === "admin" ? adminMenuItems : user?.rol === "discipulador" ? discipuladorMenuItems : miembroMenuItems;
 
   if (loading) return null;
 

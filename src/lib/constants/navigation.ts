@@ -54,16 +54,17 @@ export function navHrefs(items: NavItem[]): string[] {
 export const ROL_LABELS: Record<string, string> = {
   admin: "Administrador",
   discipulador: "Discipulador",
-  discipulo: "Discípulo",
+  miembro: "Miembro",
+  discipulo: "Miembro",
 };
 
 export const adminMenuItems: NavItem[] = [
   {
-    label: "Discípulos",
+    label: "Miembros",
     icon: Users,
     children: [
-      { href: "/dashboard", label: "Dashboard Discípulos", icon: LayoutDashboard },
-      { href: "/discipulos", label: "Lista Discípulos", icon: List },
+      { href: "/dashboard", label: "Dashboard Miembros", icon: LayoutDashboard },
+      { href: "/discipulos", label: "Lista Miembros", icon: List },
     ],
   },
   {
@@ -83,7 +84,7 @@ export const adminMenuItems: NavItem[] = [
   { href: "/configuracion", label: "Configuración", icon: Settings },
 ];
 
-export const discipuloMenuItems: NavItem[] = [
+export const miembroMenuItems: NavItem[] = [
   { href: "/mi-crecimiento", label: "Mi Crecimiento", icon: Gauge },
   { href: "/seguimiento", label: "Seguimiento", icon: Map },
   { href: "/evangelismo", label: "Evangelismo", icon: Flame },
@@ -93,11 +94,11 @@ export const discipuloMenuItems: NavItem[] = [
 
 export const discipuladorMenuItems: NavItem[] = [
   {
-    label: "Discípulos",
+    label: "Miembros",
     icon: Users,
     children: [
-      { href: "/dashboard", label: "Dashboard Discípulos", icon: LayoutDashboard },
-      { href: "/discipulos", label: "Lista Discípulos", icon: List },
+      { href: "/dashboard", label: "Dashboard Miembros", icon: LayoutDashboard },
+      { href: "/discipulos", label: "Lista Miembros", icon: List },
     ],
   },
   { href: "/seguimiento", label: "Seguimiento", icon: Map },
@@ -111,5 +112,5 @@ export const discipuladorMenuItems: NavItem[] = [
 export function getMenuItems(rol?: string): NavItem[] {
   if (rol === "admin") return adminMenuItems;
   if (rol === "discipulador") return discipuladorMenuItems;
-  return discipuloMenuItems;
+  return miembroMenuItems;
 }

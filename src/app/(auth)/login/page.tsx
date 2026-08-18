@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -11,11 +11,19 @@ import { loginSchema, type LoginInput } from "@/lib/validations/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { GoogleIcon } from "@/components/icons/google-icon";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff, Crown, Shield, UserCog } from "lucide-react";
 import { toast } from "sonner";
 import { BASE_PATH } from "@/lib/constants/paths";
+import { ROL_LABELS } from "@/lib/constants/navigation";
+
+const ROL_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
+  admin: Crown,
+  discipulador: UserCog,
+  miembro: Shield,
+};
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
@@ -24,15 +32,43 @@ export default function LoginPage() {
   const [recuperarEmail, setRecuperarEmail] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
+  const [rolDetectado, setRolDetectado] = useState<string | null>(null);
+  const [buscandoRol, setBuscandoRol] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const router = useRouter();
 
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
   });
+
+  const emailValue = watch("email");
+
+  useEffect(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    const email = (emailValue || "").trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setRolDetectado(null);
+      return;
+    }
+    setBuscandoRol(true);
+    timerRef.current = setTimeout(async () => {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase.rpc("get_rol_por_email", { p_email: email });
+        setRolDetectado(data || null);
+      } catch {
+        setRolDetectado(null);
+      } finally {
+        setBuscandoRol(false);
+      }
+    }, 500);
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, [emailValue]);
 
   const onSubmit = async (data: LoginInput) => {
     setLoading(true);
@@ -120,7 +156,30 @@ export default function LoginPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="tu@email.com" {...register("email")} />
+                <div className="relative">
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="tu@email.com"
+                    {...register("email")}
+                    className={rolDetectado ? "pr-24" : ""}
+                  />
+                  {(rolDetectado || buscandoRol) && (
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                      {buscandoRol ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                      ) : rolDetectado ? (
+                        <Badge variant="secondary" className="capitalize gap-1 text-[10px] px-1.5 py-0.5 whitespace-nowrap">
+                          {(() => {
+                            const Icon = ROL_ICON[rolDetectado] || Shield;
+                            return <Icon className="h-3 w-3" />;
+                          })()}
+                          {ROL_LABELS[rolDetectado] || rolDetectado}
+                        </Badge>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
                 {errors.email && (<p className="text-sm text-destructive">{errors.email.message}</p>)}
               </div>
               <div className="space-y-2">

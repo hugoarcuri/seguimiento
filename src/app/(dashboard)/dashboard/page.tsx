@@ -108,7 +108,7 @@ export default function DashboardPage() {
   const [raw, setRaw] = useState<RawData | null>(null);
 
   useEffect(() => {
-    if (!loadingUser && user?.rol === "discipulo") {
+    if (!loadingUser && (user?.rol === "miembro" || user?.rol === "discipulo")) {
       router.replace("/mi-crecimiento");
     }
   }, [user, loadingUser, router]);

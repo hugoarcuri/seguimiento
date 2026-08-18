@@ -9,7 +9,7 @@ import { useUser } from "@/hooks/useUser";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, PanelLeft, PanelLeftClose } from "lucide-react";
-import { adminMenuItems, discipuloMenuItems, discipuladorMenuItems, isNavGroup, navHrefs, type NavGroup } from "@/lib/constants/navigation";
+import { adminMenuItems, miembroMenuItems, discipuladorMenuItems, isNavGroup, navHrefs, type NavGroup } from "@/lib/constants/navigation";
 import { findActiveHref, BASE_PATH } from "@/lib/constants/paths";
 
 const STORAGE_KEY = "sidebar-colapsado";
@@ -90,7 +90,7 @@ export function Sidebar() {
   }, [collapsed]);
 
   const menuItems =
-    user?.rol === "admin" ? adminMenuItems : user?.rol === "discipulador" ? discipuladorMenuItems : discipuloMenuItems;
+    user?.rol === "admin" ? adminMenuItems : user?.rol === "discipulador" ? discipuladorMenuItems : miembroMenuItems;
 
   if (loading) return null;
 
