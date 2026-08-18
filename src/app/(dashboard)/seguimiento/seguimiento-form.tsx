@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -66,14 +66,17 @@ export function SeguimientoForm({
     }
   }, [open, editing, defaultDiscipuladorId, form]);
 
-  const miembroId = form.watch("miembro_id");
-  useEffect(() => {
-    if (editing || !miembroId) return;
-    const miembro = miembros.find((m) => m.id === miembroId);
-    if (miembro?.etapa_id) {
-      form.setValue("etapa", miembro.etapa_id);
-    }
-  }, [miembroId, editing, miembros, form]);
+  const onSelectMiembro = useCallback((v: string | undefined, onChange: (v: string) => void) => {
+    const val = v ?? "";
+    onChange(val);
+    if (editing || !val) return;
+    const supabase = createClient();
+    supabase.from("miembros").select("etapa_id").eq("id", val).single().then(({ data }) => {
+      if (data?.etapa_id) {
+        form.setValue("etapa", data.etapa_id);
+      }
+    });
+  }, [editing, form]);
 
   const onSubmit = async (data: SeguimientoInput) => {
     const supabase = createClient();
@@ -130,7 +133,7 @@ export function SeguimientoForm({
                   <Select
                     value={field.value || undefined}
                     disabled={!!editing}
-                    onValueChange={(v) => field.onChange(v?.toString() ?? "")}
+                    onValueChange={(v) => onSelectMiembro(v?.toString(), field.onChange)}
                     items={miembros.map((d) => ({ value: d.id, label: `${d.apellido}, ${d.nombre}` }))}
                   >
                   <SelectTrigger><SelectValue placeholder="Seleccionar miembro" /></SelectTrigger>
