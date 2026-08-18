@@ -73,7 +73,7 @@ export function SeguimientoForm({
     const supabase = createClient();
     supabase.from("miembros").select("etapa_id").eq("id", val).single().then(({ data }) => {
       if (data?.etapa_id) {
-        form.setValue("etapa", data.etapa_id);
+        form.setValue("etapa", data.etapa_id, { shouldValidate: true, shouldDirty: true });
       }
     });
   }, [editing, form]);
@@ -177,6 +177,7 @@ export function SeguimientoForm({
                 name="etapa"
                 render={({ field }) => (
                   <Select
+                    key={`etapa-${field.value}`}
                     value={String(field.value)}
                     onValueChange={(v) => field.onChange(Number(v))}
                     items={etapas.map((e) => ({ value: String(e.id), label: `${e.id}. ${e.nombre}` }))}
