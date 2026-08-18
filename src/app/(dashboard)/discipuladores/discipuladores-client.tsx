@@ -186,7 +186,7 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:h-[calc(100vh-8rem)]">
       {/* LEFT PANEL */}
-      <div className={cn("w-full lg:shrink-0 flex flex-col gap-4", listaReducida ? "lg:w-[250px]" : "lg:w-[418px]")}>
+      <div className={cn("w-full lg:shrink-0 flex flex-col gap-4", listaReducida ? "lg:w-[250px]" : "lg:w-[440px]")}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-xl font-bold">Discipuladores</h1>
