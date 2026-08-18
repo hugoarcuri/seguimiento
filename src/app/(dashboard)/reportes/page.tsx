@@ -228,7 +228,7 @@ export default function ReportesPage() {
       const oracionesPendientes = oraciones.filter((o) => o.miembro_id === d.id && o.estado === "pendiente").length;
 
       const salud = calcularSalud({
-        encuentrosMes: agendaRealizada.filter((a) => a.discipulo_id === d.id && enPeriodo(a.fecha)).length,
+        encuentrosMes: agendaRealizada.filter((a) => a.miembro_id === d.id && enPeriodo(a.fecha)).length,
         etapa: d.etapa_id,
         bautizado: d.bautizado,
         es_miembro: d.es_miembro,

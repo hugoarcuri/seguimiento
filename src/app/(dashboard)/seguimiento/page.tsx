@@ -545,7 +545,7 @@ export default function SeguimientoPage() {
         onOpenChange={setDialogOpen}
         editing={editing}
         onSaved={fetchData}
-        discipulos={miembros}
+        miembros={miembros}
         discipuladores={discipuladores}
         etapas={etapas}
         defaultDiscipuladorId={isAdmin ? undefined : currentUserId}
