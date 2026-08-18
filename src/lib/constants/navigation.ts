@@ -6,7 +6,6 @@ import {
   CalendarCheck,
   MessagesSquare,
   Settings,
-  User,
   Flame,
   Map,
   FileBarChart,
@@ -106,7 +105,6 @@ export const discipuladorMenuItems: NavItem[] = [
   { href: "/agenda", label: "Agenda", icon: CalendarCheck },
   { href: "/oracion", label: "Oración", icon: MessagesSquare },
   { href: "/estudios-biblicos", label: "Estudios Bíblicos", icon: BookOpen },
-  { href: "/perfil", label: "Mi Perfil", icon: User },
 ];
 
 export function getMenuItems(rol?: string): NavItem[] {

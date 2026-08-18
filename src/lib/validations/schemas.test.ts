@@ -76,7 +76,7 @@ describe("miembroSchema", () => {
 
 describe("agendaSchema", () => {
   it("requiere fecha y tema", () => {
-    const base = { discipulo_id: "00000000-0000-0000-0000-000000000000" };
+    const base = { miembro_id: "00000000-0000-0000-0000-000000000000" };
     expect(agendaSchema.safeParse({ ...base, fecha: "", tema_tratado: "X" }).success).toBe(false);
     expect(agendaSchema.safeParse({ ...base, fecha: "2026-08-01", tema_tratado: "X" }).success).toBe(true);
   });
@@ -84,12 +84,12 @@ describe("agendaSchema", () => {
 
 describe("oracionSchema", () => {
   it("define estado por defecto pendiente", () => {
-    const parsed = oracionSchema.parse({ discipulo_id: "00000000-0000-0000-0000-000000000000", pedido: "Salud" });
+    const parsed = oracionSchema.parse({ miembro_id: "00000000-0000-0000-0000-000000000000", pedido: "Salud" });
     expect(parsed.estado).toBe("pendiente");
   });
 
   it("rechaza un pedido vacío", () => {
-    const res = oracionSchema.safeParse({ discipulo_id: "00000000-0000-0000-0000-000000000000", pedido: "" });
+    const res = oracionSchema.safeParse({ miembro_id: "00000000-0000-0000-0000-000000000000", pedido: "" });
     expect(res.success).toBe(false);
   });
 });
