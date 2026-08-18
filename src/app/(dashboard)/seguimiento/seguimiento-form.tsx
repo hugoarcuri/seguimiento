@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -47,6 +47,8 @@ export function SeguimientoForm({
     },
   });
 
+  const [localEtapa, setLocalEtapa] = useState(1);
+
   useEffect(() => {
     if (!open) return;
     if (editing) {
@@ -56,6 +58,7 @@ export function SeguimientoForm({
         etapa: editing.etapa,
         fecha_inicio: editing.fecha_inicio?.slice(0, 10) || new Date().toISOString().split("T")[0],
       });
+      setLocalEtapa(editing.etapa);
     } else {
       form.reset({
         miembro_id: "",
@@ -63,6 +66,7 @@ export function SeguimientoForm({
         etapa: 1,
         fecha_inicio: new Date().toISOString().split("T")[0],
       });
+      setLocalEtapa(1);
     }
   }, [open, editing, defaultDiscipuladorId, form]);
 
@@ -72,17 +76,20 @@ export function SeguimientoForm({
     if (editing || !val) return;
     const fromProp = miembros.find((m) => m.id === val)?.etapa_id;
     if (fromProp) {
+      setLocalEtapa(fromProp);
       form.setValue("etapa", fromProp, { shouldValidate: true, shouldDirty: true });
       return;
     }
     const supabase = createClient();
     const { data } = await supabase.from("miembros").select("etapa_id").eq("id", val).single();
     if (data?.etapa_id) {
+      setLocalEtapa(data.etapa_id);
       form.setValue("etapa", data.etapa_id, { shouldValidate: true, shouldDirty: true });
       return;
     }
     const { data: data2 } = await supabase.from("discipulos").select("etapa_id").eq("id", val).single();
     if (data2?.etapa_id) {
+      setLocalEtapa(data2.etapa_id);
       form.setValue("etapa", data2.etapa_id, { shouldValidate: true, shouldDirty: true });
     }
   }, [editing, miembros, form]);
@@ -186,9 +193,12 @@ export function SeguimientoForm({
                 name="etapa"
                 render={({ field }) => (
                   <Select
-                    key={`etapa-${field.value}`}
-                    value={String(field.value)}
-                    onValueChange={(v) => field.onChange(Number(v))}
+                    value={String(localEtapa)}
+                    onValueChange={(v) => {
+                      const n = Number(v);
+                      setLocalEtapa(n);
+                      field.onChange(n);
+                    }}
                     items={etapas.map((e) => ({ value: String(e.id), label: `${e.id}. ${e.nombre}` }))}
                   >
                     <SelectTrigger><SelectValue /></SelectTrigger>
