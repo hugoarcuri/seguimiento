@@ -19,7 +19,7 @@ interface SeguimientoFormProps {
   onOpenChange: (open: boolean) => void;
   editing: Seguimiento | null;
   onSaved: () => void;
-  miembros: Array<{ id: string; nombre: string; apellido: string }>;
+  miembros: Array<{ id: string; nombre: string; apellido: string; etapa_id?: number }>;
   discipuladores: Array<{ id: string; nombre: string; apellido: string }>;
   etapas: Etapa[];
   defaultDiscipuladorId?: string;
@@ -65,6 +65,15 @@ export function SeguimientoForm({
       });
     }
   }, [open, editing, defaultDiscipuladorId, form]);
+
+  const miembroId = form.watch("miembro_id");
+  useEffect(() => {
+    if (editing || !miembroId) return;
+    const miembro = miembros.find((m) => m.id === miembroId);
+    if (miembro?.etapa_id) {
+      form.setValue("etapa", miembro.etapa_id);
+    }
+  }, [miembroId, editing, miembros, form]);
 
   const onSubmit = async (data: SeguimientoInput) => {
     const supabase = createClient();

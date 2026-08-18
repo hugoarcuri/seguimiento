@@ -40,7 +40,7 @@ export default function SeguimientoPage() {
   const [seguimientos, setSeguimientos] = useState<SeguimientoFila[]>([]);
   const [proximoEncuentroPorMiembro, setProximoEncuentroPorMiembro] = useState<Record<string, EncuentroProximo>>({});
   const [encuentrosMesPorMiembro, setEncuentrosMesPorMiembro] = useState<Record<string, number>>({});
-  const [miembros, setMiembros] = useState<Array<{ id: string; nombre: string; apellido: string }>>([]);
+  const [miembros, setMiembros] = useState<Array<{ id: string; nombre: string; apellido: string; etapa_id?: number }>>([]);
   const [discipuladores, setDiscipuladores] = useState<Array<{ id: string; nombre: string; apellido: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -73,7 +73,7 @@ export default function SeguimientoPage() {
 
     let miembrosQuery = supabase
       .from("miembros")
-      .select("id, nombre, apellido")
+      .select("id, nombre, apellido, etapa_id")
       .order("apellido", { ascending: true });
     if (!admin) miembrosQuery = miembrosQuery.eq("lider_id", authUser.id);
 

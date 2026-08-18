@@ -5,7 +5,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 const STORAGE_KEY = "app:font-scale:v1";
 const MIN_SCALE = 0.7;
 const MAX_SCALE = 1.5;
-const BASE_PERCENT = 115;
+const BASE_PERCENT = 105;
 
 interface FontSizeContextType {
   scale: number;

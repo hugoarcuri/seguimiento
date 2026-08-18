@@ -203,7 +203,7 @@
   html {
     @apply font-sans;
     overflow-x: clip;
-    font-size: 115%;
+    font-size: 105%;
   }
   body {
     @apply bg-background text-foreground;
