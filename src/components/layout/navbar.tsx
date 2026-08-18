@@ -41,6 +41,15 @@ export function Navbar() {
             <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
             <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
           </Button>
+          {user?.rol && (
+            <Badge variant="secondary" className="capitalize gap-1.5 text-sm px-3 py-1 hidden sm:inline-flex">
+              {(() => {
+                const Icon = rolIcon[user.rol as keyof typeof rolIcon] || Shield;
+                return <Icon className="h-4 w-4" />;
+              })()}
+              {ROL_LABELS[user.rol] || user.rol}
+            </Badge>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
@@ -63,17 +72,6 @@ export function Navbar() {
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
                 </div>
               </div>
-              {user?.rol && (
-                <div className="px-2 pb-2">
-                  <Badge variant="secondary" className="capitalize gap-1">
-                    {(() => {
-                      const Icon = rolIcon[user.rol as keyof typeof rolIcon] || Shield;
-                      return <Icon className="h-3 w-3" />;
-                    })()}
-                    {ROL_LABELS[user.rol] || user.rol}
-                  </Badge>
-                </div>
-              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem render={<Link href="/perfil" />}>
                 <User className="mr-2 h-4 w-4" />
