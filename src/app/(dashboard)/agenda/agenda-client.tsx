@@ -48,15 +48,15 @@ import { Badge } from "@/components/ui/badge";
 import type { Agenda } from "@/types/database";
 
 interface AgendaClientProps {
-  agendas: (Agenda & { discipulos?: { nombre: string; apellido: string } })[];
-  setAgendas: React.Dispatch<React.SetStateAction<(Agenda & { discipulos?: { nombre: string; apellido: string } })[]>>;
-  discipulos: Array<{ id: string; nombre: string; apellido: string }>;
+  agendas: (Agenda & { miembros?: { nombre: string; apellido: string } })[];
+  setAgendas: React.Dispatch<React.SetStateAction<(Agenda & { miembros?: { nombre: string; apellido: string } })[]>>;
+  miembros: Array<{ id: string; nombre: string; apellido: string }>;
 }
 
 export function AgendaClient({
   agendas,
   setAgendas,
-  discipulos,
+  miembros,
 }: AgendaClientProps) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Agenda | null>(null);
@@ -68,14 +68,14 @@ export function AgendaClient({
 
   const openCreate = () => {
     setEditing(null);
-    form.reset({ discipulo_id: "", fecha: "", hora: "", lugar: "", tema_tratado: "", material_utilizado: "", compromisos: "", notas: "", proximo_encuentro: "" });
+    form.reset({ miembro_id: "", fecha: "", hora: "", lugar: "", tema_tratado: "", material_utilizado: "", compromisos: "", notas: "", proximo_encuentro: "" });
     setOpen(true);
   };
 
-  const openEdit = (agenda: Agenda & { discipulos?: { nombre: string; apellido: string } }) => {
+  const openEdit = (agenda: Agenda & { miembros?: { nombre: string; apellido: string } }) => {
     setEditing(agenda);
     form.reset({
-      discipulo_id: agenda.discipulo_id,
+      miembro_id: agenda.miembro_id,
       fecha: agenda.fecha?.split("T")[0] || "",
       hora: agenda.hora || "",
       lugar: agenda.lugar || "",
@@ -105,8 +105,8 @@ export function AgendaClient({
       proximo_encuentro: data.proximo_encuentro || null,
     };
     const { error, data: result } = editing
-      ? await supabase.from("agenda").update(payload).eq("id", editing.id).select("*, discipulos:discipulo_id(nombre, apellido)").single()
-      : await supabase.from("agenda").insert(payload).select("*, discipulos:discipulo_id(nombre, apellido)").single();
+      ? await supabase.from("agenda").update(payload).eq("id", editing.id).select("*, miembros:miembro_id(nombre, apellido)").single()
+      : await supabase.from("agenda").insert(payload).select("*, miembros:miembro_id(nombre, apellido)").single();
 
     if (error) {
       toast.error(editing ? "Error al actualizar la cita" : "Error al registrar la cita");
@@ -129,7 +129,7 @@ export function AgendaClient({
     setAgendas((prev) => prev.filter((e) => e.id !== deleteId));
   };
 
-  const toggleRealizada = async (agenda: Agenda & { discipulos?: { nombre: string; apellido: string } }) => {
+  const toggleRealizada = async (agenda: Agenda & { miembros?: { nombre: string; apellido: string } }) => {
     const nueva = !agenda.realizada;
     const { error } = await createClient().from("agenda").update({ realizada: nueva }).eq("id", agenda.id);
     if (error) { toast.error("Error al actualizar la cita"); return; }
@@ -154,17 +154,17 @@ export function AgendaClient({
             </DialogHeader>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
-                <Label>Discípulo *</Label>
+                <Label>Miembro *</Label>
                 <Controller
                   control={form.control}
-                  name="discipulo_id"
+                  name="miembro_id"
                   render={({ field }) => (
-                    <Select value={field.value || undefined} onValueChange={(value) => field.onChange(value?.toString() ?? "")} items={discipulos.map((d) => ({ value: d.id, label: `${d.apellido}, ${d.nombre}` }))}>
+                    <Select value={field.value || undefined} onValueChange={(value) => field.onChange(value?.toString() ?? "")} items={miembros.map((d) => ({ value: d.id, label: `${d.apellido}, ${d.nombre}` }))}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar discípulo" />
+                        <SelectValue placeholder="Seleccionar miembro" />
                       </SelectTrigger>
                       <SelectContent>
-                        {discipulos.map((d) => (
+                        {miembros.map((d) => (
                           <SelectItem key={d.id} value={d.id}>
                             {d.apellido}, {d.nombre}
                           </SelectItem>
@@ -173,9 +173,9 @@ export function AgendaClient({
                     </Select>
                   )}
                 />
-                {form.formState.errors.discipulo_id && (
+                {form.formState.errors.miembro_id && (
                   <p className="text-sm text-destructive">
-                    {form.formState.errors.discipulo_id.message}
+                    {form.formState.errors.miembro_id.message}
                   </p>
                 )}
               </div>
@@ -260,8 +260,8 @@ export function AgendaClient({
                   </div>
                   <div className="space-y-1 text-sm">
                     <p className="font-medium">
-                      {agenda.discipulos?.nombre
-                        ? `${agenda.discipulos.apellido}, ${agenda.discipulos.nombre}`
+                      {agenda.miembros?.nombre
+                        ? `${agenda.miembros.apellido}, ${agenda.miembros.nombre}`
                         : "—"}
                     </p>
                     {agenda.tema_tratado && <p className="text-muted-foreground break-words">Tema: {agenda.tema_tratado}</p>}
@@ -289,7 +289,7 @@ export function AgendaClient({
               <TableHeader>
                 <TableRow>
                   <TableHead>Fecha</TableHead>
-                  <TableHead>Discípulo</TableHead>
+                   <TableHead>Miembro</TableHead>
                   <TableHead>Tema</TableHead>
                   <TableHead>Lugar</TableHead>
                   <TableHead>Compromisos</TableHead>
@@ -319,8 +319,8 @@ export function AgendaClient({
                         </div>
                       </TableCell>
                       <TableCell>
-                        {agenda.discipulos?.nombre
-                          ? `${agenda.discipulos.apellido}, ${agenda.discipulos.nombre}`
+                        {agenda.miembros?.nombre
+                          ? `${agenda.miembros.apellido}, ${agenda.miembros.nombre}`
                           : "—"}
                       </TableCell>
                       <TableCell className="max-w-[200px] truncate">

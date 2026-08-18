@@ -54,7 +54,7 @@ import { estadoColors } from "@/lib/utils";
 import { SALUD_CONFIG, ACCION_LABEL, type SaludResultado } from "@/lib/discipulo-health";
 import { CAMPOS_EVALUACION, decodificarCampoEvaluacion, calcularProgreso } from "../seguimiento/seguimiento-constants";
 import type {
-  Discipulo,
+  Miembro,
   Agenda,
   Oracion,
   Tarea,
@@ -65,8 +65,8 @@ import type {
   SeguimientoObjetivo,
 } from "@/types/database";
 
-export interface DetalleDiscipulo {
-  discipulo: Discipulo;
+export interface DetalleMiembro {
+  miembro: Miembro;
   etapas: Etapa[];
   agendas: Agenda[];
   oraciones: Oracion[];
@@ -120,8 +120,8 @@ function FilaDato({ label, valor }: { label: string; valor?: ReactNode }) {
   );
 }
 
-export function DiscipuloDetailClient({
-  discipulo: initialDiscipulo,
+export function MiembroDetailClient({
+  miembro: initialMiembro,
   etapas,
   agendas: initialAgendas,
   oraciones: initialOraciones,
@@ -134,32 +134,32 @@ export function DiscipuloDetailClient({
   discipulador,
   discipuladores = [],
   onCambio,
-}: DetalleDiscipulo) {
+}: DetalleMiembro) {
   const router = useRouter();
   const supabase = createClient();
-  const etapaActual = etapas.find((e) => e.id === initialDiscipulo.etapa_id);
-  const [discipulo, setDiscipulo] = useState(initialDiscipulo);
+  const etapaActual = etapas.find((e) => e.id === initialMiembro.etapa_id);
+  const [miembro, setMiembro] = useState(initialMiembro);
   const [subiendoAvatar, setSubiendoAvatar] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [editandoDatos, setEditandoDatos] = useState(false);
   const [guardandoDatos, setGuardandoDatos] = useState(false);
   const [draft, setDraft] = useState({
-    nombre: initialDiscipulo.nombre ?? "",
-    apellido: initialDiscipulo.apellido ?? "",
-    sexo: initialDiscipulo.sexo ?? "",
-    fecha_nacimiento: initialDiscipulo.fecha_nacimiento?.split("T")[0] ?? "",
-    telefono: initialDiscipulo.telefono ?? "",
-    email: initialDiscipulo.email ?? "",
-    direccion: initialDiscipulo.direccion ?? "",
-    convive_con: initialDiscipulo.convive_con ?? "",
-    etapa_id: initialDiscipulo.etapa_id ?? 1,
-    lider_id: initialDiscipulo.lider_id ?? "",
-    fecha_conversion: initialDiscipulo.fecha_conversion?.split("T")[0] ?? "",
-    fecha_bautismo: initialDiscipulo.fecha_bautismo?.split("T")[0] ?? "",
-    bautizado: initialDiscipulo.bautizado ?? false,
-    es_miembro: initialDiscipulo.es_miembro ?? false,
-    observaciones: initialDiscipulo.observaciones ?? "",
+    nombre: initialMiembro.nombre ?? "",
+    apellido: initialMiembro.apellido ?? "",
+    sexo: initialMiembro.sexo ?? "",
+    fecha_nacimiento: initialMiembro.fecha_nacimiento?.split("T")[0] ?? "",
+    telefono: initialMiembro.telefono ?? "",
+    email: initialMiembro.email ?? "",
+    direccion: initialMiembro.direccion ?? "",
+    convive_con: initialMiembro.convive_con ?? "",
+    etapa_id: initialMiembro.etapa_id ?? 1,
+    lider_id: initialMiembro.lider_id ?? "",
+    fecha_conversion: initialMiembro.fecha_conversion?.split("T")[0] ?? "",
+    fecha_bautismo: initialMiembro.fecha_bautismo?.split("T")[0] ?? "",
+    bautizado: initialMiembro.bautizado ?? false,
+    es_miembro: initialMiembro.es_miembro ?? false,
+    observaciones: initialMiembro.observaciones ?? "",
   });
 
   const [agendas, setAgendas] = useState(initialAgendas);
@@ -192,36 +192,36 @@ export function DiscipuloDetailClient({
     if (!file) return;
     setSubiendoAvatar(true);
     const ext = file.name.split(".").pop();
-    const path = `${discipulo.id}.${ext}`;
+    const path = `${miembro.id}.${ext}`;
     const { error: uploadError } = await supabase.storage
       .from("discipulo-avatars")
       .upload(path, file, { upsert: true });
     if (uploadError) { toast.error("Error al subir: " + uploadError.message); setSubiendoAvatar(false); return; }
     const { data: urlData } = supabase.storage.from("discipulo-avatars").getPublicUrl(path);
-    const { error: updateError } = await supabase.from("discipulos").update({ avatar_url: urlData.publicUrl }).eq("id", discipulo.id);
+    const { error: updateError } = await supabase.from("miembros").update({ avatar_url: urlData.publicUrl }).eq("id", miembro.id);
     if (updateError) { toast.error("Error al guardar"); setSubiendoAvatar(false); return; }
-    setDiscipulo((prev) => ({ ...prev, avatar_url: urlData.publicUrl }));
+    setMiembro((prev) => ({ ...prev, avatar_url: urlData.publicUrl }));
     setSubiendoAvatar(false);
     toast.success("Foto actualizada");
   };
 
   const iniciarEdicionDatos = () => {
     setDraft({
-      nombre: discipulo.nombre ?? "",
-      apellido: discipulo.apellido ?? "",
-      sexo: discipulo.sexo ?? "",
-      fecha_nacimiento: discipulo.fecha_nacimiento?.split("T")[0] ?? "",
-      telefono: discipulo.telefono ?? "",
-      email: discipulo.email ?? "",
-      direccion: discipulo.direccion ?? "",
-      convive_con: discipulo.convive_con ?? "",
-      etapa_id: discipulo.etapa_id ?? 1,
-      lider_id: discipulo.lider_id ?? "",
-      fecha_conversion: discipulo.fecha_conversion?.split("T")[0] ?? "",
-      fecha_bautismo: discipulo.fecha_bautismo?.split("T")[0] ?? "",
-      bautizado: discipulo.bautizado ?? false,
-      es_miembro: discipulo.es_miembro ?? false,
-      observaciones: discipulo.observaciones ?? "",
+      nombre: miembro.nombre ?? "",
+      apellido: miembro.apellido ?? "",
+      sexo: miembro.sexo ?? "",
+      fecha_nacimiento: miembro.fecha_nacimiento?.split("T")[0] ?? "",
+      telefono: miembro.telefono ?? "",
+      email: miembro.email ?? "",
+      direccion: miembro.direccion ?? "",
+      convive_con: miembro.convive_con ?? "",
+      etapa_id: miembro.etapa_id ?? 1,
+      lider_id: miembro.lider_id ?? "",
+      fecha_conversion: miembro.fecha_conversion?.split("T")[0] ?? "",
+      fecha_bautismo: miembro.fecha_bautismo?.split("T")[0] ?? "",
+      bautizado: miembro.bautizado ?? false,
+      es_miembro: miembro.es_miembro ?? false,
+      observaciones: miembro.observaciones ?? "",
     });
     setEditandoDatos(true);
   };
@@ -249,13 +249,13 @@ export function DiscipuloDetailClient({
       es_miembro: draft.es_miembro,
       observaciones: draft.observaciones || null,
     };
-    const { error } = await supabase.from("discipulos").update(payload).eq("id", discipulo.id);
+    const { error } = await supabase.from("miembros").update(payload).eq("id", miembro.id);
     setGuardandoDatos(false);
     if (error) {
       toast.error("Error al guardar los datos");
       return;
     }
-    setDiscipulo((prev) => ({ ...prev, ...payload }) as Discipulo);
+    setMiembro((prev) => ({ ...prev, ...payload }) as Miembro);
     setEditandoDatos(false);
     toast.success("Datos guardados");
     onCambio?.();
@@ -271,8 +271,8 @@ export function DiscipuloDetailClient({
     const { error, data } = await supabase
       .from("agenda")
       .insert({
-        discipulo_id: discipulo.id,
-        lider_id: user?.id || discipulo.lider_id || null,
+        miembro_id: miembro.id,
+        lider_id: user?.id || miembro.lider_id || null,
         fecha: encuentroDraft.fecha,
         realizada: false,
         hora: encuentroDraft.hora || null,
@@ -299,8 +299,8 @@ export function DiscipuloDetailClient({
     const { error, data } = await supabase
       .from("oraciones")
       .insert({
-        discipulo_id: discipulo.id,
-        lider_id: user?.id || discipulo.lider_id || null,
+        miembro_id: miembro.id,
+        lider_id: user?.id || miembro.lider_id || null,
         fecha: hoyISO,
         pedido,
         estado: "pendiente",
@@ -393,9 +393,9 @@ export function DiscipuloDetailClient({
     const { error, data } = await supabase
       .from("seguimientos")
       .insert({
-        discipulo_id: discipulo.id,
-        discipulador_id: discipulo.lider_id || user.id,
-        etapa: discipulo.etapa_id,
+        miembro_id: miembro.id,
+        discipulador_id: miembro.lider_id || user.id,
+        etapa: miembro.etapa_id,
         estado: "activo",
         fecha_inicio: hoyISO,
         progreso: 0,
@@ -421,7 +421,7 @@ export function DiscipuloDetailClient({
         return;
       case "pastorear_bautismo":
       case "pastorear_membresia":
-        router.push(`/discipulos/editar?id=${discipulo.id}`);
+        router.push(`/miembros/editar?id=${miembro.id}`);
         return;
       case "iniciar_seguimiento":
         iniciarSeguimiento();
@@ -438,7 +438,7 @@ export function DiscipuloDetailClient({
       {/* BARRA SUPERIOR */}
       <div className="flex items-center justify-between">
         <Link
-          href="/discipulos"
+          href="/miembros"
           className="inline-flex items-center justify-center rounded-lg border border-border bg-background hover:bg-muted size-11 md:size-9"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -453,7 +453,7 @@ export function DiscipuloDetailClient({
             </Link>
           )}
           <Link
-            href={`/discipulos/editar?id=${discipulo.id}`}
+            href={`/miembros/editar?id=${miembro.id}`}
             className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/80 min-h-11 md:min-h-8 gap-1.5 px-3 text-sm font-medium shrink-0"
           >
             <Edit className="h-4 w-4" />
@@ -465,11 +465,11 @@ export function DiscipuloDetailClient({
       {/* PERFIL */}
       <div className="flex flex-col items-center gap-3 text-center">
         <div className="relative group shrink-0">
-          {discipulo.avatar_url ? (
-            <img src={discipulo.avatar_url} alt="" className="w-[115px] h-[115px] rounded-full object-cover ring-4 ring-background shadow-lg" />
+          {miembro.avatar_url ? (
+            <img src={miembro.avatar_url} alt="" className="w-[115px] h-[115px] rounded-full object-cover ring-4 ring-background shadow-lg" />
           ) : (
             <div className="w-[115px] h-[115px] rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-4xl ring-4 ring-background shadow-lg">
-              {discipulo.nombre?.charAt(0)?.toUpperCase()}{discipulo.apellido?.charAt(0)?.toUpperCase()}
+              {miembro.nombre?.charAt(0)?.toUpperCase()}{miembro.apellido?.charAt(0)?.toUpperCase()}
             </div>
           )}
           <button
@@ -484,8 +484,8 @@ export function DiscipuloDetailClient({
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-2">
-          <h1 className="text-2xl font-bold">{discipulo.apellido}, {discipulo.nombre}</h1>
-          <span className={cn("h-3 w-3 rounded-full shrink-0", estadoColors[discipulo.estado])} />
+          <h1 className="text-2xl font-bold">{miembro.apellido}, {miembro.nombre}</h1>
+          <span className={cn("h-3 w-3 rounded-full shrink-0", estadoColors[miembro.estado])} />
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-2">
@@ -496,18 +496,18 @@ export function DiscipuloDetailClient({
             </span>
           )}
           <Badge variant="secondary">{etapaActual?.nombre || "Sin etapa"}</Badge>
-          {discipulo.etapa_id >= 2 && !discipulo.bautizado && (
+          {miembro.etapa_id >= 2 && !miembro.bautizado && (
             <Badge variant="destructive">Bautismo pend.</Badge>
           )}
-          {discipulo.etapa_id >= 2 && !discipulo.es_miembro && (
+          {miembro.etapa_id >= 2 && !miembro.es_miembro && (
             <Badge variant="destructive">Membresía pend.</Badge>
           )}
         </div>
 
         <p className="text-sm text-muted-foreground max-w-sm truncate">
-          {discipulo.telefono && <span className="inline-flex items-center gap-1"><Phone className="h-3.5 w-3.5" />{discipulo.telefono}</span>}
-          {discipulo.telefono && discipulo.email && <span className="mx-2">·</span>}
-          {discipulo.email && <span className="inline-flex items-center gap-1"><Mail className="h-3.5 w-3.5" />{discipulo.email}</span>}
+          {miembro.telefono && <span className="inline-flex items-center gap-1"><Phone className="h-3.5 w-3.5" />{miembro.telefono}</span>}
+          {miembro.telefono && miembro.email && <span className="mx-2">·</span>}
+          {miembro.email && <span className="inline-flex items-center gap-1"><Mail className="h-3.5 w-3.5" />{miembro.email}</span>}
         </p>
       </div>
 
@@ -645,36 +645,36 @@ export function DiscipuloDetailClient({
               </div>
             ) : (
               <div className="grid gap-x-6 gap-y-3 @sm:grid-cols-2">
-                <FilaDato label="Nombre" valor={discipulo.nombre} />
-                <FilaDato label="Apellido" valor={discipulo.apellido} />
-                <FilaDato label="Sexo" valor={discipulo.sexo === "F" ? "Femenino" : discipulo.sexo === "M" ? "Masculino" : undefined} />
+                <FilaDato label="Nombre" valor={miembro.nombre} />
+                <FilaDato label="Apellido" valor={miembro.apellido} />
+                <FilaDato label="Sexo" valor={miembro.sexo === "F" ? "Femenino" : miembro.sexo === "M" ? "Masculino" : undefined} />
                 <FilaDato
                   label="Nacimiento"
                   valor={
-                    discipulo.fecha_nacimiento
-                      ? `${fechaCorta(discipulo.fecha_nacimiento)}${edadDesde(discipulo.fecha_nacimiento) ? ` · ${edadDesde(discipulo.fecha_nacimiento)}` : ""}`
+                    miembro.fecha_nacimiento
+                      ? `${fechaCorta(miembro.fecha_nacimiento)}${edadDesde(miembro.fecha_nacimiento) ? ` · ${edadDesde(miembro.fecha_nacimiento)}` : ""}`
                       : undefined
                   }
                 />
-                <FilaDato label="Teléfono" valor={discipulo.telefono} />
-                <FilaDato label="Email" valor={discipulo.email} />
-                <FilaDato label="Dirección" valor={discipulo.direccion} />
-                <FilaDato label="¿Con quién vive?" valor={discipulo.convive_con} />
+                <FilaDato label="Teléfono" valor={miembro.telefono} />
+                <FilaDato label="Email" valor={miembro.email} />
+                <FilaDato label="Dirección" valor={miembro.direccion} />
+                <FilaDato label="¿Con quién vive?" valor={miembro.convive_con} />
                 <FilaDato label="Discipulador" valor={discipulador ? `${discipulador.apellido}, ${discipulador.nombre}` : undefined} />
                 <FilaDato label="Etapa actual" valor={etapaActual?.nombre} />
-                <FilaDato label="Conversión" valor={discipulo.fecha_conversion ? fechaCorta(discipulo.fecha_conversion) : undefined} />
+                <FilaDato label="Conversión" valor={miembro.fecha_conversion ? fechaCorta(miembro.fecha_conversion) : undefined} />
                 <FilaDato
                   label="Bautizado"
                   valor={
-                    discipulo.bautizado
-                      ? `Sí${discipulo.fecha_bautismo ? ` · ${fechaCorta(discipulo.fecha_bautismo)}` : ""}`
-                      : discipulo.bautizado === false
+                    miembro.bautizado
+                      ? `Sí${miembro.fecha_bautismo ? ` · ${fechaCorta(miembro.fecha_bautismo)}` : ""}`
+                      : miembro.bautizado === false
                         ? "No"
                         : undefined
                   }
                 />
-                <FilaDato label="Es miembro" valor={discipulo.es_miembro === true ? "Sí" : discipulo.es_miembro === false ? "No" : undefined} />
-                <FilaDato label="Observaciones" valor={discipulo.observaciones || undefined} />
+                <FilaDato label="Es miembro" valor={miembro.es_miembro === true ? "Sí" : miembro.es_miembro === false ? "No" : undefined} />
+                <FilaDato label="Observaciones" valor={miembro.observaciones || undefined} />
               </div>
             )}
           </CardContent>
@@ -852,7 +852,7 @@ export function DiscipuloDetailClient({
       {!seguimiento && (
         <div className="rounded-lg border border-red-200 bg-red-50/50 dark:border-red-900 dark:bg-red-950/20 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
           <p className="text-sm flex-1">
-            <strong>Sin seguimiento activo.</strong> Iniciá un seguimiento para empezar a pastorear a {discipulo.nombre}.
+            <strong>Sin seguimiento activo.</strong> Iniciá un seguimiento para empezar a pastorear a {miembro.nombre}.
           </p>
           <Button size="sm" onClick={iniciarSeguimiento}>Iniciar seguimiento</Button>
         </div>
@@ -1160,7 +1160,7 @@ export function DiscipuloDetailClient({
           <DialogHeader>
             <DialogTitle>Registrar encuentro</DialogTitle>
             <DialogDescription>
-              Encuentro con {discipulo.nombre} {discipulo.apellido}
+              Encuentro con {miembro.nombre} {miembro.apellido}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
@@ -1203,7 +1203,7 @@ export function DiscipuloDetailClient({
           <DialogHeader>
             <DialogTitle>Pedido de oración</DialogTitle>
             <DialogDescription>
-              Agregar un pedido para {discipulo.nombre} {discipulo.apellido}
+              Agregar un pedido para {miembro.nombre} {miembro.apellido}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1">

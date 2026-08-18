@@ -50,7 +50,7 @@ const FORMATO_EJEMPLO_TEXTO = `apellido\tnombre\ttelefono\temail\tetapa\testado
 García\tJuan\t1123456789\tjuan@gmail.com\t1\tactivo
 Pérez\tMaría\t1198765432\tmaria@gmail.com\t2\tactivo`;
 
-export function ImportarDiscipulos({ etapas, onImportado }: { etapas: Etapa[]; onImportado?: () => void }) {
+export function ImportarMiembros({ etapas, onImportado }: { etapas: Etapa[]; onImportado?: () => void }) {
   const router = useRouter();
   const fileInput = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
@@ -197,8 +197,7 @@ export function ImportarDiscipulos({ etapas, onImportado }: { etapas: Etapa[]; o
     let err = 0;
     const errores: string[] = [];
 
-    // Evita duplicados por email (sin constraint en la DB)
-    const { data: existentes } = await supabase.from("discipulos").select("email");
+    const { data: existentes } = await supabase.from("miembros").select("email");
     const emailsExistentes = new Set<string>();
     (existentes || []).forEach((d) => { if (d.email) emailsExistentes.add(String(d.email).toLowerCase()); });
 
@@ -215,7 +214,7 @@ export function ImportarDiscipulos({ etapas, onImportado }: { etapas: Etapa[]; o
         emailsExistentes.add(emailNormalizado);
       }
 
-      const { error } = await supabase.from("discipulos").insert({
+      const { error } = await supabase.from("miembros").insert({
         lider_id: user.id,
         apellido: fila.apellido,
         nombre: fila.nombre,
@@ -243,12 +242,12 @@ export function ImportarDiscipulos({ etapas, onImportado }: { etapas: Etapa[]; o
     setImportando(false);
 
     if (ok > 0) {
-      toast.success(`${ok} discípulos importados`);
+      toast.success(`${ok} miembros importados`);
       router.refresh();
       onImportado?.();
     }
     if (err > 0) {
-      toast.error(`${err} discípulos no pudieron importarse`);
+      toast.error(`${err} miembros no pudieron importarse`);
     }
   };
 
@@ -261,8 +260,8 @@ export function ImportarDiscipulos({ etapas, onImportado }: { etapas: Etapa[]; o
       </Button>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Importar Discípulos</DialogTitle>
-          <DialogDescription>Importá discípulos desde texto copiado o archivo Excel/CSV</DialogDescription>
+          <DialogTitle>Importar Miembros</DialogTitle>
+          <DialogDescription>Importá miembros desde texto copiado o archivo Excel/CSV</DialogDescription>
         </DialogHeader>
 
         {resultado ? (
@@ -368,7 +367,7 @@ export function ImportarDiscipulos({ etapas, onImportado }: { etapas: Etapa[]; o
               <Button variant="outline" onClick={() => { setFilas([]); setTexto(""); }}>Cancelar</Button>
               <Button onClick={handleImportar} disabled={importando || validadas.length === 0}>
                 {importando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Importar {validadas.length} discípulos
+                Importar {validadas.length} miembros
               </Button>
             </DialogFooter>
           </div>
@@ -377,3 +376,5 @@ export function ImportarDiscipulos({ etapas, onImportado }: { etapas: Etapa[]; o
     </Dialog>
   );
 }
+
+export { ImportarMiembros as ImportarDiscipulos };

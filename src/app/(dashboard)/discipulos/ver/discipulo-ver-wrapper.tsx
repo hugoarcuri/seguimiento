@@ -3,18 +3,18 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { DiscipuloDetailClient } from "../discipulo-detail-client";
+import { MiembroDetailClient } from "../discipulo-detail-client";
 import { calcularSalud, contarEncuentrosMes } from "@/lib/discipulo-health";
 import type {
-  Discipulo, Etapa, Agenda, Oracion, Tarea, Timeline, Seguimiento,
+  Miembro, Etapa, Agenda, Oracion, Tarea, Timeline, Seguimiento,
   SeguimientoEvaluacion, SeguimientoObjetivo,
 } from "@/types/database";
 
-function DiscipuloVerInner() {
+function MiembroVerInner() {
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
   const [data, setData] = useState<{
-    discipulo: Discipulo;
+    miembro: Miembro;
     etapas: Etapa[];
     agendas: Agenda[];
     oraciones: Oracion[];
@@ -37,25 +37,25 @@ function DiscipuloVerInner() {
     const supabase = createClient();
     (async () => {
       try {
-        const [discipuloRes, etapasRes, agendasRes, oracionesRes, tareasRes, timelineRes, seguimientosRes] = await Promise.all([
-          supabase.from("discipulos").select("*").eq("id", id).single(),
+        const [miembroRes, etapasRes, agendasRes, oracionesRes, tareasRes, timelineRes, seguimientosRes] = await Promise.all([
+          supabase.from("miembros").select("*").eq("id", id).single(),
           supabase.from("etapas").select("*").order("orden", { ascending: true }),
-          supabase.from("agenda").select("*").eq("discipulo_id", id).order("fecha", { ascending: false }),
-          supabase.from("oraciones").select("*").eq("discipulo_id", id).order("fecha", { ascending: false }),
-          supabase.from("tareas").select("*").eq("discipulo_id", id).order("created_at", { ascending: false }),
-          supabase.from("timeline").select("*").eq("discipulo_id", id).order("created_at", { ascending: false }),
-          supabase.from("seguimientos").select("*").eq("discipulo_id", id).order("created_at", { ascending: false }),
+          supabase.from("agenda").select("*").eq("miembro_id", id).order("fecha", { ascending: false }),
+          supabase.from("oraciones").select("*").eq("miembro_id", id).order("fecha", { ascending: false }),
+          supabase.from("tareas").select("*").eq("miembro_id", id).order("created_at", { ascending: false }),
+          supabase.from("timeline").select("*").eq("miembro_id", id).order("created_at", { ascending: false }),
+          supabase.from("seguimientos").select("*").eq("miembro_id", id).order("created_at", { ascending: false }),
         ]);
         if (cancelado) return;
-        if (!discipuloRes.data) { setLoading(false); return; }
-        const discipulo = discipuloRes.data as Discipulo;
+        if (!miembroRes.data) { setLoading(false); return; }
+        const miembro = miembroRes.data as Miembro;
         let discipulador: { nombre: string; apellido: string } | null = null;
         let discipuladores: Array<{ id: string; nombre: string; apellido: string }> = [];
-        if (discipulo.lider_id) {
+        if (miembro.lider_id) {
           const { data: liderRes } = await supabase
             .from("profiles")
             .select("nombre, apellido")
-            .eq("id", discipulo.lider_id)
+            .eq("id", miembro.lider_id)
             .maybeSingle();
           if (!cancelado && liderRes) discipulador = liderRes as { nombre: string; apellido: string };
         }
@@ -80,7 +80,7 @@ function DiscipuloVerInner() {
           }
         }
         setData({
-          discipulo,
+          miembro,
           etapas: etapasRes.data || [],
           agendas: agendasRes.data || [],
           oraciones: oracionesRes.data || [],
@@ -102,25 +102,25 @@ function DiscipuloVerInner() {
   }, [id]);
 
   if (loading) return <div className="flex items-center justify-center min-h-[50vh]"><p className="text-muted-foreground">Cargando...</p></div>;
-  if (!data) return <div className="flex items-center justify-center min-h-[50vh]"><p className="text-muted-foreground">Discípulo no encontrado</p></div>;
+  if (!data) return <div className="flex items-center justify-center min-h-[50vh]"><p className="text-muted-foreground">Miembro no encontrado</p></div>;
 
-  const { discipulo, agendas, oraciones, objetivos } = data;
+  const { miembro, agendas, oraciones, objetivos } = data;
   const salud = calcularSalud({
     encuentrosMes: contarEncuentrosMes(agendas.map((a) => ({ fecha: a.fecha, realizada: a.realizada }))),
-    etapa: discipulo.etapa_id,
-    bautizado: discipulo.bautizado ?? false,
-    es_miembro: discipulo.es_miembro ?? false,
+    etapa: miembro.etapa_id,
+    bautizado: miembro.bautizado ?? false,
+    es_miembro: miembro.es_miembro ?? false,
     objetivosPendientes: objetivos.filter((o) => !o.completado).length,
     oracionesPendientes: oraciones.filter((o) => o.estado !== "respondida").length,
   });
 
-  return <DiscipuloDetailClient key={discipulo.id} {...data} salud={salud} />;
+  return <MiembroDetailClient key={miembro.id} {...data} salud={salud} />;
 }
 
-export function DiscipuloVerWrapper() {
+export function MiembroVerWrapper() {
   return (
     <Suspense fallback={<div className="flex items-center justify-center min-h-[50vh]"><p className="text-muted-foreground">Cargando...</p></div>}>
-      <DiscipuloVerInner />
+      <MiembroVerInner />
     </Suspense>
   );
 }

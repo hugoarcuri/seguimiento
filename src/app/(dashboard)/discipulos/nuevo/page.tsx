@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { DiscipuloForm } from "../discipulo-form";
+import { MiembroForm } from "../discipulo-form";
 import type { Etapa } from "@/types/database";
 
-export default function NuevoDiscipuloPage() {
+export default function NuevoMiembroPage() {
   const [etapas, setEtapas] = useState<Etapa[]>([]);
   const [discipuladores, setDiscipuladores] = useState<Array<{ id: string; nombre: string; apellido: string }>>([]);
   const [loading, setLoading] = useState(true);
@@ -33,10 +33,10 @@ export default function NuevoDiscipuloPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Nuevo Discípulo</h1>
-        <p className="text-muted-foreground">Registra un nuevo discípulo en el sistema</p>
+        <h1 className="text-3xl font-bold">Nuevo Miembro</h1>
+        <p className="text-muted-foreground">Registra un nuevo miembro en el sistema</p>
       </div>
-      <DiscipuloForm etapas={etapas} discipuladores={discipuladores} />
+      <MiembroForm etapas={etapas} discipuladores={discipuladores} />
     </div>
   );
 }

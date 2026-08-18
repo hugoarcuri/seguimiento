@@ -3,14 +3,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { DiscipuladoresClient } from "./discipuladores-client";
-import type { Profile, Discipulo, Etapa } from "@/types/database";
+import type { Profile, Miembro, Etapa } from "@/types/database";
 import { useRequireRol } from "@/hooks/useRequireRol";
 import { useSyncMiembros } from "@/hooks/useSyncMiembros";
 
 export default function DiscipuladoresPage() {
   const { permitido, loading: autorizando } = useRequireRol(["admin"]);
   const [discipuladores, setDiscipuladores] = useState<Profile[]>([]);
-  const [discipulos, setDiscipulos] = useState<Discipulo[]>([]);
+  const [miembros, setMiembros] = useState<Miembro[]>([]);
   const [etapas, setEtapas] = useState<Etapa[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -18,16 +18,16 @@ export default function DiscipuladoresPage() {
 
   const cargarDatos = useCallback(async () => {
     const supabase = createClient();
-    const [discipuladoresRes, discipulosRes, etapasRes] = await Promise.all([
+    const [discipuladoresRes, miembrosRes, etapasRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("rol", "discipulador").order("apellido", { ascending: true }),
       supabase
-        .from("discipulos")
+        .from("miembros")
         .select("id, apellido, nombre, avatar_url, etapa_id, estado, lider_id, created_at, updated_at")
         .order("apellido", { ascending: true }),
       supabase.from("etapas").select("*").order("orden", { ascending: true }),
     ]);
     setDiscipuladores(discipuladoresRes.data || []);
-    setDiscipulos((discipulosRes.data as Discipulo[] | null) || []);
+    setMiembros((miembrosRes.data as Miembro[] | null) || []);
     setEtapas(etapasRes.data || []);
   }, []);
 
@@ -46,5 +46,5 @@ export default function DiscipuladoresPage() {
   if (loading || autorizando) return <div className="flex items-center justify-center min-h-[50vh]"><p className="text-muted-foreground">Cargando...</p></div>;
   if (!permitido) return null;
 
-  return <DiscipuladoresClient discipuladores={discipuladores} discipulos={discipulos} etapas={etapas} onCambio={cargarDatos} />;
+  return <DiscipuladoresClient discipuladores={discipuladores} miembros={miembros} etapas={etapas} onCambio={cargarDatos} />;
 }

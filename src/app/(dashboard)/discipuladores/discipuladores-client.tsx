@@ -39,7 +39,7 @@ import {
 import { toast } from "sonner";
 import { cn, estadoColors, calcularEdad } from "@/lib/utils";
 import { descargarCSV } from "@/lib/csv";
-import type { Profile, Discipulo, Etapa } from "@/types/database";
+import type { Profile, Miembro, Etapa } from "@/types/database";
 import { CrearDiscipuladorDialog } from "./crear-discipulador-dialog";
 import { EditarDiscipuladorDialog } from "./editar-discipulador-dialog";
 
@@ -60,19 +60,19 @@ function iniciales(p: Profile): string {
 
 interface DiscipuladoresClientProps {
   discipuladores: Profile[];
-  discipulos: Discipulo[];
+  miembros: Miembro[];
   etapas: Etapa[];
   onCambio?: () => void;
 }
 
-export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCambio }: DiscipuladoresClientProps) {
+export function DiscipuladoresClient({ discipuladores, miembros, etapas, onCambio }: DiscipuladoresClientProps) {
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [crearOpen, setCrearOpen] = useState(false);
   const [editar, setEditar] = useState<Profile | null>(null);
   const [asignarOpen, setAsignarOpen] = useState(false);
   const [asignarId, setAsignarId] = useState("");
-  const [desvincular, setDesvincular] = useState<Discipulo | null>(null);
+  const [desvincular, setDesvincular] = useState<Miembro | null>(null);
   const [busy, setBusy] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
@@ -84,14 +84,14 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
     [discipuladores, selectedId]
   );
 
-  const discipulosDe = useMemo(
-    () => (selected ? discipulos.filter((d) => d.lider_id === selected.id) : []),
-    [discipulos, selected]
+  const miembrosDe = useMemo(
+    () => (selected ? miembros.filter((d) => d.lider_id === selected.id) : []),
+    [miembros, selected]
   );
 
-  const discipulosDisponibles = useMemo(
-    () => (selected ? discipulos.filter((d) => d.lider_id !== selected.id) : []),
-    [discipulos, selected]
+  const miembrosDisponibles = useMemo(
+    () => (selected ? miembros.filter((d) => d.lider_id !== selected.id) : []),
+    [miembros, selected]
   );
 
   const filtered = discipuladores.filter((p) =>
@@ -103,7 +103,7 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
     setBusy(true);
     const supabase = createClient();
     const { error } = await supabase
-      .from("discipulos")
+      .from("miembros")
       .update({ lider_id: selected.id })
       .eq("id", asignarId);
     setBusy(false);
@@ -122,7 +122,7 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
     setBusy(true);
     const supabase = createClient();
     const { error } = await supabase
-      .from("discipulos")
+      .from("miembros")
       .update({ lider_id: null })
       .eq("id", desvincular.id);
     setBusy(false);
@@ -177,7 +177,7 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
       "Don espiritual": p.don_espiritual || "",
       Fortalezas: p.fortalezas || "",
       Debilidades: p.debilidades || "",
-      "Discípulos": discipulos.filter((d) => d.lider_id === p.id).length,
+      "Miembros": miembros.filter((d) => d.lider_id === p.id).length,
     }));
     descargarCSV("discipuladores.csv", filas);
     toast.success(`${sel.length} discipulador(es) exportado(s)`);
@@ -256,7 +256,7 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
             <p className="text-sm text-muted-foreground text-center py-8">No se encontraron discipuladores</p>
           ) : (
             filtered.map((p) => {
-              const count = discipulos.filter((d) => d.lider_id === p.id).length;
+              const count = miembros.filter((d) => d.lider_id === p.id).length;
               return (
                 <div
                   key={p.id}
@@ -331,7 +331,7 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
                 <h3 className="text-xl font-bold">{selected.apellido}, {selected.nombre}</h3>
                 <div className="flex flex-wrap items-center justify-center gap-2 mt-1">
                   <Badge variant="secondary">Discipulador</Badge>
-                  <span className="text-sm text-muted-foreground">{discipulosDe.length} discípulo{discipulosDe.length === 1 ? "" : "s"}</span>
+                  <span className="text-sm text-muted-foreground">{miembrosDe.length} miembro{miembrosDe.length === 1 ? "" : "s"}</span>
                 </div>
               </div>
             </div>
@@ -390,23 +390,23 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
             <Card>
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-center justify-between gap-2">
-                  <h4 className="text-sm font-semibold min-w-0 flex-1 truncate">Discípulos vinculados ({discipulosDe.length})</h4>
+                  <h4 className="text-sm font-semibold min-w-0 flex-1 truncate">Miembros vinculados ({miembrosDe.length})</h4>
                   <Button size="sm" variant="outline" onClick={() => setAsignarOpen(true)} className="gap-1 shrink-0">
                     <Link2 className="h-4 w-4" />
-                    Asignar discípulo
+                    Asignar miembro
                   </Button>
                 </div>
-                {discipulosDe.length === 0 ? (
+                {miembrosDe.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-6">
-                    Sin discípulos asignados. Usá &quot;Asignar discípulo&quot; para vincular uno.
+                    Sin miembros asignados. Usá &quot;Asignar miembro&quot; para vincular uno.
                   </p>
                 ) : (
                   <div className="space-y-1">
-                    {discipulosDe.map((d) => (
+                    {miembrosDe.map((d) => (
                       <div key={d.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50">
                         <div className={cn("h-3 w-3 rounded-full shrink-0", estadoColors[d.estado])} />
                         <Link
-                          href={`/discipulos/ver?id=${d.id}`}
+                          href={`/miembros/ver?id=${d.id}`}
                           className="flex-1 min-w-0 text-sm font-medium hover:underline truncate"
                         >
                           {d.apellido}, {d.nombre}
@@ -417,7 +417,7 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
                         <button
                           type="button"
                           onClick={() => setDesvincular(d)}
-                          title="Desvincular discípulo"
+                          title="Desvincular miembro"
                           className="shrink-0 text-muted-foreground/50 hover:text-destructive transition-colors"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -446,22 +446,22 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
       <Dialog open={asignarOpen} onOpenChange={(o) => { if (!busy) setAsignarOpen(o); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Asignar discípulo</DialogTitle>
+            <DialogTitle>Asignar miembro</DialogTitle>
             <DialogDescription>
-              Elegí un discípulo para vincularlo con {selected?.nombre} {selected?.apellido}.
+              Elegí un miembro para vincularlo con {selected?.nombre} {selected?.apellido}.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Select value={asignarId || undefined} onValueChange={(v) => setAsignarId(v?.toString() ?? "")} items={discipulosDisponibles.map((d) => ({ value: d.id, label: `${d.apellido}, ${d.nombre}` }))}>
-              <SelectTrigger><SelectValue placeholder="Seleccionar discípulo" /></SelectTrigger>
+            <Select value={asignarId || undefined} onValueChange={(v) => setAsignarId(v?.toString() ?? "")} items={miembrosDisponibles.map((d) => ({ value: d.id, label: `${d.apellido}, ${d.nombre}` }))}>
+              <SelectTrigger><SelectValue placeholder="Seleccionar miembro" /></SelectTrigger>
               <SelectContent>
-                {discipulosDisponibles.map((d) => (
+                {miembrosDisponibles.map((d) => (
                   <SelectItem key={d.id} value={d.id}>{d.apellido}, {d.nombre}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {discipulosDisponibles.length === 0 && (
-              <p className="text-sm text-muted-foreground">Todos los discípulos ya están asignados.</p>
+            {miembrosDisponibles.length === 0 && (
+              <p className="text-sm text-muted-foreground">Todos los miembros ya están asignados.</p>
             )}
           </div>
           <DialogFooter>
@@ -477,10 +477,10 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
       <Dialog open={!!desvincular} onOpenChange={() => setDesvincular(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Desvincular discípulo</DialogTitle>
+            <DialogTitle>Desvincular miembro</DialogTitle>
             <DialogDescription>
               ¿Desvincular a {desvincular?.apellido}, {desvincular?.nombre} de {selected?.nombre} {selected?.apellido}?
-              El discípulo quedará sin discipulador asignado.
+              El miembro quedará sin discipulador asignado.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -496,7 +496,7 @@ export function DiscipuladoresClient({ discipuladores, discipulos, etapas, onCam
           <DialogHeader>
             <DialogTitle>Eliminar discipuladores</DialogTitle>
             <DialogDescription>
-              ¿Eliminar {selectedIds.length} discipulador(es) seleccionado(s)? Se desvincularán sus discípulos y se
+              ¿Eliminar {selectedIds.length} discipulador(es) seleccionado(s)? Se desvincularán sus miembros y se
               borrarán sus seguimientos, encuentros, oraciones y tareas. Esta acción no se puede deshacer.
             </DialogDescription>
           </DialogHeader>

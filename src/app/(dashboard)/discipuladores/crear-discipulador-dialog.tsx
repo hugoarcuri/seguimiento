@@ -130,7 +130,7 @@ export function CrearDiscipuladorDialog({ open, onOpenChange, onCreado }: CrearD
         <DialogHeader>
           <DialogTitle>Nuevo Discipulador</DialogTitle>
           <DialogDescription>
-            Crea una cuenta de usuario con rol discipulador para que pueda vincularse con discípulos.
+            Crea una cuenta de usuario con rol discipulador para que pueda vincularse con miembros.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

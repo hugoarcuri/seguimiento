@@ -258,7 +258,7 @@ export default function ReportesPage() {
       .sort((a, b) => b.fecha.localeCompare(a.fecha))
       .map((a) => ({
         id: a.id,
-        discipulo: nombreMiembro(a.miembro_id),
+        miembro: nombreMiembro(a.miembro_id),
         fecha: a.fecha,
         tema: a.tema_tratado || null,
         realizada: true,
@@ -269,7 +269,7 @@ export default function ReportesPage() {
       .sort((a, b) => a.estado.localeCompare(b.estado))
       .map((t) => ({
         id: t.id,
-        discipulo: nombreMiembro(t.miembro_id),
+        miembro: nombreMiembro(t.miembro_id),
         titulo: t.titulo,
         tipo: TIPO_TAREA[t.tipo] || t.tipo,
         estado: ESTADO_TAREA[t.estado] || t.estado,
@@ -277,7 +277,7 @@ export default function ReportesPage() {
       }));
 
     const reporteObjetivos = objetivosDelLider.map((o) => ({
-      discipulo: nombreMiembro(segPorMiembro.get(o.seguimiento_id)!.miembro_id),
+      miembro: nombreMiembro(segPorMiembro.get(o.seguimiento_id)!.miembro_id),
       descripcion: o.descripcion,
       completado: o.completado,
     }));
