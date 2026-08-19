@@ -8,6 +8,7 @@ export const miembroSchema = z.object({
   sexo: z.enum(["M", "F"]).optional().nullable(),
   telefono: z.string().optional().nullable(),
   email: z.string().email("Email inválido").optional().or(z.literal("")).nullable(),
+  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres").optional().or(z.literal("")).nullable(),
   direccion: z.string().optional().nullable(),
   fecha_conversion: z.string().optional().nullable(),
   fecha_bautismo: z.string().optional().nullable(),

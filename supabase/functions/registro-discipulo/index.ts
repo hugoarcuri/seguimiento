@@ -48,6 +48,7 @@ Deno.serve(async (req) => {
       ministerio,
       estudia,
       trabaja,
+      miembro_id,
     } = body;
 
     if (!email || !password || !nombre || !apellido) {
@@ -76,29 +77,61 @@ Deno.serve(async (req) => {
       return json({ error: `Perfil no actualizado: ${profileError.message}` }, 500);
     }
 
-    const { error: miembroError } = await supabase.from("miembros").insert({
-      id: userId,
-      nombre,
-      apellido,
-      email,
-      sexo: sexo || null,
-      fecha_nacimiento: fecha_nacimiento || null,
-      telefono: telefono || null,
-      direccion: direccion || null,
-      convive_con: convive_con || null,
-      dones: don_espiritual || null,
-      ministerio: ministerio || null,
-      estudia: estudia ?? null,
-      trabaja: trabaja || null,
-      etapa_id: 1,
-      estado: "activo",
-    });
+    let miembroId = miembro_id;
 
-    if (miembroError) {
-      return json({ error: `Miembro no creado: ${miembroError.message}` }, 500);
+    if (miembro_id) {
+      const { error: linkError } = await supabase
+        .from("miembros")
+        .update({ user_id: userId })
+        .eq("id", miembro_id);
+
+      if (linkError) {
+        return json({ error: `No se pudo vincular miembro: ${linkError.message}` }, 500);
+      }
+    } else {
+      const { data: miembroData, error: miembroError } = await supabase
+        .from("miembros")
+        .insert({
+          id: userId,
+          user_id: userId,
+          nombre,
+          apellido,
+          email,
+          sexo: sexo || null,
+          fecha_nacimiento: fecha_nacimiento || null,
+          telefono: telefono || null,
+          direccion: direccion || null,
+          convive_con: convive_con || null,
+          dones: don_espiritual || null,
+          ministerio: ministerio || null,
+          estudia: estudia ?? null,
+          trabaja: trabaja || null,
+          etapa_id: 1,
+          estado: "activo",
+        })
+        .select("id")
+        .single();
+
+      if (miembroError) {
+        return json({ error: `Miembro no creado: ${miembroError.message}` }, 500);
+      }
+      miembroId = miembroData.id;
     }
 
-    return json({ id: userId, nombre, apellido, email }, 200);
+    if (miembroId) {
+      await supabase
+        .from("seguimientos")
+        .insert({
+          miembro_id: miembroId,
+          discipulador_id: userId,
+          etapa: 1,
+          progreso: 0,
+          estado: "activo",
+        })
+        .select();
+    }
+
+    return json({ id: userId, miembro_id: miembroId, nombre, apellido, email }, 200);
   } catch (err) {
     return json({ error: (err as Error).message || "Error interno" }, 500);
   }

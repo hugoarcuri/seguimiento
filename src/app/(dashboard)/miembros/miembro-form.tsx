@@ -30,8 +30,8 @@ interface MiembroFormProps {
   isEditing?: boolean;
 }
 
-const inputClass = "h-11 md:h-8";
-const inputLabelClass = "text-[11px] font-medium text-muted-foreground";
+const inputClass = "h-11 md:h-10 text-sm";
+const inputLabelClass = "text-xs font-medium text-muted-foreground";
 
 const sexoOptions: Array<{ value: "M" | "F"; label: string }> = [
   { value: "M", label: "Masculino" },
@@ -159,6 +159,16 @@ export function MiembroForm({
       return;
     }
 
+    if (!isEditing && (!data.password || data.password.length < 6)) {
+      toast.error("La contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+
+    if (!isEditing && !data.email) {
+      toast.error("El email es requerido para crear la cuenta de acceso");
+      return;
+    }
+
     const payload = {
       ...data,
       lider_id: data.lider_id || null,
@@ -205,38 +215,39 @@ export function MiembroForm({
 
       if (error) {
         toast.error("Error al crear miembro");
-      } else {
-        if (pendingFile) {
-          const avatarUrl = await uploadAvatar(pendingFile, newMiembro.id);
-          if (avatarUrl) {
-            await supabase
-              .from("miembros")
-              .update({ avatar_url: avatarUrl })
-              .eq("id", newMiembro.id);
-          }
-        }
-
-        const seguimientoPayload = {
-          miembro_id: newMiembro.id,
-          discipulador_id: data.lider_id || user.id,
-          etapa: data.etapa_id || 1,
-          estado: "activo" as const,
-          fecha_inicio: new Date().toISOString().split("T")[0],
-          progreso: 0,
-        };
-        const { error: seguimientoError } = await supabase
-          .from("seguimientos")
-          .insert(seguimientoPayload);
-
-        if (seguimientoError) {
-          toast.success("Miembro creado exitosamente");
-          toast.warning("No se pudo crear el seguimiento automáticamente");
-        } else {
-          toast.success("Miembro y seguimiento creados exitosamente");
-        }
-        router.push("/miembros");
-        router.refresh();
+        return;
       }
+
+      if (pendingFile) {
+        const avatarUrl = await uploadAvatar(pendingFile, newMiembro.id);
+        if (avatarUrl) {
+          await supabase
+            .from("miembros")
+            .update({ avatar_url: avatarUrl })
+            .eq("id", newMiembro.id);
+        }
+      }
+
+      toast.loading("Creando cuenta de acceso...");
+      const { error: authError } = await supabase.functions.invoke("registro-discipulo", {
+        body: {
+          email: data.email,
+          password: data.password,
+          nombre: data.nombre,
+          apellido: data.apellido,
+          miembro_id: newMiembro.id,
+        },
+      });
+      toast.dismiss();
+
+      if (authError) {
+        toast.warning("Miembro creado, pero no se pudo crear la cuenta de acceso. Créala manualmente.");
+      } else {
+        toast.success("Miembro y cuenta de acceso creados exitosamente");
+      }
+
+      router.push("/miembros");
+      router.refresh();
     }
   };
 
@@ -307,6 +318,12 @@ export function MiembroForm({
             <Label htmlFor="email" className={inputLabelClass}>Email</Label>
             <Input id="email" type="email" className={inputClass} {...register("email")} />
           </div>
+          {!isEditing && (
+            <div className="space-y-1">
+              <Label htmlFor="password" className={inputLabelClass}>Contraseña *</Label>
+              <Input id="password" type="password" className={inputClass} {...register("password")} placeholder="Mínimo 6 caracteres" />
+            </div>
+          )}
           <div className="space-y-1 sm:col-span-2">
             <Label htmlFor="direccion" className={inputLabelClass}>Dirección</Label>
             <Input id="direccion" className={inputClass} {...register("direccion")} />
@@ -403,9 +420,9 @@ export function MiembroForm({
           </div>
         </div>
 
-        {(errors.nombre || errors.apellido || errors.email) && (
+        {(errors.nombre || errors.apellido || errors.email || errors.password) && (
           <p className="text-xs text-destructive">
-            {errors.apellido?.message || errors.nombre?.message || errors.email?.message}
+            {errors.apellido?.message || errors.nombre?.message || errors.email?.message || errors.password?.message}
           </p>
         )}
       </div>
