@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -497,7 +498,7 @@ export function MiembrosClient({ miembros, etapas, esAdmin, onCambio }: Miembros
                                 </span>
                               )}
                               {d.avatar_url ? (
-                                <img src={d.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
+                                <Image src={d.avatar_url} alt="" width={36} height={36} className="w-9 h-9 rounded-full object-cover shrink-0" />
                               ) : (
                                 <div className={cn("w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0", getAvatarColor(d.id))}>
                                   {d.nombre?.charAt(0)?.toUpperCase()}{d.apellido?.charAt(0)?.toUpperCase()}

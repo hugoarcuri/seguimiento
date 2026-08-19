@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useRef, type ReactNode } from "react";
@@ -466,7 +467,7 @@ export function MiembroDetailClient({
       <div className="flex flex-col items-center gap-3 text-center">
         <div className="relative group shrink-0">
           {miembro.avatar_url ? (
-            <img src={miembro.avatar_url} alt="" className="w-[115px] h-[115px] rounded-full object-cover ring-4 ring-background shadow-lg" />
+            <Image src={miembro.avatar_url} alt="" width={115} height={115} className="w-[115px] h-[115px] rounded-full object-cover ring-4 ring-background shadow-lg" />
           ) : (
             <div className="w-[115px] h-[115px] rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-4xl ring-4 ring-background shadow-lg">
               {miembro.nombre?.charAt(0)?.toUpperCase()}{miembro.apellido?.charAt(0)?.toUpperCase()}

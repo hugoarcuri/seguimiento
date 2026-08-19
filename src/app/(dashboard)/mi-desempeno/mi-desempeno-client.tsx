@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -186,7 +187,7 @@ export function MiDesempenoClient({ data }: { data: DesempenoData }) {
                       <TableCell>
                         <div className="flex items-center gap-2.5">
                           {m.avatar_url ? (
-                            <img src={m.avatar_url} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
+                            <Image src={m.avatar_url} alt="" width={32} height={32} className="h-8 w-8 shrink-0 rounded-full object-cover" />
                           ) : (
                             <div
                               className={cn(
@@ -258,7 +259,7 @@ export function MiDesempenoClient({ data }: { data: DesempenoData }) {
                 <div key={m.id} className="rounded-lg border p-3 space-y-2">
                   <div className="flex items-center gap-2.5">
                     {m.avatar_url ? (
-                      <img src={m.avatar_url} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
+                      <Image src={m.avatar_url} alt="" width={36} height={36} className="h-9 w-9 shrink-0 rounded-full object-cover" />
                     ) : (
                       <div
                         className={cn(

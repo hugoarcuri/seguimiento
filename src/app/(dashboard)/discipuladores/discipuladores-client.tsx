@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -286,7 +287,7 @@ export function DiscipuladoresClient({ discipuladores, miembros, etapas, onCambi
                     </span>
                   )}
                   {p.avatar_url ? (
-                    <img src={p.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
+                    <Image src={p.avatar_url} alt="" width={36} height={36} className="w-9 h-9 rounded-full object-cover shrink-0" />
                   ) : (
                     <div className={cn("w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0", getAvatarColor(p.id))}>
                       {iniciales(p) || "?"}
@@ -321,7 +322,7 @@ export function DiscipuladoresClient({ discipuladores, miembros, etapas, onCambi
 
             <div className="flex flex-col items-center gap-3 text-center">
               {selected.avatar_url ? (
-                <img src={selected.avatar_url} alt="" className="w-24 h-24 rounded-full object-cover ring-4 ring-background shadow-lg" />
+                <Image src={selected.avatar_url} alt="" width={96} height={96} className="w-24 h-24 rounded-full object-cover ring-4 ring-background shadow-lg" />
               ) : (
                 <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-3xl ring-4 ring-background shadow-lg">
                   {iniciales(selected) || "?"}

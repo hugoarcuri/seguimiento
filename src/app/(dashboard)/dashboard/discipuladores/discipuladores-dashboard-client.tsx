@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -166,9 +167,11 @@ function getAvatarColor(id: string): string {
 function Avatar({ persona, className }: { persona: { id: string; nombre: string; apellido: string; avatar_url: string | null }; className?: string }) {
   if (persona.avatar_url) {
     return (
-      <img
+      <Image
         src={persona.avatar_url}
         alt=""
+        width={32}
+        height={32}
         className={cn("h-8 w-8 shrink-0 rounded-full object-cover", className)}
       />
     );

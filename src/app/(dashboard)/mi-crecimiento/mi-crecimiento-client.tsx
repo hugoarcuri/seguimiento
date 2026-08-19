@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -136,7 +137,7 @@ export function MiCrecimientoClient() {
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         {discipulo.avatar_url ? (
-          <img src={discipulo.avatar_url} alt="" className="h-16 w-16 rounded-full object-cover" />
+          <Image src={discipulo.avatar_url} alt="" width={64} height={64} className="h-16 w-16 rounded-full object-cover" />
         ) : (
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-xl font-bold text-primary">
             {(discipulo.nombre?.[0] || "").toUpperCase()}{(discipulo.apellido?.[0] || "").toUpperCase()}

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -321,7 +322,7 @@ export default function SeguimientoPage() {
                             className="size-4 shrink-0 cursor-pointer accent-primary mt-1"
                           />
                           {s.miembros?.avatar_url ? (
-                            <img src={s.miembros.avatar_url} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
+                            <Image src={s.miembros.avatar_url} alt="" width={36} height={36} className="h-9 w-9 shrink-0 rounded-full object-cover" />
                           ) : (
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
                               {(s.miembros?.nombre?.[0] || "").toUpperCase()}
@@ -444,7 +445,7 @@ export default function SeguimientoPage() {
                       <TableCell>
                         <div className="flex items-center gap-2.5">
                           {s.miembros?.avatar_url ? (
-                            <img src={s.miembros.avatar_url} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
+                            <Image src={s.miembros.avatar_url} alt="" width={36} height={36} className="h-9 w-9 shrink-0 rounded-full object-cover" />
                           ) : (
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
                               {(s.miembros?.nombre?.[0] || "").toUpperCase()}

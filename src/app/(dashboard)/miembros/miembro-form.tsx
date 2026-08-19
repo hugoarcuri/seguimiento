@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useForm } from "react-hook-form";
@@ -245,7 +246,7 @@ export function MiembroForm({
       <div className="flex flex-col items-center gap-3 pt-4 pb-6">
         <div className="relative group">
           {avatarPreview || initialData?.avatar_url ? (
-            <img src={avatarPreview || initialData?.avatar_url || ""} alt="" className="w-28 h-28 rounded-full object-cover ring-4 ring-primary/20" />
+            <Image src={avatarPreview || initialData?.avatar_url || ""} alt="" width={112} height={112} className="w-28 h-28 rounded-full object-cover ring-4 ring-primary/20" />
           ) : (
             <div className="w-28 h-28 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center text-primary font-bold text-4xl ring-4 ring-primary/20">
               {initialData?.nombre?.charAt(0)?.toUpperCase()}{initialData?.apellido?.charAt(0)?.toUpperCase()}
