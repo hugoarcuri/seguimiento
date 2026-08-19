@@ -10,12 +10,15 @@ import { ChevronDown, ChevronRight, Download, Eye, GraduationCap, BookOpen } fro
 interface Props {
   etapas: Etapa[];
   puedeVerGuia: boolean;
+  etapaMiembro?: number | null;
 }
 
-export function EstudiosBiblicosClient({ etapas, puedeVerGuia }: Props) {
-  const [etapaSeleccionada, setEtapaSeleccionada] = useState<string>(
-    String(etapas[0]?.id ?? 2)
-  );
+export function EstudiosBiblicosClient({ etapas, puedeVerGuia, etapaMiembro }: Props) {
+  const defaultEtapa = etapaMiembro
+    ? String(etapaMiembro)
+    : String(etapas[0]?.id ?? 2);
+
+  const [etapaSeleccionada, setEtapaSeleccionada] = useState<string>(defaultEtapa);
   const [pasoAbierto, setPasoAbierto] = useState<number | null>(null);
   const [guiaAbierta, setGuiaAbierta] = useState<number | null>(null);
 
@@ -44,7 +47,10 @@ export function EstudiosBiblicosClient({ etapas, puedeVerGuia }: Props) {
       </div>
 
       <Tabs value={etapaSeleccionada} onValueChange={handleTabChange}>
-        <TabsList variant="line" className="w-full justify-start overflow-x-auto">
+        <TabsList
+          variant="line"
+          className="w-full justify-start overflow-x-auto scrollbar-none"
+        >
           {etapas.map((etapa) => (
             <TabsTrigger key={etapa.id} value={String(etapa.id)} className="whitespace-nowrap">
               {etapa.nombre}
