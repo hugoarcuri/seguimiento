@@ -81,11 +81,6 @@ export function SeguimientoForm({
     const { data } = await supabase.from("miembros").select("etapa_id").eq("id", val).single();
     if (data?.etapa_id) {
       form.setValue("etapa", data.etapa_id, { shouldValidate: true, shouldDirty: true });
-      return;
-    }
-    const { data: data2 } = await supabase.from("discipulos").select("etapa_id").eq("id", val).single();
-    if (data2?.etapa_id) {
-      form.setValue("etapa", data2.etapa_id, { shouldValidate: true, shouldDirty: true });
     }
   }, [editing, miembros, form]);
 

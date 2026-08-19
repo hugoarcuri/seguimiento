@@ -14,7 +14,7 @@ export function useSyncMiembros() {
     synced = true;
 
     const supabase = createClient();
-    supabase.rpc("admin_sync_miembros_discipulos").then(({ error }) => {
+    supabase.rpc("admin_sync_miembros").then(({ error }) => {
       if (error) console.error("sync miembros:", error);
     });
   }, []);

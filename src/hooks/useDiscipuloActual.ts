@@ -24,7 +24,7 @@ export function useMiembroActual() {
         return;
       }
 
-      const { data: miembroId } = await supabase.rpc("ensure_miembro_discipulo");
+      const { data: miembroId } = await supabase.rpc("ensure_miembro");
 
       if (!mounted) return;
 
@@ -55,7 +55,7 @@ export function useMiembroActual() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data: miembroId } = await supabase.rpc("ensure_miembro_discipulo");
+    const { data: miembroId } = await supabase.rpc("ensure_miembro");
 
     if (miembroId) {
       const { data } = await supabase
@@ -76,5 +76,3 @@ export function useMiembroActual() {
 
   return { miembro, loading, refresh };
 }
-
-export const useDiscipuloActual = useMiembroActual;

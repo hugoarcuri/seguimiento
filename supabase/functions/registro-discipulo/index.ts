@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
       return json({ error: `Perfil no actualizado: ${profileError.message}` }, 500);
     }
 
-    const { error: discipuloError } = await supabase.from("discipulos").insert({
+    const { error: miembroError } = await supabase.from("miembros").insert({
       id: userId,
       nombre,
       apellido,
@@ -94,8 +94,8 @@ Deno.serve(async (req) => {
       estado: "activo",
     });
 
-    if (discipuloError) {
-      return json({ error: `Discípulo no creado: ${discipuloError.message}` }, 500);
+    if (miembroError) {
+      return json({ error: `Miembro no creado: ${miembroError.message}` }, 500);
     }
 
     return json({ id: userId, nombre, apellido, email }, 200);

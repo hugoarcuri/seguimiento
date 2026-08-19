@@ -33,9 +33,9 @@ import { Plus, Loader2, Church } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
-interface OracionConDiscipulo {
+interface OracionConMiembro {
   id: string;
-  discipulo_id: string;
+  miembro_id: string;
   lider_id?: string;
   pedido: string;
   respuesta?: string;
@@ -43,18 +43,18 @@ interface OracionConDiscipulo {
   fecha: string;
   created_at?: string;
   updated_at?: string;
-  discipulos?: { nombre: string; apellido: string };
+  miembros?: { nombre: string; apellido: string };
 }
 
 interface OracionClientProps {
-  oraciones: OracionConDiscipulo[];
-  setOraciones: React.Dispatch<React.SetStateAction<OracionConDiscipulo[]>>;
-  discipulos: Array<{ id: string; nombre: string; apellido: string }>;
+  oraciones: OracionConMiembro[];
+  setOraciones: React.Dispatch<React.SetStateAction<OracionConMiembro[]>>;
+  miembros: Array<{ id: string; nombre: string; apellido: string }>;
 }
 
-export function OracionClient({ oraciones, setOraciones, discipulos }: OracionClientProps) {
+export function OracionClient({ oraciones, setOraciones, miembros }: OracionClientProps) {
   const [open, setOpen] = useState(false);
-  const [discipuloId, setDiscipuloId] = useState("");
+  const [miembroId, setMiembroId] = useState("");
   const [pedido, setPedido] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [responderId, setResponderId] = useState<string | null>(null);
@@ -70,24 +70,24 @@ export function OracionClient({ oraciones, setOraciones, discipulos }: OracionCl
     } = await supabase.auth.getUser();
 
     if (!user) return;
-    if (!discipuloId) {
-      toast.error("Seleccioná un discípulo");
+    if (!miembroId) {
+      toast.error("Seleccioná un miembro");
       setSubmitting(false);
       return;
     }
 
     const { data, error } = await supabase.from("oraciones").insert({
-      discipulo_id: discipuloId,
+      miembro_id: miembroId,
       lider_id: user.id,
       pedido,
-    }).select("*, discipulos:discipulo_id(nombre, apellido)").single();
+    }).select("*, miembros:miembro_id(nombre, apellido)").single();
 
     if (error) {
       toast.error("Error al registrar pedido");
     } else {
       toast.success("Pedido de oración registrado");
       setOpen(false);
-      setDiscipuloId("");
+      setMiembroId("");
       setPedido("");
       if (data) setOraciones((prev) => [data as never, ...prev]);
     }
@@ -150,13 +150,13 @@ export function OracionClient({ oraciones, setOraciones, discipulos }: OracionCl
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label>Discípulo *</Label>
-                 <Select onValueChange={(v) => setDiscipuloId(v?.toString() ?? "")} items={discipulos.map((d) => ({ value: d.id, label: `${d.apellido}, ${d.nombre}` }))}>
+                <Label>Miembro *</Label>
+                 <Select onValueChange={(v) => setMiembroId(v?.toString() ?? "")} items={miembros.map((d) => ({ value: d.id, label: `${d.apellido}, ${d.nombre}` }))}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar discípulo" />
+                    <SelectValue placeholder="Seleccionar miembro" />
                   </SelectTrigger>
                   <SelectContent>
-                    {discipulos.map((d) => (
+                    {miembros.map((d) => (
                       <SelectItem key={d.id} value={d.id}>
                         {d.apellido}, {d.nombre}
                       </SelectItem>
@@ -199,8 +199,8 @@ export function OracionClient({ oraciones, setOraciones, discipulos }: OracionCl
                       {oracion.pedido}
                     </CardTitle>
                     <CardDescription>
-                      {oracion.discipulos?.nombre
-                        ? `${oracion.discipulos.apellido}, ${oracion.discipulos.nombre}`
+                      {oracion.miembros?.nombre
+                        ? `${oracion.miembros.apellido}, ${oracion.miembros.nombre}`
                         : "—"}{" "}
                       · {format(new Date(oracion.fecha), "dd/MM/yyyy")}
                     </CardDescription>

@@ -40,5 +40,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# supabase local metadata
+supabase/.temp/
+
 # material original (los PDFs ya están en public/)
 /material/
+
+# root images (leftovers)
+/dash.png
+/logo.jpg

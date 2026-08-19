@@ -19,6 +19,7 @@ export interface Profile {
 
 export interface Miembro {
   id: string;
+  user_id?: string | null;
   lider_id?: string | null;
   apellido: string;
   nombre: string;
