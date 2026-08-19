@@ -7,17 +7,33 @@ export interface GuiaDiscipulador {
 
 export interface PasoEstudio {
   numero: number;
+  etapaId: number;
   titulo: string;
   archivo: string;
   descripcion: string;
   guia: GuiaDiscipulador;
 }
 
-export const NIVEL_LABEL = "Nivel 1 — Fundamentos de la fe";
+export const ETAPA_LABELS: Record<number, string> = {
+  1: "No creyente",
+  2: "Nuevo creyente",
+  3: "Discípulo",
+  4: "Siervo",
+  5: "Multiplicador",
+};
+
+export const ETAPADescripcion: Record<number, string> = {
+  1: "Material de evangelismo y acompañamiento para quienes aún no conocen a Cristo",
+  2: "Fundamentos de la fe para quienes recién aceptaron a Cristo",
+  3: "Formación en carácter y conocimiento bíblico para creyentes comprometidos",
+  4: "Preparación para servir y liderar en la iglesia",
+  5: "Formación para hacer discípulos y multiplicar el reino",
+};
 
 export const ESTUDIOS_BIBLICOS: PasoEstudio[] = [
   {
     numero: 1,
+    etapaId: 2,
     titulo: "Seguros por siempre",
     archivo: "paso01-seguros-por-siempre.pdf",
     descripcion: "Comprender la seguridad de la salvación y la permanencia en Cristo.",
@@ -42,6 +58,7 @@ export const ESTUDIOS_BIBLICOS: PasoEstudio[] = [
   },
   {
     numero: 2,
+    etapaId: 2,
     titulo: "Hablando con Dios",
     archivo: "paso02-hablando-con-dios.pdf",
     descripcion: "Desarrollar una vida de oración personal y consistente.",
@@ -66,11 +83,12 @@ export const ESTUDIOS_BIBLICOS: PasoEstudio[] = [
   },
   {
     numero: 3,
+    etapaId: 2,
     titulo: "La lectura bíblica",
     archivo: "paso03-la-lectura-biblica.pdf",
     descripcion: "Aprender a leer, estudiar y aplicar la Biblia en la vida diaria.",
     guia: {
-      objetivo: "Que el discípulo descubra la Biblia como guía práctica para su vida y develop el hábito de leerla diariamente.",
+      objetivo: "Que el discípulo descubra la Biblia como guía práctica para su vida y desarrolle el hábito de leerla diariamente.",
       puntosClave: [
         "La Biblia es la Palabra viva de Dios",
         "Cómo leer la Biblia: método de 4 pasos",
@@ -90,6 +108,7 @@ export const ESTUDIOS_BIBLICOS: PasoEstudio[] = [
   },
   {
     numero: 4,
+    etapaId: 2,
     titulo: "¿Quién es usted?",
     archivo: "paso04-quien-es-usted.pdf",
     descripcion: "Descubrir la identidad en Cristo y los roles del creyente.",
@@ -114,6 +133,7 @@ export const ESTUDIOS_BIBLICOS: PasoEstudio[] = [
   },
   {
     numero: 5,
+    etapaId: 2,
     titulo: "Más que vencedores",
     archivo: "paso05-mas-que-vencedores.pdf",
     descripcion: "Vivir en victoria sobre el pecado, las pruebas y las dificultades.",
@@ -138,9 +158,10 @@ export const ESTUDIOS_BIBLICOS: PasoEstudio[] = [
   },
   {
     numero: 6,
+    etapaId: 2,
     titulo: "Ganando almas",
     archivo: "paso06-ganando-almas.pdf",
-    descripcion: "Aprender a compartir el evangelio con其他人 de forma efectiva.",
+    descripcion: "Aprender a compartir el evangelio con otros de forma efectiva.",
     guia: {
       objetivo: "Que el discípulo se sienta preparado para compartir su fe y ganar almas para Cristo.",
       puntosClave: [
@@ -162,6 +183,7 @@ export const ESTUDIOS_BIBLICOS: PasoEstudio[] = [
   },
   {
     numero: 7,
+    etapaId: 2,
     titulo: "Creciendo solo o en familia",
     archivo: "paso07-creciendo-solo-o-en-familia.pdf",
     descripcion: "Aprender a crecer espiritualmente de forma individual y en comunidad.",
@@ -185,6 +207,10 @@ export const ESTUDIOS_BIBLICOS: PasoEstudio[] = [
     },
   },
 ];
+
+export function getEstudiosPorEtapa(etapaId: number): PasoEstudio[] {
+  return ESTUDIOS_BIBLICOS.filter((e) => e.etapaId === etapaId);
+}
 
 export function getBasePath(): string {
   return "/estudios-biblicos/nivel-1";

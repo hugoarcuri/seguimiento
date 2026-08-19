@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { ESTUDIOS_BIBLICOS, NIVEL_LABEL } from "@/lib/constants/estudios-biblicos";
+import { getEstudiosPorEtapa } from "@/lib/constants/estudios-biblicos";
 import { BASE_PATH } from "@/lib/constants/paths";
 import { calcularSalud, contarEncuentrosMes, SALUD_CONFIG } from "@/lib/discipulo-health";
 import { calcularProgreso } from "../seguimiento/seguimiento-constants";
@@ -194,11 +194,11 @@ export function MiCrecimientoClient() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm flex items-center gap-2">
-                <BookOpen className="h-4 w-4" /> Estudios Bíblicos — {NIVEL_LABEL}
+                <BookOpen className="h-4 w-4" /> Estudios Bíblicos — Nuevo creyente
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {ESTUDIOS_BIBLICOS.map((paso) => {
+              {getEstudiosPorEtapa(2).map((paso) => {
                 const abierto = pasoAbierto === paso.numero;
                 const pdfUrl = `${BASE_PATH}/estudios-biblicos/nivel-1/${paso.archivo}`;
                 return (
