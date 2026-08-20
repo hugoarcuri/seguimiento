@@ -146,7 +146,7 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!saving) onOpenChange(o); }}>
-      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>{esEdicion ? "Editar Estudio" : "Nuevo Estudio Bíblico"}</DialogTitle>
           <DialogDescription>
