@@ -198,3 +198,45 @@ export interface EstudioBiblicoProgreso {
   created_at: string;
   updated_at: string;
 }
+
+export interface SeccionContenido {
+  tipo: "titulo" | "subtitulo" | "texto" | "referencia";
+  valor: string;
+}
+
+export interface PreguntaEstudio {
+  enunciado: string;
+  tipo: "texto_libre" | "opcion_multiple";
+  opciones?: string[];
+}
+
+export interface GuiaDiscipulador {
+  objetivo: string;
+  puntosClave: string[];
+  consejos: string[];
+  preguntas: string[];
+}
+
+export interface EstudioBiblico {
+  id: string;
+  numero: number;
+  etapa_id: number;
+  titulo: string;
+  descripcion: string;
+  contenido: SeccionContenido[];
+  preguntas: PreguntaEstudio[];
+  guia: GuiaDiscipulador;
+  activo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PasoEstudio {
+  numero: number;
+  etapaId: number;
+  titulo: string;
+  descripcion: string;
+  contenido: SeccionContenido[];
+  preguntas: PreguntaEstudio[];
+  guia: GuiaDiscipulador;
+}

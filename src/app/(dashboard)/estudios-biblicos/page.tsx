@@ -5,22 +5,35 @@ import { useUser } from "@/hooks/useUser";
 import { useEtapas } from "@/hooks/useEtapas";
 import { createClient } from "@/lib/supabase/client";
 import { EstudiosBiblicosClient } from "./estudios-biblicos-client";
-import type { EstudioBiblicoRespuesta, EstudioBiblicoProgreso } from "@/types/database";
+import type { EstudioBiblico, EstudioBiblicoRespuesta, EstudioBiblicoProgreso } from "@/types/database";
 
 export default function EstudiosBiblicosPage() {
   const { user, loading: userLoading } = useUser();
   const { etapas, loading: etapasLoading } = useEtapas();
+  const [estudios, setEstudios] = useState<EstudioBiblico[]>([]);
   const [etapaMiembro, setEtapaMiembro] = useState<number | null>(null);
   const [miembroId, setMiembroId] = useState<string | null>(null);
   const [respuestas, setRespuestas] = useState<EstudioBiblicoRespuesta[]>([]);
   const [progreso, setProgreso] = useState<EstudioBiblicoProgreso[]>([]);
-  const [cargandoRespuestas, setCargandoRespuestas] = useState(true);
+  const [cargando, setCargando] = useState(true);
+
+  const cargarEstudios = async () => {
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("estudios_biblicos")
+      .select("*")
+      .order("etapa_id", { ascending: true })
+      .order("numero", { ascending: true });
+    setEstudios((data || []) as EstudioBiblico[]);
+  };
 
   useEffect(() => {
     if (!user || userLoading) return;
 
     const supabase = createClient();
     (async () => {
+      await cargarEstudios();
+
       const { data: miembro } = await supabase
         .from("miembros")
         .select("id")
@@ -48,11 +61,12 @@ export default function EstudiosBiblicosPage() {
         setProgreso((progRes.data || []) as EstudioBiblicoProgreso[]);
       }
 
-      setCargandoRespuestas(false);
+      setCargando(false);
     })();
   }, [user, userLoading]);
 
-  const puedeVerGuia = user?.rol === "admin" || user?.rol === "discipulador";
+  const esAdmin = user?.rol === "admin";
+  const puedeVerGuia = esAdmin || user?.rol === "discipulador";
 
   if (userLoading || etapasLoading) {
     return (
@@ -65,14 +79,17 @@ export default function EstudiosBiblicosPage() {
   return (
     <EstudiosBiblicosClient
       etapas={etapas}
+      estudios={estudios}
+      esAdmin={esAdmin}
       puedeVerGuia={puedeVerGuia}
       etapaMiembro={etapaMiembro}
       miembroId={miembroId}
       respuestas={respuestas}
       progreso={progreso}
-      cargandoRespuestas={cargandoRespuestas}
+      cargando={cargando}
       onActualizarRespuestas={setRespuestas}
       onActualizarProgreso={setProgreso}
+      onRecargarEstudios={cargarEstudios}
     />
   );
 }

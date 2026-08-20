@@ -4,7 +4,7 @@ import { useState, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { getEstudiosPorEtapa } from "@/lib/constants/estudios-biblicos";
 import type { PasoEstudio } from "@/lib/constants/estudios-biblicos";
-import type { Etapa, EstudioBiblicoRespuesta, EstudioBiblicoProgreso } from "@/types/database";
+import type { Etapa, EstudioBiblico, EstudioBiblicoRespuesta, EstudioBiblicoProgreso } from "@/types/database";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,26 +12,31 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   ChevronDown, ChevronRight, GraduationCap, BookOpen,
-  CheckCircle2, Loader2, Save, Send,
+  CheckCircle2, Loader2, Save, Send, Plus, Pencil, Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { EstudioBiblicoFormDialog } from "./estudio-biblico-form-dialog";
 
 interface Props {
   etapas: Etapa[];
+  estudios: EstudioBiblico[];
+  esAdmin: boolean;
   puedeVerGuia: boolean;
   etapaMiembro?: number | null;
   miembroId: string | null;
   respuestas: EstudioBiblicoRespuesta[];
   progreso: EstudioBiblicoProgreso[];
-  cargandoRespuestas: boolean;
+  cargando: boolean;
   onActualizarRespuestas: (r: EstudioBiblicoRespuesta[]) => void;
   onActualizarProgreso: (p: EstudioBiblicoProgreso[]) => void;
+  onRecargarEstudios: () => Promise<void>;
 }
 
 export function EstudiosBiblicosClient({
-  etapas, puedeVerGuia, etapaMiembro, miembroId,
-  respuestas, progreso, cargandoRespuestas,
-  onActualizarRespuestas, onActualizarProgreso,
+  etapas, estudios, esAdmin, puedeVerGuia, etapaMiembro, miembroId,
+  respuestas, progreso, cargando,
+  onActualizarRespuestas, onActualizarProgreso, onRecargarEstudios,
 }: Props) {
   const defaultEtapa = etapaMiembro ? String(etapaMiembro) : String(etapas[0]?.id ?? 2);
 
@@ -41,6 +46,9 @@ export function EstudiosBiblicosClient({
   const [respuestasLocales, setRespuestasLocales] = useState<Record<string, string>>({});
   const [guardando, setGuardando] = useState<Record<string, boolean>>({});
   const [guardadoOk, setGuardadoOk] = useState<Record<string, boolean>>({});
+  const [dialogAbierto, setDialogAbierto] = useState(false);
+  const [estudioEditando, setEstudioEditando] = useState<EstudioBiblico | null>(null);
+  const [eliminando, setEliminando] = useState<string | null>(null);
 
   const supabase = useMemo(() => createClient(), []);
 
@@ -57,6 +65,30 @@ export function EstudiosBiblicosClient({
     setEtapaSeleccionada(value);
     setPasoAbierto(null);
     setGuiaAbierta(null);
+  };
+
+  const abrirCrear = () => {
+    setEstudioEditando(null);
+    setDialogAbierto(true);
+  };
+
+  const abrirEditar = (e: EstudioBiblico) => {
+    setEstudioEditando(e);
+    setDialogAbierto(true);
+  };
+
+  const eliminarEstudio = async (estudio: EstudioBiblico) => {
+    if (!confirm(`¿Eliminar el estudio "${estudio.titulo}"? Esta acción no se puede deshacer.`)) return;
+    setEliminando(estudio.id);
+    const supabase = createClient();
+    const { error } = await supabase.from("estudios_biblicos").delete().eq("id", estudio.id);
+    setEliminando(null);
+    if (error) {
+      toast.error("Error al eliminar el estudio");
+      return;
+    }
+    toast.success("Estudio eliminado");
+    await onRecargarEstudios();
   };
 
   const getRespuesta = useCallback((estudioNumero: number, preguntaIndex: number): string => {
@@ -166,11 +198,19 @@ export function EstudiosBiblicosClient({
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight">Estudios Bíblicos</h1>
-        <p className="text-muted-foreground">
-          Material organizado por etapas de discipulado
-        </p>
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight">Estudios Bíblicos</h1>
+          <p className="text-muted-foreground">
+            Material organizado por etapas de discipulado
+          </p>
+        </div>
+        {esAdmin && (
+          <Button onClick={abrirCrear} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Crear estudio
+          </Button>
+        )}
       </div>
 
       <Tabs value={etapaSeleccionada} onValueChange={handleTabChange}>
@@ -186,7 +226,7 @@ export function EstudiosBiblicosClient({
         </TabsList>
 
         {etapas.map((etapa) => {
-          const estudiosEtapa = getEstudiosPorEtapa(etapa.id);
+          const estudiosEtapa = getEstudiosPorEtapa(estudios, etapa.id);
           return (
             <TabsContent key={etapa.id} value={String(etapa.id)}>
               <div className="space-y-4 pt-2">
@@ -202,10 +242,10 @@ export function EstudiosBiblicosClient({
                     <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                       <BookOpen className="h-10 w-10 text-muted-foreground/40 mb-3" />
                       <p className="text-sm font-medium text-muted-foreground">
-                        Próximamente disponible
+                        {esAdmin ? "No hay estudios para esta etapa" : "Próximamente disponible"}
                       </p>
                       <p className="text-xs text-muted-foreground/70 mt-1">
-                        El material para esta etapa está en preparación
+                        {esAdmin ? "Creá el primer estudio con el botón de arriba" : "El material para esta etapa está en preparación"}
                       </p>
                     </CardContent>
                   </Card>
@@ -217,39 +257,62 @@ export function EstudiosBiblicosClient({
                       const completado = estaCompletado(paso.numero);
                       const respondidas = contarRespondidas(paso);
                       const total = paso.preguntas.length;
+                      const estudioDb = estudios.find((e) => e.numero === paso.numero && e.etapa_id === etapa.id);
 
                       return (
                         <Card key={paso.numero} className="overflow-hidden">
-                          <button
-                            type="button"
-                            onClick={() => togglePaso(paso.numero)}
-                            className="flex w-full items-center gap-3 p-4 text-left hover:bg-accent/50 transition-colors"
-                          >
-                            <div className={cn(
-                              "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold",
-                              completado
-                                ? "bg-emerald-500 text-white"
-                                : "bg-primary text-primary-foreground"
-                            )}>
-                              {completado ? <CheckCircle2 className="h-5 w-5" /> : paso.numero}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-sm">{paso.titulo}</p>
-                              <p className="text-xs text-muted-foreground truncate">{paso.descripcion}</p>
-                              {!cargandoRespuestas && miembroId && (
-                                <div className="flex items-center gap-2 mt-1">
-                                  <Badge variant={completado ? "default" : "secondary"} className="text-[10px]">
-                                    {completado ? "Completado" : `${respondidas}/${total} respondidas`}
-                                  </Badge>
-                                </div>
+                          <div className="flex items-center">
+                            <button
+                              type="button"
+                              onClick={() => togglePaso(paso.numero)}
+                              className="flex flex-1 items-center gap-3 p-4 text-left hover:bg-accent/50 transition-colors"
+                            >
+                              <div className={cn(
+                                "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold",
+                                completado
+                                  ? "bg-emerald-500 text-white"
+                                  : "bg-primary text-primary-foreground"
+                              )}>
+                                {completado ? <CheckCircle2 className="h-5 w-5" /> : paso.numero}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-sm">{paso.titulo}</p>
+                                <p className="text-xs text-muted-foreground truncate">{paso.descripcion}</p>
+                                {!cargando && miembroId && (
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <Badge variant={completado ? "default" : "secondary"} className="text-[10px]">
+                                      {completado ? "Completado" : `${respondidas}/${total} respondidas`}
+                                    </Badge>
+                                  </div>
+                                )}
+                              </div>
+                              {abierto ? (
+                                <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
                               )}
-                            </div>
-                            {abierto ? (
-                              <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            </button>
+
+                            {esAdmin && estudioDb && (
+                              <div className="flex items-center gap-1 pr-3 shrink-0">
+                                <Button size="icon-xs" variant="ghost" onClick={() => abrirEditar(estudioDb)}>
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  size="icon-xs"
+                                  variant="ghost"
+                                  onClick={() => eliminarEstudio(estudioDb)}
+                                  disabled={eliminando === estudioDb.id}
+                                >
+                                  {eliminando === estudioDb.id ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                                  )}
+                                </Button>
+                              </div>
                             )}
-                          </button>
+                          </div>
 
                           {abierto && (
                             <CardContent className="px-4 pb-4 pt-0 space-y-5">
@@ -276,7 +339,7 @@ export function EstudiosBiblicosClient({
                                 })}
                               </div>
 
-                              {!cargandoRespuestas && miembroId && (
+                              {!cargando && miembroId && (
                                 <div className="space-y-4 mt-6 pt-4 border-t">
                                   <h4 className="text-sm font-semibold flex items-center gap-2">
                                     <Send className="h-4 w-4 text-primary" />
@@ -437,6 +500,13 @@ export function EstudiosBiblicosClient({
           );
         })}
       </Tabs>
+
+      <EstudioBiblicoFormDialog
+        open={dialogAbierto}
+        onOpenChange={setDialogAbierto}
+        estudio={estudioEditando}
+        onGuardado={onRecargarEstudios}
+      />
     </div>
   );
 }

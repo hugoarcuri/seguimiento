@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { getEstudiosPorEtapa } from "@/lib/constants/estudios-biblicos";
 import { calcularSalud, contarEncuentrosMes, SALUD_CONFIG } from "@/lib/discipulo-health";
 import { calcularProgreso } from "../seguimiento/seguimiento-constants";
 import type {
@@ -192,23 +191,20 @@ export function MiCrecimientoClient() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm flex items-center gap-2">
-                <BookOpen className="h-4 w-4" /> Estudios Bíblicos — Nuevo creyente
+                <BookOpen className="h-4 w-4" /> Estudios Bíblicos
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
-              {getEstudiosPorEtapa(2).map((paso) => (
-                <Link
-                  key={paso.numero}
-                  href="/estudios-biblicos"
-                  className="flex items-center gap-2.5 rounded-lg border p-3 hover:bg-accent/50 transition-colors"
-                >
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
-                    {paso.numero}
-                  </div>
-                  <span className="flex-1 text-sm font-medium truncate">{paso.titulo}</span>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                </Link>
-              ))}
+            <CardContent>
+              <Link
+                href="/estudios-biblicos"
+                className="flex items-center justify-between rounded-lg border p-4 hover:bg-accent/50 transition-colors"
+              >
+                <div>
+                  <p className="text-sm font-medium">Ir a Estudios Bíblicos</p>
+                  <p className="text-xs text-muted-foreground">Material de formación por etapas de discipulado</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </Link>
             </CardContent>
           </Card>
         </div>
