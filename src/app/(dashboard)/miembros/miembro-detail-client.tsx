@@ -477,7 +477,7 @@ export function MiembroDetailClient({
             type="button"
             onClick={() => fileRef.current?.click()}
             disabled={subiendoAvatar}
-            className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+            className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-80 md:opacity-0 md:group-hover:opacity-100 transition-opacity cursor-pointer"
           >
             {subiendoAvatar ? <Loader2 className="h-6 w-6 text-white animate-spin" /> : <Camera className="h-6 w-6 text-white" />}
           </button>
@@ -485,7 +485,7 @@ export function MiembroDetailClient({
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-2">
-          <h1 className="text-2xl font-bold">{miembro.apellido}, {miembro.nombre}</h1>
+          <h1 className="text-2xl font-bold break-words min-w-0">{miembro.apellido}, {miembro.nombre}</h1>
           <span className={cn("h-3 w-3 rounded-full shrink-0", estadoColors[miembro.estado])} />
         </div>
 
@@ -519,16 +519,16 @@ export function MiembroDetailClient({
             <div className="flex items-center justify-between gap-2">
               <CardTitle className="text-base">Datos personales</CardTitle>
               {!editandoDatos ? (
-                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={iniciarEdicionDatos}>
+                <Button variant="outline" size="sm" className="min-h-11 md:min-h-7 text-xs" onClick={iniciarEdicionDatos}>
                   <Edit className="mr-1 h-3.5 w-3.5" />
                   Editar
                 </Button>
               ) : (
                 <div className="flex items-center gap-1.5">
-                  <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setEditandoDatos(false)} disabled={guardandoDatos}>
+                  <Button variant="outline" size="sm" className="min-h-11 md:min-h-7 text-xs" onClick={() => setEditandoDatos(false)} disabled={guardandoDatos}>
                     Cancelar
                   </Button>
-                  <Button size="sm" className="h-7 text-xs" onClick={guardarDatos} disabled={guardandoDatos}>
+                  <Button size="sm" className="min-h-11 md:min-h-7 text-xs" onClick={guardarDatos} disabled={guardandoDatos}>
                     {guardandoDatos && <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />}
                     Guardar
                   </Button>
@@ -876,7 +876,7 @@ export function MiembroDetailClient({
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base">Próximos encuentros</CardTitle>
-                  <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setEncuentroOpen(true)}>
+                  <Button variant="outline" size="sm" className="min-h-11 md:min-h-7 text-xs" onClick={() => setEncuentroOpen(true)}>
                     <CalendarPlus className="mr-1 h-3.5 w-3.5" />Registrar encuentro
                   </Button>
                 </div>
@@ -1009,7 +1009,7 @@ export function MiembroDetailClient({
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-base">Evaluación integral</CardTitle>
                     <Link href={`/seguimiento/ver?id=${seguimiento.id}`}>
-                      <Button variant="outline" size="sm" className="h-7 text-xs">
+                      <Button variant="outline" size="sm" className="min-h-11 md:min-h-7 text-xs">
                         {evaluacion ? "Editar evaluación" : "Hacer evaluación"}
                       </Button>
                     </Link>
@@ -1102,7 +1102,7 @@ export function MiembroDetailClient({
                       <Button
                         size="sm"
                         variant={o.estado === "en_oracion" ? "default" : "outline"}
-                        className="h-7 text-xs"
+                        className="min-h-11 md:min-h-7 text-xs"
                         onClick={() => cambiarEstadoOracion(o, "en_oracion")}
                       >
                         En oración
@@ -1110,7 +1110,7 @@ export function MiembroDetailClient({
                       <Button
                         size="sm"
                         variant={o.estado === "respondida" ? "default" : "outline"}
-                        className="h-7 text-xs"
+                        className="min-h-11 md:min-h-7 text-xs"
                         onClick={() => cambiarEstadoOracion(o, "respondida")}
                       >
                         Respondida

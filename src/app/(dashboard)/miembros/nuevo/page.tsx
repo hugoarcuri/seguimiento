@@ -33,7 +33,7 @@ export default function NuevoMiembroPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Nuevo Miembro</h1>
+        <h1 className="text-3xl font-bold break-words">Nuevo Miembro</h1>
         <p className="text-muted-foreground">Registra un nuevo miembro en el sistema</p>
       </div>
       <MiembroForm etapas={etapas} discipuladores={discipuladores} />

@@ -27,29 +27,27 @@ export default function EstudiosBiblicosPage() {
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (!miembro) {
-        setCargandoRespuestas(false);
-        return;
+      if (miembro) {
+        setMiembroId(miembro.id);
+
+        const { data: seg } = await supabase
+          .from("seguimientos")
+          .select("etapa")
+          .eq("miembro_id", miembro.id)
+          .eq("estado", "activo")
+          .maybeSingle();
+
+        if (seg?.etapa) setEtapaMiembro(seg.etapa);
+
+        const [respRes, progRes] = await Promise.all([
+          supabase.from("estudios_biblicos_respuestas").select("*").eq("miembro_id", miembro.id),
+          supabase.from("estudios_biblicos_progreso").select("*").eq("miembro_id", miembro.id),
+        ]);
+
+        setRespuestas((respRes.data || []) as EstudioBiblicoRespuesta[]);
+        setProgreso((progRes.data || []) as EstudioBiblicoProgreso[]);
       }
 
-      setMiembroId(miembro.id);
-
-      const { data: seg } = await supabase
-        .from("seguimientos")
-        .select("etapa")
-        .eq("miembro_id", miembro.id)
-        .eq("estado", "activo")
-        .maybeSingle();
-
-      if (seg?.etapa) setEtapaMiembro(seg.etapa);
-
-      const [respRes, progRes] = await Promise.all([
-        supabase.from("estudios_biblicos_respuestas").select("*").eq("miembro_id", miembro.id),
-        supabase.from("estudios_biblicos_progreso").select("*").eq("miembro_id", miembro.id),
-      ]);
-
-      setRespuestas((respRes.data || []) as EstudioBiblicoRespuesta[]);
-      setProgreso((progRes.data || []) as EstudioBiblicoProgreso[]);
       setCargandoRespuestas(false);
     })();
   }, [user, userLoading]);

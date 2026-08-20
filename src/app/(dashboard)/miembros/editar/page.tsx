@@ -44,7 +44,7 @@ function EditarMiembroContent() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Editar Miembro</h1>
+        <h1 className="text-3xl font-bold break-words">Editar Miembro</h1>
         <p className="text-muted-foreground">
           {miembro.apellido}, {miembro.nombre}
         </p>

@@ -377,8 +377,8 @@ export default function EvangelismoPage() {
                       )}
                     </div>
                     <span className="flex items-center gap-0.5 border-l border-muted pl-1.5 ml-0.5">
-                      <button type="button" aria-label={`Editar ${p.nombre} ${p.apellido}`} onClick={(e) => { e.stopPropagation(); setEditPersonaForm({ nombre: p.nombre, apellido: p.apellido, telefono: p.telefono || "", edad: p.edad?.toString() || "", observaciones: p.observaciones || "", estado: p.estado }); setShowEditDialog(p); }} className="text-blue-400 hover:text-blue-600 text-xs p-1"><Pencil className="h-3.5 w-3.5" /></button>
-                      <button type="button" aria-label={`Eliminar ${p.nombre} ${p.apellido}`} onClick={(e) => { e.stopPropagation(); handleEliminarPersona(p.id); }} className="text-red-400 hover:text-red-600 text-xs p-1"><Trash2 className="h-3.5 w-3.5" /></button>
+                      <button type="button" aria-label={`Editar ${p.nombre} ${p.apellido}`} onClick={(e) => { e.stopPropagation(); setEditPersonaForm({ nombre: p.nombre, apellido: p.apellido, telefono: p.telefono || "", edad: p.edad?.toString() || "", observaciones: p.observaciones || "", estado: p.estado }); setShowEditDialog(p); }} className="text-blue-400 hover:text-blue-600 p-1.5 -m-0.5 rounded min-h-9 min-w-9 flex items-center justify-center"><Pencil className="h-4 w-4" /></button>
+                      <button type="button" aria-label={`Eliminar ${p.nombre} ${p.apellido}`} onClick={(e) => { e.stopPropagation(); handleEliminarPersona(p.id); }} className="text-red-400 hover:text-red-600 p-1.5 -m-0.5 rounded min-h-9 min-w-9 flex items-center justify-center"><Trash2 className="h-4 w-4" /></button>
                     </span>
                   </div>
                 </CardContent>
@@ -414,15 +414,15 @@ export default function EvangelismoPage() {
                         draggable onDragStart={() => handleDragStart(p)} onClick={() => setSelectedPersona(p)}
                       >
                         <div className="flex items-center gap-1">
-                          <span onClick={(e) => e.stopPropagation()} className="shrink-0 p-0.5 -ml-0.5 hover:bg-primary/10 rounded" title="Seleccionar">
-                            <Checkbox checked={selectedIds.includes(p.id)} onCheckedChange={() => toggleSeleccion(p.id)} aria-label="Seleccionar" className="h-3.5 w-3.5" />
+                          <span onClick={(e) => e.stopPropagation()} className="shrink-0 p-1 -ml-0.5 hover:bg-primary/10 rounded min-h-9 min-w-9 flex items-center justify-center" title="Seleccionar">
+                            <Checkbox checked={selectedIds.includes(p.id)} onCheckedChange={() => toggleSeleccion(p.id)} aria-label="Seleccionar" className="h-4 w-4" />
                           </span>
                           <GripVertical className="h-3 w-3 text-muted-foreground shrink-0" />
                           <p className="text-xs font-medium truncate flex-1">{p.nombre} {p.apellido}</p>
                           {(() => { const d = miembros.find((x) => x.id === p.miembro_id); if (!d) return null; const c = getMiembroColor(d.id); return <span className="text-[9px] px-1 py-0.5 rounded-full hidden sm:inline font-medium" style={{ color: c.fg, backgroundColor: c.bg }}>{d.nombre}</span>; })()}
                           <Badge variant="outline" className="text-[10px] px-1">{dias}/30d</Badge>
-                          <button type="button" aria-label={`Editar ${p.nombre} ${p.apellido}`} onClick={(e) => { e.stopPropagation(); setEditPersonaForm({ nombre: p.nombre, apellido: p.apellido, telefono: p.telefono || "", edad: p.edad?.toString() || "", observaciones: p.observaciones || "", estado: p.estado }); setShowEditDialog(p); }} className="text-blue-400 hover:text-blue-600 text-[10px] p-0.5"><Pencil className="h-3 w-3" /></button>
-                          <button type="button" aria-label={`Eliminar ${p.nombre} ${p.apellido}`} onClick={(e) => { e.stopPropagation(); handleEliminarPersona(p.id); }} className="text-red-400 hover:text-red-600 text-[10px] p-0.5"><Trash2 className="h-3 w-3" /></button>
+                          <button type="button" aria-label={`Editar ${p.nombre} ${p.apellido}`} onClick={(e) => { e.stopPropagation(); setEditPersonaForm({ nombre: p.nombre, apellido: p.apellido, telefono: p.telefono || "", edad: p.edad?.toString() || "", observaciones: p.observaciones || "", estado: p.estado }); setShowEditDialog(p); }} className="text-blue-400 hover:text-blue-600 p-1 -m-0.5 rounded min-h-9 min-w-9 flex items-center justify-center"><Pencil className="h-3.5 w-3.5" /></button>
+                          <button type="button" aria-label={`Eliminar ${p.nombre} ${p.apellido}`} onClick={(e) => { e.stopPropagation(); handleEliminarPersona(p.id); }} className="text-red-400 hover:text-red-600 p-1 -m-0.5 rounded min-h-9 min-w-9 flex items-center justify-center"><Trash2 className="h-3.5 w-3.5" /></button>
                         </div>
                         <div className="mt-1.5 h-1 bg-muted rounded-full overflow-hidden">
                           <div className={cn("h-full rounded-full", prog >= 100 ? "bg-emerald-500" : "bg-blue-500")} style={{ width: `${prog}%` }} />

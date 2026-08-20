@@ -393,7 +393,7 @@ export function MiembrosClient({ miembros, etapas, esAdmin, onCambio }: Miembros
                 type="button"
                 onClick={() => setFoco("todos")}
                 className={cn(
-                  "text-xs rounded-full px-2.5 py-1 font-medium transition-colors inline-flex items-center gap-1.5",
+                  "text-xs rounded-full px-3 py-1.5 min-h-9 font-medium transition-colors inline-flex items-center gap-1.5",
                   foco === "todos" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
                 )}
               >
@@ -405,7 +405,7 @@ export function MiembrosClient({ miembros, etapas, esAdmin, onCambio }: Miembros
                   type="button"
                   onClick={() => setFoco(c.key)}
                   className={cn(
-                    "text-xs rounded-full px-2.5 py-1 font-medium transition-colors inline-flex items-center gap-1",
+                    "text-xs rounded-full px-3 py-1.5 min-h-9 font-medium transition-colors inline-flex items-center gap-1",
                     foco === c.key ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
                   )}
                 >
@@ -417,11 +417,11 @@ export function MiembrosClient({ miembros, etapas, esAdmin, onCambio }: Miembros
 
             <div className="flex flex-wrap gap-1">
               <button type="button" onClick={() => setEtapaFilter(null)}
-                className={cn("text-xs rounded-full px-2.5 py-1 font-medium transition-colors", etapaFilter === null ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80")}
+                className={cn("text-xs rounded-full px-3 py-1.5 min-h-9 font-medium transition-colors", etapaFilter === null ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80")}
               >Todas</button>
               {etapas.map((e) => (
                 <button key={e.id} type="button" onClick={() => setEtapaFilter(e.id)}
-                  className={cn("text-xs rounded-full px-2.5 py-1 font-medium transition-colors", etapaFilter === e.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80")}
+                  className={cn("text-xs rounded-full px-3 py-1.5 min-h-9 font-medium transition-colors", etapaFilter === e.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80")}
                 >{e.nombre}</button>
               ))}
             </div>
@@ -539,8 +539,8 @@ export function MiembrosClient({ miembros, etapas, esAdmin, onCambio }: Miembros
                                 )}
                               </div>
                               {!listaReducida && esAdmin && (
-                                <button type="button" onClick={(e) => { e.stopPropagation(); setDeleteDialog(d.id); }} className="shrink-0 text-muted-foreground/50 hover:text-destructive transition-colors pt-0.5" aria-label="Eliminar">
-                                  <Trash2 className="h-3.5 w-3.5" />
+                                <button type="button" onClick={(e) => { e.stopPropagation(); setDeleteDialog(d.id); }} className="shrink-0 text-muted-foreground/50 hover:text-destructive transition-colors p-1 -m-1 rounded" aria-label="Eliminar">
+                                  <Trash2 className="h-4 w-4" />
                                 </button>
                               )}
                             </div>
@@ -548,7 +548,7 @@ export function MiembrosClient({ miembros, etapas, esAdmin, onCambio }: Miembros
                               <div className="px-2 pb-2">
                                 <Button
                                   size="sm"
-                                  className="h-7 w-full text-xs gap-1"
+                                  className="min-h-11 md:min-h-7 w-full text-xs gap-1"
                                   disabled={iniciandoSeg === d.id}
                                   onClick={() => ejecutarAccion(d)}
                                 >
