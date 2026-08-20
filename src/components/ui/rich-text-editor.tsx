@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -82,7 +82,7 @@ export function RichTextEditor({ value, onChange, placeholder, className, minHei
     },
     editorProps: {
       attributes: {
-        class: "prose prose-sm max-w-none px-3 py-2 focus:outline-none min-h-full",
+        class: "prose prose-sm max-w-none px-3 py-2 focus:outline-none",
       },
     },
   });
@@ -90,59 +90,59 @@ export function RichTextEditor({ value, onChange, placeholder, className, minHei
   const fontSize = getCurrentFontSize(editor);
 
   return (
-    <div className={cn("rounded-md border bg-background flex flex-col", className)}>
-      {editor && (
-        <div className="flex items-center gap-0.5 border-b px-2 py-1.5 shrink-0">
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().toggleBold().run()}
-            className={cn(
-              "rounded p-1.5 hover:bg-accent transition-colors",
-              editor.isActive("bold") && "bg-accent text-foreground"
-            )}
-            title="Negrita"
-          >
-            <Bold className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().toggleUnderline().run()}
-            className={cn(
-              "rounded p-1.5 hover:bg-accent transition-colors",
-              editor.isActive("underline") && "bg-accent text-foreground"
-            )}
-            title="Subrayado"
-          >
-            <UnderlineIcon className="h-4 w-4" />
-          </button>
-
-          <div className="mx-1 h-4 w-px bg-border" />
-
-          <button
-            type="button"
-            onClick={() => cycleFontSize(editor, "down")}
-            className="rounded p-1.5 hover:bg-accent transition-colors"
-            title="Achicar texto"
-          >
-            <Minus className="h-4 w-4" />
-          </button>
-
-          <div className="flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs text-muted-foreground min-w-[60px] justify-center">
-            <Type className="h-3 w-3" />
-            {fontSize.replace("px", "")}
-          </div>
-
-          <button
-            type="button"
-            onClick={() => cycleFontSize(editor, "up")}
-            className="rounded p-1.5 hover:bg-accent transition-colors"
-            title="Agrandar texto"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
-        </div>
-      )}
+    <div className={cn("rounded-md border bg-background", className)}>
       <div className="overflow-y-auto" style={{ height: `${height}px` }}>
+        {editor && (
+          <div className="flex items-center gap-0.5 border-b px-2 py-1.5 sticky top-0 bg-background z-10 shrink-0">
+            <button
+              type="button"
+              onClick={() => editor.chain().focus().toggleBold().run()}
+              className={cn(
+                "rounded p-1.5 hover:bg-accent transition-colors",
+                editor.isActive("bold") && "bg-accent text-foreground"
+              )}
+              title="Negrita"
+            >
+              <Bold className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => editor.chain().focus().toggleUnderline().run()}
+              className={cn(
+                "rounded p-1.5 hover:bg-accent transition-colors",
+                editor.isActive("underline") && "bg-accent text-foreground"
+              )}
+              title="Subrayado"
+            >
+              <UnderlineIcon className="h-4 w-4" />
+            </button>
+
+            <div className="mx-1 h-4 w-px bg-border" />
+
+            <button
+              type="button"
+              onClick={() => cycleFontSize(editor, "down")}
+              className="rounded p-1.5 hover:bg-accent transition-colors"
+              title="Achicar texto"
+            >
+              <Minus className="h-4 w-4" />
+            </button>
+
+            <div className="flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs text-muted-foreground min-w-[60px] justify-center">
+              <Type className="h-3 w-3" />
+              {fontSize.replace("px", "")}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => cycleFontSize(editor, "up")}
+              className="rounded p-1.5 hover:bg-accent transition-colors"
+              title="Agrandar texto"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          </div>
+        )}
         <EditorContent editor={editor} placeholder={placeholder} />
       </div>
       <div
