@@ -212,6 +212,8 @@ export function getEstudiosPorEtapa(etapaId: number): PasoEstudio[] {
   return ESTUDIOS_BIBLICOS.filter((e) => e.etapaId === etapaId);
 }
 
+import { BASE_PATH } from "@/lib/constants/paths";
+
 export function getBasePath(): string {
-  return "/estudios-biblicos/nivel-1";
+  return `${BASE_PATH}/estudios-biblicos/nivel-1`;
 }
