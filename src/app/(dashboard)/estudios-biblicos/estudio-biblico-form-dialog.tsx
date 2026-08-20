@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import {
   Select,
@@ -146,7 +145,7 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!saving) onOpenChange(o); }}>
-      <DialogContent className="sm:max-w-3xl max-h-[90dvh] flex flex-col overflow-hidden p-0">
+      <DialogContent className="sm:max-w-3xl p-0">
         <DialogHeader className="px-6 pt-6 pb-2">
           <DialogTitle>{esEdicion ? "Editar Estudio" : "Nuevo Estudio Bíblico"}</DialogTitle>
           <DialogDescription>
@@ -154,8 +153,8 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0 overflow-hidden">
-          <div className="px-6 space-y-3 shrink-0">
+        <form onSubmit={handleSubmit(onSubmit)} className="px-6 pb-6 space-y-4">
+          <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className={labelClass}>Etapa *</Label>
@@ -180,51 +179,45 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
               <Textarea rows={1} className="text-sm" {...register("descripcion")} placeholder="Breve descripción" />
               {errors.descripcion && <p className="text-xs text-destructive">{errors.descripcion.message}</p>}
             </div>
-            <div className="flex items-center gap-2">
-              <Checkbox checked={watch("activo")} onCheckedChange={(c) => setValue("activo", c === true)} />
-              <span className="text-sm">Activo</span>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase text-muted-foreground">Contenido</p>
+              <Button type="button" size="sm" variant="outline" onClick={() => agregarContenido({ tipo: "texto", valor: "" })}>
+                <Plus className="h-3.5 w-3.5 mr-1" /> Agregar sección
+              </Button>
+            </div>
+            {errors.contenido && <p className="text-xs text-destructive">{errors.contenido.message}</p>}
+            <div className="space-y-2">
+              {camposContenido.map((campo, idx) => (
+                <div key={campo.id} className="rounded-lg border p-2 space-y-1">
+                  <div className="flex items-center justify-end">
+                    {camposContenido.length > 1 && (
+                      <Button type="button" size="icon-xs" variant="ghost" onClick={() => eliminarContenido(idx)}>
+                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      </Button>
+                    )}
+                  </div>
+                  <Controller
+                    control={control}
+                    name={`contenido.${idx}.valor`}
+                    render={({ field }) => (
+                      <RichTextEditor
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        placeholder="Escribí el contenido del estudio..."
+                        defaultHeight={400}
+                        minHeight={150}
+                      />
+                    )}
+                  />
+                </div>
+              ))}
             </div>
           </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto px-6 py-3">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase text-muted-foreground">Contenido</p>
-                  <Button type="button" size="sm" variant="outline" onClick={() => agregarContenido({ tipo: "texto", valor: "" })}>
-                    <Plus className="h-3.5 w-3.5 mr-1" /> Agregar sección
-                  </Button>
-                </div>
-                {errors.contenido && <p className="text-xs text-destructive">{errors.contenido.message}</p>}
-                <div className="space-y-2">
-                  {camposContenido.map((campo, idx) => (
-                    <div key={campo.id} className="rounded-lg border p-2 space-y-1">
-                      <div className="flex items-center justify-end">
-                        {camposContenido.length > 1 && (
-                          <Button type="button" size="icon-xs" variant="ghost" onClick={() => eliminarContenido(idx)}>
-                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                          </Button>
-                        )}
-                      </div>
-                      <Controller
-                        control={control}
-                        name={`contenido.${idx}.valor`}
-                        render={({ field }) => (
-                          <RichTextEditor
-                            value={field.value || ""}
-                            onChange={field.onChange}
-                            placeholder="Escribí el contenido del estudio..."
-                            defaultHeight={400}
-                            minHeight={150}
-                          />
-                        )}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-          </div>
-
-          <div className="px-6 shrink-0 border-t pt-3 space-y-2">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold uppercase text-muted-foreground">Preguntas de reflexión</p>
               <Button type="button" size="sm" variant="outline" onClick={() => agregarPregunta({ enunciado: "", tipo: "texto_libre" })}>
@@ -249,17 +242,15 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
             </div>
           </div>
 
-          <div className="px-6 pb-6 pt-3 shrink-0">
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={saving}>
-                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {esEdicion ? "Guardar cambios" : "Crear estudio"}
-              </Button>
-            </DialogFooter>
-          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={saving}>
+              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {esEdicion ? "Guardar cambios" : "Crear estudio"}
+            </Button>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
