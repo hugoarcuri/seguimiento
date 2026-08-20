@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -12,7 +13,8 @@ interface Props {
   onChange: (html: string) => void;
   placeholder?: string;
   className?: string;
-  rows?: number;
+  minHeight?: number;
+  defaultHeight?: number;
 }
 
 const FONT_SIZES = ["12px", "14px", "16px", "18px", "20px", "24px", "28px", "32px"];
@@ -34,7 +36,30 @@ function cycleFontSize(editor: ReturnType<typeof useEditor>, direction: "up" | "
   }
 }
 
-export function RichTextEditor({ value, onChange, placeholder, className, rows = 8 }: Props) {
+export function RichTextEditor({ value, onChange, placeholder, className, minHeight = 200, defaultHeight = 400 }: Props) {
+  const [height, setHeight] = useState(defaultHeight);
+  const dragging = useRef(false);
+  const startY = useRef(0);
+  const startH = useRef(0);
+
+  const onPointerDown = useCallback((e: React.PointerEvent) => {
+    dragging.current = true;
+    startY.current = e.clientY;
+    startH.current = height;
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  }, [height]);
+
+  const onPointerMove = useCallback((e: React.PointerEvent) => {
+    if (!dragging.current) return;
+    const delta = e.clientY - startY.current;
+    const next = Math.max(minHeight, startH.current + delta);
+    setHeight(next);
+  }, [minHeight]);
+
+  const onPointerUp = useCallback(() => {
+    dragging.current = false;
+  }, []);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -57,7 +82,7 @@ export function RichTextEditor({ value, onChange, placeholder, className, rows =
     },
     editorProps: {
       attributes: {
-        class: "prose prose-sm max-w-none px-3 py-2 focus:outline-none",
+        class: "prose prose-sm max-w-none px-3 py-2 focus:outline-none min-h-full",
       },
     },
   });
@@ -67,7 +92,7 @@ export function RichTextEditor({ value, onChange, placeholder, className, rows =
   return (
     <div className={cn("rounded-md border bg-background flex flex-col", className)}>
       {editor && (
-        <div className="flex items-center gap-0.5 border-b px-2 py-1.5 sticky top-0 bg-background z-10 shrink-0">
+        <div className="flex items-center gap-0.5 border-b px-2 py-1.5 shrink-0">
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleBold().run()}
@@ -117,8 +142,16 @@ export function RichTextEditor({ value, onChange, placeholder, className, rows =
           </button>
         </div>
       )}
-      <div className="overflow-y-auto" style={{ minHeight: "6rem", maxHeight: `${rows * 1.5}rem` }}>
+      <div className="overflow-y-auto" style={{ height: `${height}px` }}>
         <EditorContent editor={editor} placeholder={placeholder} />
+      </div>
+      <div
+        className="h-5 cursor-ns-resize flex items-center justify-center border-t bg-muted/50 hover:bg-muted transition-colors shrink-0 select-none"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+      >
+        <div className="w-8 h-1 rounded-full bg-border" />
       </div>
     </div>
   );

@@ -213,7 +213,8 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
                             value={field.value || ""}
                             onChange={field.onChange}
                             placeholder="Escribí el contenido del estudio..."
-                            rows={14}
+                            defaultHeight={400}
+                            minHeight={150}
                           />
                         )}
                       />
