@@ -154,8 +154,8 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="space-y-3">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label className={labelClass}>Etapa *</Label>
               <Select value={String(watch("etapa_id"))} onValueChange={(v) => setValue("etapa_id", Number(v))}>
@@ -173,28 +173,28 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
               <Input className={inputClass} {...register("titulo")} placeholder="Título del estudio" />
               {errors.titulo && <p className="text-xs text-destructive">{errors.titulo.message}</p>}
             </div>
-            <div className="space-y-1">
-              <Label className={labelClass}>Descripción *</Label>
-              <Textarea rows={2} className="text-sm" {...register("descripcion")} placeholder="Breve descripción del estudio" />
-              {errors.descripcion && <p className="text-xs text-destructive">{errors.descripcion.message}</p>}
-            </div>
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <Checkbox checked={watch("activo")} onCheckedChange={(c) => setValue("activo", c === true)} />
-              Activo (visible para miembros)
-            </label>
+          </div>
+          <div className="space-y-1">
+            <Label className={labelClass}>Descripción *</Label>
+            <Textarea rows={1} className="text-sm" {...register("descripcion")} placeholder="Breve descripción" />
+            {errors.descripcion && <p className="text-xs text-destructive">{errors.descripcion.message}</p>}
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox checked={watch("activo")} onCheckedChange={(c) => setValue("activo", c === true)} />
+            <span className="text-sm">Activo</span>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase text-muted-foreground">Contenido del estudio</p>
+              <p className="text-xs font-semibold uppercase text-muted-foreground">Contenido</p>
               <Button type="button" size="sm" variant="outline" onClick={() => agregarContenido({ tipo: "texto", valor: "" })}>
                 <Plus className="h-3.5 w-3.5 mr-1" /> Agregar sección
               </Button>
             </div>
             {errors.contenido && <p className="text-xs text-destructive">{errors.contenido.message}</p>}
-            <div className="space-y-3">
+            <div className="space-y-2">
               {camposContenido.map((campo, idx) => (
-                <div key={campo.id} className="rounded-lg border p-3 space-y-2">
+                <div key={campo.id} className="rounded-lg border p-2 space-y-1">
                   <div className="flex items-center justify-end">
                     {camposContenido.length > 1 && (
                       <Button type="button" size="icon-xs" variant="ghost" onClick={() => eliminarContenido(idx)}>
@@ -210,6 +210,7 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
                         value={field.value || ""}
                         onChange={field.onChange}
                         placeholder="Escribí el contenido del estudio..."
+                        rows={14}
                       />
                     )}
                   />
@@ -218,25 +219,25 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
             </div>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold uppercase text-muted-foreground">Preguntas de reflexión</p>
               <Button type="button" size="sm" variant="outline" onClick={() => agregarPregunta({ enunciado: "", tipo: "texto_libre" })}>
-                <Plus className="h-3.5 w-3.5 mr-1" /> Agregar pregunta
+                <Plus className="h-3.5 w-3.5 mr-1" /> Agregar
               </Button>
             </div>
             {errors.preguntas && <p className="text-xs text-destructive">{errors.preguntas.message}</p>}
-            <div className="space-y-2">
+            <div className="space-y-1">
               {camposPreguntas.map((campo, idx) => (
-                <div key={campo.id} className="flex gap-2 items-start">
-                  <span className="text-xs font-bold text-muted-foreground mt-2 shrink-0 w-5">{idx + 1}.</span>
+                <div key={campo.id} className="flex gap-2 items-center">
+                  <span className="text-xs font-bold text-muted-foreground shrink-0 w-4 text-right">{idx + 1}.</span>
                   <Input
                     {...register(`preguntas.${idx}.enunciado`)}
-                    className={inputClass + " flex-1"}
-                    placeholder="Escribí la pregunta..."
+                    className="h-8 text-sm flex-1"
+                    placeholder="Pregunta..."
                   />
-                  <Button type="button" size="icon-xs" variant="ghost" onClick={() => eliminarPregunta(idx)} className="mt-1 shrink-0">
-                    <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                  <Button type="button" size="icon-xs" variant="ghost" onClick={() => eliminarPregunta(idx)} className="shrink-0">
+                    <Trash2 className="h-3 w-3 text-destructive" />
                   </Button>
                 </div>
               ))}
