@@ -57,8 +57,7 @@ export function RichTextEditor({ value, onChange, placeholder, className, rows =
     },
     editorProps: {
       attributes: {
-        class: `prose prose-sm max-w-none px-3 py-2 focus:outline-none`,
-        style: `min-height: ${rows * 1.5}rem`,
+        class: "prose prose-sm max-w-none px-3 py-2 focus:outline-none",
       },
     },
   });
@@ -66,9 +65,9 @@ export function RichTextEditor({ value, onChange, placeholder, className, rows =
   const fontSize = getCurrentFontSize(editor);
 
   return (
-    <div className={cn("rounded-md border bg-background", className)}>
+    <div className={cn("rounded-md border bg-background flex flex-col", className)}>
       {editor && (
-        <div className="flex items-center gap-0.5 border-b px-2 py-1.5">
+        <div className="flex items-center gap-0.5 border-b px-2 py-1.5 sticky top-0 bg-background z-10 shrink-0">
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleBold().run()}
@@ -118,7 +117,9 @@ export function RichTextEditor({ value, onChange, placeholder, className, rows =
           </button>
         </div>
       )}
-      <EditorContent editor={editor} placeholder={placeholder} />
+      <div className="overflow-y-auto" style={{ minHeight: "6rem", maxHeight: `${rows * 1.5}rem` }}>
+        <EditorContent editor={editor} placeholder={placeholder} />
+      </div>
     </div>
   );
 }

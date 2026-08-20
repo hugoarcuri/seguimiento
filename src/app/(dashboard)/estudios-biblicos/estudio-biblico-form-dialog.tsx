@@ -187,7 +187,6 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto px-6 py-3">
-            <div className="space-y-3">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-semibold uppercase text-muted-foreground">Contenido</p>
@@ -222,31 +221,30 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
                   ))}
                 </div>
               </div>
+          </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase text-muted-foreground">Preguntas de reflexión</p>
-                  <Button type="button" size="sm" variant="outline" onClick={() => agregarPregunta({ enunciado: "", tipo: "texto_libre" })}>
-                    <Plus className="h-3.5 w-3.5 mr-1" /> Agregar
+          <div className="px-6 shrink-0 border-t pt-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase text-muted-foreground">Preguntas de reflexión</p>
+              <Button type="button" size="sm" variant="outline" onClick={() => agregarPregunta({ enunciado: "", tipo: "texto_libre" })}>
+                <Plus className="h-3.5 w-3.5 mr-1" /> Agregar
+              </Button>
+            </div>
+            {errors.preguntas && <p className="text-xs text-destructive">{errors.preguntas.message}</p>}
+            <div className="space-y-1">
+              {camposPreguntas.map((campo, idx) => (
+                <div key={campo.id} className="flex gap-2 items-center">
+                  <span className="text-xs font-bold text-muted-foreground shrink-0 w-4 text-right">{idx + 1}.</span>
+                  <Input
+                    {...register(`preguntas.${idx}.enunciado`)}
+                    className="h-8 text-sm flex-1"
+                    placeholder="Pregunta..."
+                  />
+                  <Button type="button" size="icon-xs" variant="ghost" onClick={() => eliminarPregunta(idx)} className="shrink-0">
+                    <Trash2 className="h-3 w-3 text-destructive" />
                   </Button>
                 </div>
-                {errors.preguntas && <p className="text-xs text-destructive">{errors.preguntas.message}</p>}
-                <div className="space-y-1">
-                  {camposPreguntas.map((campo, idx) => (
-                    <div key={campo.id} className="flex gap-2 items-center">
-                      <span className="text-xs font-bold text-muted-foreground shrink-0 w-4 text-right">{idx + 1}.</span>
-                      <Input
-                        {...register(`preguntas.${idx}.enunciado`)}
-                        className="h-8 text-sm flex-1"
-                        placeholder="Pregunta..."
-                      />
-                      <Button type="button" size="icon-xs" variant="ghost" onClick={() => eliminarPregunta(idx)} className="shrink-0">
-                        <Trash2 className="h-3 w-3 text-destructive" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              ))}
             </div>
           </div>
 
