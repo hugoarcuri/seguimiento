@@ -136,7 +136,7 @@ export function EstudiosBiblicosClient({ etapas, puedeVerGuia, etapaMiembro }: P
 
                               <iframe
                                 src={pdfUrl}
-                                className="w-full h-[500px] rounded-lg border"
+                                className="w-full h-[350px] rounded-lg border"
                                 title={`Paso ${paso.numero} - ${paso.titulo}`}
                               />
 
