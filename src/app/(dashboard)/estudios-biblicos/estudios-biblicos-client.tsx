@@ -319,22 +319,18 @@ export function EstudiosBiblicosClient({
                               <div className="space-y-3">
                                 {paso.contenido.map((seccion, i) => {
                                   if (seccion.tipo === "titulo") {
-                                    return <h3 key={i} className="text-lg font-bold text-foreground">{seccion.valor}</h3>;
+                                    return <h3 key={i} className="text-lg font-bold text-foreground" dangerouslySetInnerHTML={{ __html: seccion.valor }} />;
                                   }
                                   if (seccion.tipo === "subtitulo") {
-                                    return <h4 key={i} className="text-base font-semibold text-foreground mt-4">{seccion.valor}</h4>;
+                                    return <h4 key={i} className="text-base font-semibold text-foreground mt-4" dangerouslySetInnerHTML={{ __html: seccion.valor }} />;
                                   }
                                   if (seccion.tipo === "referencia") {
                                     return (
-                                      <blockquote key={i} className="border-l-4 border-primary/40 pl-4 py-2 italic text-sm text-muted-foreground bg-muted/30 rounded-r-lg">
-                                        {seccion.valor}
-                                      </blockquote>
+                                      <blockquote key={i} className="border-l-4 border-primary/40 pl-4 py-2 italic text-sm text-muted-foreground bg-muted/30 rounded-r-lg" dangerouslySetInnerHTML={{ __html: seccion.valor }} />
                                     );
                                   }
                                   return (
-                                    <p key={i} className="text-sm leading-relaxed whitespace-pre-line text-foreground">
-                                      {seccion.valor}
-                                    </p>
+                                    <div key={i} className="text-sm leading-relaxed prose prose-sm max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: seccion.valor }} />
                                   );
                                 })}
                               </div>

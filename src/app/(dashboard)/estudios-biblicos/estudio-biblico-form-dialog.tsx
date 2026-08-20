@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { estudioBiblicoSchema, type EstudioBiblicoInput } from "@/lib/validations/estudio-biblico";
 import type { EstudioBiblico } from "@/types/database";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import {
   Select,
   SelectContent,
@@ -107,7 +108,6 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
     control,
     watch,
     setValue,
-    getValues,
     formState: { errors },
   } = useForm<EstudioBiblicoInput>({
     resolver: zodResolver(estudioBiblicoSchema),
@@ -163,14 +163,7 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
     }
   }, [open, estudio, reset]);
 
-  const syncGuia = () => {
-    setValue("guia.puntosClave", puntosClave.filter((s) => s.trim() !== ""));
-    setValue("guia.consejos", consejos.filter((s) => s.trim() !== ""));
-    setValue("guia.preguntas", guiaPreguntas.filter((s) => s.trim() !== ""));
-  };
-
   const onSubmit = async (data: EstudioBiblicoInput) => {
-    syncGuia();
     const finalData = {
       ...data,
       guia: {
@@ -208,7 +201,7 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!saving) onOpenChange(o); }}>
-      <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{esEdicion ? "Editar Estudio" : "Nuevo Estudio Bíblico"}</DialogTitle>
           <DialogDescription>
@@ -264,26 +257,38 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
               </Button>
             </div>
             {errors.contenido && <p className="text-xs text-destructive">{errors.contenido.message}</p>}
-            <div className="space-y-2">
+            <div className="space-y-3">
               {camposContenido.map((campo, idx) => (
-                <div key={campo.id} className="flex gap-2 items-start">
-                  <select
-                    {...register(`contenido.${idx}.tipo`)}
-                    className="h-8 rounded-md border bg-background px-2 text-xs shrink-0 w-28"
-                  >
-                    {TIPOS_CONTENIDO.map((t) => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
-                    ))}
-                  </select>
-                  <Textarea
-                    {...register(`contenido.${idx}.valor`)}
-                    rows={2}
-                    className="text-sm flex-1"
-                    placeholder="Escribí el contenido..."
+                <div key={campo.id} className="rounded-lg border p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <select
+                      {...register(`contenido.${idx}.tipo`)}
+                      className="h-8 rounded-md border bg-background px-2 text-xs shrink-0 w-28"
+                    >
+                      {TIPOS_CONTENIDO.map((t) => (
+                        <option key={t.value} value={t.value}>{t.label}</option>
+                      ))}
+                    </select>
+                    <Button type="button" size="icon-xs" variant="ghost" onClick={() => eliminarContenido(idx)} className="ml-auto shrink-0">
+                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                    </Button>
+                  </div>
+                  <Controller
+                    control={control}
+                    name={`contenido.${idx}.valor`}
+                    render={({ field }) => (
+                      <RichTextEditor
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        placeholder={
+                          watch(`contenido.${idx}.tipo`) === "titulo" ? "Título principal" :
+                          watch(`contenido.${idx}.tipo`) === "subtitulo" ? "Subtítulo" :
+                          watch(`contenido.${idx}.tipo`) === "referencia" ? "Juan 3:16 — «Porque...»" :
+                          "Escribí el contenido..."
+                        }
+                      />
+                    )}
                   />
-                  <Button type="button" size="icon-xs" variant="ghost" onClick={() => eliminarContenido(idx)} className="mt-1 shrink-0">
-                    <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                  </Button>
                 </div>
               ))}
             </div>
