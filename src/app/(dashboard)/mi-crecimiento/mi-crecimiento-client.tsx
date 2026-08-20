@@ -13,12 +13,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import {
   Loader2, BookOpen, CheckCircle2, Clock, CalendarDays,
-  Hand, ChevronDown, ChevronRight, Download, Eye, Flame,
+  Hand, ChevronRight, Flame,
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { getEstudiosPorEtapa } from "@/lib/constants/estudios-biblicos";
-import { BASE_PATH } from "@/lib/constants/paths";
 import { calcularSalud, contarEncuentrosMes, SALUD_CONFIG } from "@/lib/discipulo-health";
 import { calcularProgreso } from "../seguimiento/seguimiento-constants";
 import type {
@@ -39,7 +38,6 @@ export function MiCrecimientoClient() {
   const [tareas, setTareas] = useState<Tarea[]>([]);
   const [oraciones, setOraciones] = useState<Oracion[]>([]);
   const [loading, setLoading] = useState(true);
-  const [pasoAbierto, setPasoAbierto] = useState<number | null>(null);
 
   const supabase = useMemo(() => createClient(), []);
 
@@ -198,41 +196,19 @@ export function MiCrecimientoClient() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {getEstudiosPorEtapa(2).map((paso) => {
-                const abierto = pasoAbierto === paso.numero;
-                const pdfUrl = `${BASE_PATH}/estudios-biblicos/nivel-1/${paso.archivo}`;
-                return (
-                  <div key={paso.numero} className="rounded-lg border overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={() => setPasoAbierto(abierto ? null : paso.numero)}
-                      className="flex w-full items-center gap-2.5 p-3 text-left hover:bg-accent/50 transition-colors"
-                    >
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
-                        {paso.numero}
-                      </div>
-                      <span className="flex-1 text-sm font-medium truncate">{paso.titulo}</span>
-                      {abierto ? <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />}
-                    </button>
-                    {abierto && (
-                      <div className="px-3 pb-3 space-y-2">
-                        <p className="text-xs text-muted-foreground">{paso.descripcion}</p>
-                        <div className="flex gap-2">
-                          <a href={pdfUrl} target="_blank" rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 rounded-md border bg-background px-2.5 py-1 text-xs font-medium hover:bg-accent transition-colors">
-                            <Eye className="h-3 w-3" /> Ver
-                          </a>
-                          <a href={pdfUrl} download
-                            className="inline-flex items-center gap-1 rounded-md border bg-background px-2.5 py-1 text-xs font-medium hover:bg-accent transition-colors">
-                            <Download className="h-3 w-3" /> Descargar
-                          </a>
-                        </div>
-                        <iframe src={pdfUrl} className="w-full h-[400px] rounded-lg border" title={`Paso ${paso.numero}`} />
-                      </div>
-                    )}
+              {getEstudiosPorEtapa(2).map((paso) => (
+                <Link
+                  key={paso.numero}
+                  href="/estudios-biblicos"
+                  className="flex items-center gap-2.5 rounded-lg border p-3 hover:bg-accent/50 transition-colors"
+                >
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                    {paso.numero}
                   </div>
-                );
-              })}
+                  <span className="flex-1 text-sm font-medium truncate">{paso.titulo}</span>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                </Link>
+              ))}
             </CardContent>
           </Card>
         </div>

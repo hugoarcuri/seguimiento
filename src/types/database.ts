@@ -178,3 +178,23 @@ export interface SeguimientoHistorial {
   tipo: "etapa" | "evaluacion" | "objetivo" | "observacion";
   descripcion: string;
 }
+
+export interface EstudioBiblicoRespuesta {
+  id: string;
+  miembro_id: string;
+  estudio_numero: number;
+  pregunta_index: number;
+  respuesta: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EstudioBiblicoProgreso {
+  id: string;
+  miembro_id: string;
+  estudio_numero: number;
+  completado: boolean;
+  completado_en: string | null;
+  created_at: string;
+  updated_at: string;
+}
