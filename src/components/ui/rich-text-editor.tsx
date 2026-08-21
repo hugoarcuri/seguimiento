@@ -370,10 +370,23 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
             className="rounded p-1.5 hover:bg-accent transition-colors" title="Achicar texto">
             <Minus className="h-4 w-4" />
           </button>
-          <div className="flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs text-muted-foreground min-w-[50px] justify-center">
-            <Type className="h-3 w-3" />
-            {fontSize.replace("px", "")}
-          </div>
+          <input
+            type="text"
+            defaultValue={fontSize.replace("px", "")}
+            key={fontSize}
+            className="w-10 h-7 text-center text-xs border rounded bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+            title="Tamaño de fuente (Enter para aplicar)"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                const val = (e.target as HTMLInputElement).value.trim();
+                const num = parseInt(val, 10);
+                if (!isNaN(num) && num >= 6 && num <= 96) {
+                  editorRef.current?.chain().focus().setFontSize(`${num}px`).run();
+                }
+              }
+            }}
+          />
           <button type="button" onMouseDown={cycleUp}
             className="rounded p-1.5 hover:bg-accent transition-colors" title="Agrandar texto">
             <Plus className="h-4 w-4" />
