@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -179,7 +179,9 @@ export function RichTextEditor({ value, onChange, placeholder, className, minHei
     },
   });
 
-  editorRef.current = editor;
+  useEffect(() => {
+    editorRef.current = editor;
+  }, [editor]);
 
   const fontSize = getCurrentFontSize(editor);
   const fontFamily = getCurrentFontFamily(editor);
