@@ -84,6 +84,28 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
       attributes: {
         class: "prose prose-sm max-w-none px-3 py-2 focus:outline-none break-words min-h-[300px]",
       },
+      transformPastedHTML: (html: string) => {
+        let cleaned = html;
+        cleaned = cleaned.replace(/<o:p[\s\S]*?<\/o:p>/gi, "");
+        cleaned = cleaned.replace(/<style[\s\S]*?<\/style>/gi, "");
+        cleaned = cleaned.replace(/<meta[\s\S]*?>/gi, "");
+        cleaned = cleaned.replace(/<link[\s\S]*?>/gi, "");
+        cleaned = cleaned.replace(/<xml[\s\S]*?<\/xml>/gi, "");
+        cleaned = cleaned.replace(/<title[\s\S]*?<\/title>/gi, "");
+        cleaned = cleaned.replace(/<head[\s\S]*?<\/head>/gi, "");
+        cleaned = cleaned.replace(/<script[\s\S]*?<\/script>/gi, "");
+        cleaned = cleaned.replace(/<winasion[\s\S]*?<\/winasion>/gi, "");
+        cleaned = cleaned.replace(/<br\s*\/?>/gi, "<br>");
+        cleaned = cleaned.replace(/<b:sampledata[\s\S]*?<\/b:sampledata>/gi, "");
+        cleaned = cleaned.replace(/<w:sdt[\s\S]*?<\/w:sdt>/gi, "");
+        cleaned = cleaned.replace(/<v:shapetype[\s\S]*?<\/v:shapetype>/gi, "");
+        cleaned = cleaned.replace(/<v:shape[\s\S]*?<\/v:shape>/gi, "");
+        cleaned = cleaned.replace(/<v:imagedata[\s\S]*?\/?>/gi, "");
+        cleaned = cleaned.replace(/<w:worddocument[\s\S]*?<\/w:worddocument>/gi, "");
+        cleaned = cleaned.replace(/\s*mso-[^:]+:[^;]+;*/gi, "");
+        cleaned = cleaned.replace(/\s*class="?MsoNormal"?/gi, "");
+        return cleaned;
+      },
       handlePaste: (_view, event) => {
         const items = event.clipboardData?.items;
         if (!items) return false;
