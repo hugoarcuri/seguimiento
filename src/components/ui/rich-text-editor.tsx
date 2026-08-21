@@ -5,10 +5,10 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Highlight from "@tiptap/extension-highlight";
-import { TextStyle, FontSize, FontFamily } from "@tiptap/extension-text-style";
+import { TextStyle, FontSize, FontFamily, Color } from "@tiptap/extension-text-style";
 import {
   Bold, Underline as UnderlineIcon, Italic, Highlighter,
-  Minus, Plus, Type, List, ListOrdered, ChevronDown,
+  Minus, Plus, Type, List, ListOrdered, ChevronDown, Palette,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -52,6 +52,7 @@ function cycleFontSize(editor: ReturnType<typeof useEditor>, direction: "up" | "
 export function RichTextEditor({ value, onChange, placeholder, className, minHeight = 200, defaultHeight = 400 }: Props) {
   const [height, setHeight] = useState(defaultHeight);
   const [showFontPicker, setShowFontPicker] = useState(false);
+  const [showColorPicker, setShowColorPicker] = useState(false);
   const dragging = useRef(false);
   const startY = useRef(0);
   const startH = useRef(0);
@@ -88,6 +89,7 @@ export function RichTextEditor({ value, onChange, placeholder, className, minHei
       TextStyle,
       FontSize,
       FontFamily,
+      Color,
     ],
     content: value || "",
     onUpdate: ({ editor }) => {
@@ -102,6 +104,7 @@ export function RichTextEditor({ value, onChange, placeholder, className, minHei
 
   const fontSize = getCurrentFontSize(editor);
   const fontFamily = getCurrentFontFamily(editor);
+  const currentColor = editor?.getAttributes("textStyle").color || "#000000";
 
   return (
     <div className={cn("rounded-md border bg-background", className)}>
@@ -188,6 +191,58 @@ export function RichTextEditor({ value, onChange, placeholder, className, minHei
             >
               <Highlighter className="h-4 w-4" />
             </button>
+
+            <div className="mx-1 h-4 w-px bg-border" />
+
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowColorPicker(!showColorPicker)}
+                className={cn(
+                  "rounded p-1.5 hover:bg-accent transition-colors flex items-center gap-1",
+                  editor.isActive("textStyle") && editor.getAttributes("textStyle").color && "bg-accent text-foreground"
+                )}
+                title="Color de texto"
+              >
+                <Palette className="h-4 w-4" />
+                <div className="w-3 h-3 rounded-sm border" style={{ backgroundColor: currentColor }} />
+              </button>
+              {showColorPicker && (
+                <div className="absolute top-full left-0 mt-1 bg-popover border rounded-lg shadow-lg z-20 p-2">
+                  <div className="grid grid-cols-6 gap-1">
+                    {["#000000","#434343","#666666","#999999","#b7b7b7","#ffffff",
+                      "#ff0000","#ff5722","#ff9800","#ffc107","#ffeb3b","#8bc34a",
+                      "#4caf50","#009688","#00bcd4","#2196f3","#3f51b5","#9c27b0",
+                      "#e91e63","#f44336","#795548","#607d8b","#000000","#ffffff",
+                    ].map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => {
+                          editor.chain().focus().setColor(c).run();
+                          setShowColorPicker(false);
+                        }}
+                        className={cn(
+                          "w-6 h-6 rounded border hover:scale-110 transition-transform",
+                          currentColor === c ? "ring-2 ring-primary ring-offset-1" : ""
+                        )}
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      editor.chain().focus().unsetColor().run();
+                      setShowColorPicker(false);
+                    }}
+                    className="w-full mt-1 text-xs text-center py-1 rounded hover:bg-accent transition-colors"
+                  >
+                    Predeterminado
+                  </button>
+                </div>
+              )}
+            </div>
 
             <div className="mx-1 h-4 w-px bg-border" />
 
