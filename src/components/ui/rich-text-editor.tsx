@@ -5,7 +5,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Highlight from "@tiptap/extension-highlight";
-import Image from "@tiptap/extension-image";
+import { ImageResize } from "@/lib/tiptap-image-resize";
 import { TextStyle, FontSize, FontFamily, Color } from "@tiptap/extension-text-style";
 import {
   Bold, Underline as UnderlineIcon, Italic, Highlighter,
@@ -98,7 +98,7 @@ export function RichTextEditor({ value, onChange, placeholder, className, minHei
 
   const insertImage = useCallback((src: string) => {
     if (!editorRef.current) return;
-    editorRef.current.chain().focus().setImage({ src, alt: "", title: "" }).run();
+    editorRef.current.chain().focus().insertContent({ type: "imageResize", attrs: { src, alt: "", title: "" } }).run();
   }, []);
 
   const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -139,11 +139,7 @@ export function RichTextEditor({ value, onChange, placeholder, className, minHei
       }),
       Underline,
       Highlight.configure({ multicolor: true }),
-      Image.configure({
-        inline: false,
-        allowBase64: true,
-        HTMLAttributes: { class: "max-w-full h-auto rounded-lg my-2" },
-      }),
+      ImageResize,
       TextStyle,
       FontSize,
       FontFamily,
@@ -166,7 +162,7 @@ export function RichTextEditor({ value, onChange, placeholder, className, minHei
             const file = item.getAsFile();
             if (file) {
               fileToBase64(file).then((src) => {
-                editorRef.current?.chain().focus().setImage({ src, alt: "", title: "" }).run();
+                editorRef.current?.chain().focus().insertContent({ type: "imageResize", attrs: { src, alt: "", title: "" } }).run();
               }).catch(() => {
                 toast.error("Error al pegar la imagen");
               });
