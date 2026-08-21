@@ -166,7 +166,7 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
               <button
                 type="button"
                 onClick={toggleMaximize}
-                className="w-11 h-full flex items-center justify-center hover:bg-muted transition-colors"
+                className="w-11 h-full flex items-center justify-center text-blue-600 hover:bg-blue-500 hover:text-white transition-colors"
                 title={maximized ? "Restaurar" : "Maximizar"}
               >
                 {maximized ? (
@@ -183,7 +183,7 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
               <button
                 type="button"
                 onClick={() => onOpenChange(false)}
-                className="w-11 h-full flex items-center justify-center hover:bg-destructive hover:text-white transition-colors"
+                className="w-11 h-full flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-colors"
                 title="Cerrar"
               >
                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.2">
