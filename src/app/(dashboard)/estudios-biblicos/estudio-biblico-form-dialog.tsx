@@ -22,7 +22,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Loader2, Plus, Trash2 } from "lucide-react";
@@ -151,146 +150,153 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
       <DialogContent
         showCloseButton={false}
         className={maximized
-          ? "!inset-0 !w-full !h-full !max-w-none !max-h-full !rounded-none !border-none !p-0 !gap-0 !translate-x-0 !translate-y-0 !overflow-hidden !grid !grid-rows-[auto_1fr]"
-          : "sm:max-w-3xl p-0"
+          ? "!inset-0 !w-full !h-full !max-w-none !max-h-none !rounded-none !border-none !p-0 !gap-0 !translate-x-0 !translate-y-0 !overflow-hidden"
+          : "!max-h-none !overflow-visible sm:max-w-3xl !p-0"
         }
       >
-        <div className="flex items-center justify-between select-none shrink-0">
-          <div className="px-6 pt-4 pb-2">
-            <DialogTitle>{esEdicion ? "Editar Estudio" : "Nuevo Estudio Bíblico"}</DialogTitle>
-            <DialogDescription>
-              {esEdicion ? "Modificá la información del estudio." : "Completá los datos para crear un nuevo estudio bíblico."}
-            </DialogDescription>
-          </div>
-          <div className="flex h-full self-stretch">
-            <button
-              type="button"
-              onClick={toggleMaximize}
-              className="w-11 flex items-center justify-center hover:bg-muted transition-colors"
-              title={maximized ? "Restaurar" : "Maximizar"}
-            >
-              {maximized ? (
-                <svg className="w-3.5 h-3.5" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.2">
-                  <rect x="3" y="0.5" width="8.5" height="8.5" rx="1" />
-                  <rect x="0.5" y="3" width="8.5" height="8.5" rx="1" fill="currentColor" stroke="none" className="text-background" />
-                  <rect x="0.5" y="3" width="8.5" height="8.5" rx="1" />
-                </svg>
-              ) : (
-                <svg className="w-3.5 h-3.5" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.2">
-                  <rect x="1" y="1" width="10" height="10" rx="1" />
-                </svg>
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={() => onOpenChange(false)}
-              className="w-11 flex items-center justify-center hover:bg-destructive hover:text-white transition-colors"
-              title="Cerrar"
-            >
-              <svg className="w-3.5 h-3.5" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M2 2L10 10M10 2L2 10" />
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit(onSubmit)} className={cn("flex flex-col gap-4 min-h-0", maximized ? "flex-1 overflow-y-auto px-6 pb-6" : "px-6 pb-6 space-y-4")}>
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className={labelClass}>Etapa *</Label>
-                <Select value={String(watch("etapa_id"))} onValueChange={(v) => setValue("etapa_id", Number(v))}>
-                  <SelectTrigger className={inputClass}><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {ETAPAS.map((e) => (
-                      <SelectItem key={e.value} value={e.value}>{e.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.etapa_id && <p className="text-xs text-destructive">{errors.etapa_id.message}</p>}
-              </div>
-              <div className="space-y-1">
-                <Label className={labelClass}>Título *</Label>
-                <Input className={inputClass} {...register("titulo")} placeholder="Título del estudio" />
-                {errors.titulo && <p className="text-xs text-destructive">{errors.titulo.message}</p>}
-              </div>
+        <div className="flex flex-col h-full">
+          <div className="flex items-center justify-between shrink-0 h-9">
+            <div className="px-6">
+              <DialogTitle>{esEdicion ? "Editar Estudio" : "Nuevo Estudio Bíblico"}</DialogTitle>
+              <DialogDescription className="sr-only">
+                {esEdicion ? "Modificá la información del estudio." : "Completá los datos para crear un nuevo estudio bíblico."}
+              </DialogDescription>
             </div>
-            <div className="space-y-1">
-              <Label className={labelClass}>Descripción *</Label>
-              <Textarea rows={1} className="text-sm" {...register("descripcion")} placeholder="Breve descripción" />
-              {errors.descripcion && <p className="text-xs text-destructive">{errors.descripcion.message}</p>}
+            <div className="flex h-full">
+              <button
+                type="button"
+                onClick={toggleMaximize}
+                className="w-11 h-full flex items-center justify-center hover:bg-muted transition-colors"
+                title={maximized ? "Restaurar" : "Maximizar"}
+              >
+                {maximized ? (
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                    <rect x="2" y="0" width="8" height="8" rx="0.5" stroke="currentColor" strokeWidth="1" />
+                    <rect x="0" y="2" width="8" height="8" rx="0.5" fill="var(--background)" stroke="currentColor" strokeWidth="1" />
+                  </svg>
+                ) : (
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                    <rect x="0.5" y="0.5" width="9" height="9" rx="0.5" stroke="currentColor" strokeWidth="1" />
+                  </svg>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => onOpenChange(false)}
+                className="w-11 h-full flex items-center justify-center hover:bg-destructive hover:text-white transition-colors"
+                title="Cerrar"
+              >
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.2">
+                  <path d="M1 1L9 9M9 1L1 9" />
+                </svg>
+              </button>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase text-muted-foreground">Contenido</p>
-              <Button type="button" size="sm" variant="outline" onClick={() => agregarContenido({ tipo: "texto", valor: "" })}>
-                <Plus className="h-3.5 w-3.5 mr-1" /> Agregar sección
-              </Button>
-            </div>
-            {errors.contenido && <p className="text-xs text-destructive">{errors.contenido.message}</p>}
-            <div className="space-y-2">
-              {camposContenido.map((campo, idx) => (
-                <div key={campo.id} className="rounded-lg border p-2 space-y-1">
-                  <div className="flex items-center justify-end">
-                    {camposContenido.length > 1 && (
-                      <Button type="button" size="icon-xs" variant="ghost" onClick={() => eliminarContenido(idx)}>
-                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                      </Button>
-                    )}
+          <div className={cn(
+            "flex flex-col min-h-0",
+            maximized ? "flex-1 overflow-hidden" : ""
+          )}>
+            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col min-h-0 px-6 pb-6 pt-2 gap-4">
+              <div className="space-y-3 shrink-0">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className={labelClass}>Etapa *</Label>
+                    <Select value={String(watch("etapa_id"))} onValueChange={(v) => setValue("etapa_id", Number(v))}>
+                      <SelectTrigger className={inputClass}><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {ETAPAS.map((e) => (
+                          <SelectItem key={e.value} value={e.value}>{e.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.etapa_id && <p className="text-xs text-destructive">{errors.etapa_id.message}</p>}
                   </div>
-                  <Controller
-                    control={control}
-                    name={`contenido.${idx}.valor`}
-                    render={({ field }) => (
-                      <RichTextEditor
-                        value={field.value || ""}
-                        onChange={field.onChange}
-                        placeholder="Escribí el contenido del estudio..."
-                      />
-                    )}
-                  />
+                  <div className="space-y-1">
+                    <Label className={labelClass}>Título *</Label>
+                    <Input className={inputClass} {...register("titulo")} placeholder="Título del estudio" />
+                    {errors.titulo && <p className="text-xs text-destructive">{errors.titulo.message}</p>}
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
+                <div className="space-y-1">
+                  <Label className={labelClass}>Descripción *</Label>
+                  <Textarea rows={1} className="text-sm" {...register("descripcion")} placeholder="Breve descripción" />
+                  {errors.descripcion && <p className="text-xs text-destructive">{errors.descripcion.message}</p>}
+                </div>
+              </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase text-muted-foreground">Preguntas de reflexión</p>
-              <Button type="button" size="sm" variant="outline" onClick={() => agregarPregunta({ enunciado: "", tipo: "texto_libre" })}>
-                <Plus className="h-3.5 w-3.5 mr-1" /> Agregar
-              </Button>
-            </div>
-            {errors.preguntas && <p className="text-xs text-destructive">{errors.preguntas.message}</p>}
-            <div className="space-y-1">
-              {camposPreguntas.map((campo, idx) => (
-                <div key={campo.id} className="flex gap-2 items-center">
-                  <span className="text-xs font-bold text-muted-foreground shrink-0 w-4 text-right">{idx + 1}.</span>
-                  <Input
-                    {...register(`preguntas.${idx}.enunciado`)}
-                    className="h-8 text-sm flex-1"
-                    placeholder="Pregunta..."
-                  />
-                  <Button type="button" size="icon-xs" variant="ghost" onClick={() => eliminarPregunta(idx)} className="shrink-0">
-                    <Trash2 className="h-3 w-3 text-destructive" />
+              <div className="flex flex-col min-h-0 flex-1 gap-2">
+                <div className="flex items-center justify-between shrink-0">
+                  <p className="text-xs font-semibold uppercase text-muted-foreground">Contenido</p>
+                  <Button type="button" size="sm" variant="outline" onClick={() => agregarContenido({ tipo: "texto", valor: "" })}>
+                    <Plus className="h-3.5 w-3.5 mr-1" /> Agregar sección
                   </Button>
                 </div>
-              ))}
-            </div>
-          </div>
+                {errors.contenido && <p className="text-xs text-destructive shrink-0">{errors.contenido.message}</p>}
+                <div className="flex-1 min-h-0 flex flex-col gap-2">
+                  {camposContenido.map((campo, idx) => (
+                    <div key={campo.id} className="rounded-lg border p-2 space-y-1 flex flex-col flex-1 min-h-0">
+                      <div className="flex items-center justify-end shrink-0">
+                        {camposContenido.length > 1 && (
+                          <Button type="button" size="icon-xs" variant="ghost" onClick={() => eliminarContenido(idx)}>
+                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                          </Button>
+                        )}
+                      </div>
+                      <Controller
+                        control={control}
+                        name={`contenido.${idx}.valor`}
+                        render={({ field }) => (
+                          <RichTextEditor
+                            value={field.value || ""}
+                            onChange={field.onChange}
+                            placeholder="Escribí el contenido del estudio..."
+                            className="flex-1 min-h-0"
+                          />
+                        )}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={saving}>
-              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {esEdicion ? "Guardar cambios" : "Crear estudio"}
-            </Button>
-          </DialogFooter>
-        </form>
+              <div className="space-y-2 shrink-0">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase text-muted-foreground">Preguntas de reflexión</p>
+                  <Button type="button" size="sm" variant="outline" onClick={() => agregarPregunta({ enunciado: "", tipo: "texto_libre" })}>
+                    <Plus className="h-3.5 w-3.5 mr-1" /> Agregar
+                  </Button>
+                </div>
+                {errors.preguntas && <p className="text-xs text-destructive">{errors.preguntas.message}</p>}
+                <div className="space-y-1">
+                  {camposPreguntas.map((campo, idx) => (
+                    <div key={campo.id} className="flex gap-2 items-center">
+                      <span className="text-xs font-bold text-muted-foreground shrink-0 w-4 text-right">{idx + 1}.</span>
+                      <Input
+                        {...register(`preguntas.${idx}.enunciado`)}
+                        className="h-8 text-sm flex-1"
+                        placeholder="Pregunta..."
+                      />
+                      <Button type="button" size="icon-xs" variant="ghost" onClick={() => eliminarPregunta(idx)} className="shrink-0">
+                        <Trash2 className="h-3 w-3 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="shrink-0 flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={saving}>
+                  {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {esEdicion ? "Guardar cambios" : "Crear estudio"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

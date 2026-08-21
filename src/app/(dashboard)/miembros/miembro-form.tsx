@@ -240,6 +240,10 @@ export function MiembroForm({
       });
       toast.dismiss();
 
+      if (authError) {
+        toast.warning("Cuenta creada, pero hubo un problema al vincular el acceso.");
+      }
+
       toast.success("Cuenta creada exitosamente. Iniciá sesión.");
 
       setTimeout(() => {

@@ -2,11 +2,11 @@ import { z } from "zod";
 
 export const seccionContenidoSchema = z.object({
   tipo: z.enum(["titulo", "subtitulo", "texto", "referencia"]),
-  valor: z.string().min(1, "El contenido es requerido"),
+  valor: z.string(),
 });
 
 export const preguntaEstudioSchema = z.object({
-  enunciado: z.string().min(1, "El enunciado es requerido"),
+  enunciado: z.string(),
   tipo: z.enum(["texto_libre", "opcion_multiple"]),
   opciones: z.array(z.string()).optional(),
 });
