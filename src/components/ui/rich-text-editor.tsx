@@ -104,6 +104,10 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
         cleaned = cleaned.replace(/<w:worddocument[\s\S]*?<\/w:worddocument>/gi, "");
         cleaned = cleaned.replace(/\s*mso-[^:]+:[^;]+;*/gi, "");
         cleaned = cleaned.replace(/\s*class="?MsoNormal"?/gi, "");
+        cleaned = cleaned.replace(/font-size:\s*(\d+(?:\.\d+)?)pt/gi, (_match, pt) => {
+          const px = Math.round(parseFloat(pt) * 1.333);
+          return `font-size: ${px}px`;
+        });
         return cleaned;
       },
       handlePaste: (_view, event) => {
