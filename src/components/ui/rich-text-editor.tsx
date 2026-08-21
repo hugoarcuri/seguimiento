@@ -10,7 +10,7 @@ import { TextStyle, FontSize, FontFamily, Color } from "@tiptap/extension-text-s
 import {
   Bold, Underline as UnderlineIcon, Italic, Highlighter,
   Minus, Plus, Type, List, ListOrdered, ChevronDown, Palette,
-  ImagePlus, Link2,
+  ImagePlus, Link2, Heading,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -42,17 +42,6 @@ function getCurrentFontFamily(editor: ReturnType<typeof useEditor>): string {
   return FONT_FAMILIES.find((f) => f === ff) || "Predeterminada";
 }
 
-function cycleFontSize(editor: ReturnType<typeof useEditor>, direction: "up" | "down") {
-  if (!editor) return;
-  const current = getCurrentFontSize(editor);
-  const idx = FONT_SIZES.indexOf(current);
-  if (direction === "up" && idx < FONT_SIZES.length - 1) {
-    editor.chain().setFontSize(FONT_SIZES[idx + 1]).run();
-  } else if (direction === "down" && idx > 0) {
-    editor.chain().setFontSize(FONT_SIZES[idx - 1]).run();
-  }
-}
-
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -71,9 +60,14 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<ReturnType<typeof useEditor> | null>(null);
 
+  const cmd = useCallback((fn: (e: React.MouseEvent) => void) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    fn(e);
+  }, []);
+
   const insertImage = useCallback((src: string) => {
     if (!editorRef.current) return;
-    editorRef.current.chain().insertContent({ type: "imageResize", attrs: { src, alt: "", title: "" } }).run();
+    editorRef.current.chain().focus().insertContent({ type: "imageResize", attrs: { src, alt: "", title: "" } }).run();
   }, []);
 
   const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -137,7 +131,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
             const file = item.getAsFile();
             if (file) {
               fileToBase64(file).then((src) => {
-                editorRef.current?.chain().insertContent({ type: "imageResize", attrs: { src, alt: "", title: "" } }).run();
+                editorRef.current?.chain().focus().insertContent({ type: "imageResize", attrs: { src, alt: "", title: "" } }).run();
               }).catch(() => toast.error("Error al pegar la imagen"));
             }
             return true;
@@ -156,10 +150,65 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
   const fontFamily = getCurrentFontFamily(editor);
   const currentColor = editor?.getAttributes("textStyle").color || "#000000";
 
-  const run = useCallback((fn: () => void) => (e: React.MouseEvent) => {
-    e.preventDefault();
-    fn();
-  }, []);
+  const applyLevel = (level: 1 | 2 | 0) => cmd(() => {
+    const e = editorRef.current;
+    if (!e) return;
+    if (level === 1) {
+      e.chain().focus().unsetItalic().setBold().setFontSize("18px").run();
+    } else if (level === 2) {
+      e.chain().focus().setBold().setItalic().setFontSize("16px").run();
+    } else {
+      e.chain().focus().unsetBold().unsetItalic().setFontSize("12px").run();
+    }
+  });
+
+  const toggleBulletList = cmd(() => {
+    editorRef.current?.chain().focus().toggleBulletList().run();
+  });
+
+  const toggleOrderedList = cmd(() => {
+    editorRef.current?.chain().focus().toggleOrderedList().run();
+  });
+
+  const cycleUp = cmd(() => {
+    const e = editorRef.current;
+    if (!e) return;
+    const current = getCurrentFontSize(e);
+    const idx = FONT_SIZES.indexOf(current);
+    if (idx < FONT_SIZES.length - 1) {
+      e.chain().focus().setFontSize(FONT_SIZES[idx + 1]).run();
+    }
+  });
+
+  const cycleDown = cmd(() => {
+    const e = editorRef.current;
+    if (!e) return;
+    const current = getCurrentFontSize(e);
+    const idx = FONT_SIZES.indexOf(current);
+    if (idx > 0) {
+      e.chain().focus().setFontSize(FONT_SIZES[idx - 1]).run();
+    }
+  });
+
+  const toggleBold = cmd(() => editorRef.current?.chain().focus().toggleBold().run());
+  const toggleItalic = cmd(() => editorRef.current?.chain().focus().toggleItalic().run());
+  const toggleUnderline = cmd(() => editorRef.current?.chain().focus().toggleUnderline().run());
+  const toggleHighlight = cmd(() => editorRef.current?.chain().focus().toggleHighlight().run());
+
+  const setColor = (c: string) => cmd(() => {
+    editorRef.current?.chain().focus().setColor(c).run();
+    setShowColorPicker(false);
+  });
+
+  const unsetColor = cmd(() => {
+    editorRef.current?.chain().focus().unsetColor().run();
+    setShowColorPicker(false);
+  });
+
+  const setFontFamily = (ff: string) => cmd(() => {
+    editorRef.current?.chain().focus().setFontFamily(ff).run();
+    setShowFontPicker(false);
+  });
 
   return (
     <div className={cn("rounded-md border bg-background flex flex-col min-h-0", className)}>
@@ -175,7 +224,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
           <div className="relative">
             <button
               type="button"
-              onMouseDown={run(() => { setShowFontPicker(!showFontPicker); setShowColorPicker(false); setShowImageMenu(false); })}
+              onMouseDown={cmd(() => { setShowFontPicker(!showFontPicker); setShowColorPicker(false); setShowImageMenu(false); })}
               className="rounded p-1.5 hover:bg-accent transition-colors text-xs flex items-center gap-1 w-[90px] truncate"
               title="Tipo de letra"
             >
@@ -188,7 +237,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
                   <button
                     key={ff}
                     type="button"
-                    onMouseDown={run(() => { editor.chain().setFontFamily(ff).run(); setShowFontPicker(false); })}
+                    onMouseDown={setFontFamily(ff)}
                     className={cn(
                       "w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors",
                       (ff === "" && fontFamily === "Predeterminada") || ff === fontFamily ? "bg-accent" : ""
@@ -204,19 +253,19 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
 
           <div className="mx-1 h-4 w-px bg-border" />
 
-          <button type="button" onMouseDown={run(() => editor.chain().toggleBold().run())}
+          <button type="button" onMouseDown={toggleBold}
             className={cn("rounded p-1.5 hover:bg-accent transition-colors", editor.isActive("bold") && "bg-accent text-foreground")} title="Negrita">
             <Bold className="h-4 w-4" />
           </button>
-          <button type="button" onMouseDown={run(() => editor.chain().toggleItalic().run())}
+          <button type="button" onMouseDown={toggleItalic}
             className={cn("rounded p-1.5 hover:bg-accent transition-colors", editor.isActive("italic") && "bg-accent text-foreground")} title="Cursiva">
             <Italic className="h-4 w-4" />
           </button>
-          <button type="button" onMouseDown={run(() => editor.chain().toggleUnderline().run())}
+          <button type="button" onMouseDown={toggleUnderline}
             className={cn("rounded p-1.5 hover:bg-accent transition-colors", editor.isActive("underline") && "bg-accent text-foreground")} title="Subrayado">
             <UnderlineIcon className="h-4 w-4" />
           </button>
-          <button type="button" onMouseDown={run(() => editor.chain().toggleHighlight().run())}
+          <button type="button" onMouseDown={toggleHighlight}
             className={cn("rounded p-1.5 hover:bg-accent transition-colors", editor.isActive("highlight") && "bg-accent text-foreground")} title="Resaltar">
             <Highlighter className="h-4 w-4" />
           </button>
@@ -224,7 +273,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
           <div className="mx-1 h-4 w-px bg-border" />
 
           <div className="relative">
-            <button type="button" onMouseDown={run(() => { setShowColorPicker(!showColorPicker); setShowFontPicker(false); setShowImageMenu(false); })}
+            <button type="button" onMouseDown={cmd(() => { setShowColorPicker(!showColorPicker); setShowFontPicker(false); setShowImageMenu(false); })}
               className={cn("rounded p-1.5 hover:bg-accent transition-colors flex items-center gap-1", editor.isActive("textStyle") && editor.getAttributes("textStyle").color && "bg-accent text-foreground")} title="Color de texto">
               <Palette className="h-4 w-4" />
               <div className="w-3 h-3 rounded-sm border" style={{ backgroundColor: currentColor }} />
@@ -237,12 +286,12 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
                     "#4caf50","#009688","#00bcd4","#2196f3","#3f51b5","#9c27b0",
                     "#e91e63","#f44336","#795548","#607d8b","#000000","#ffffff",
                   ].map((c) => (
-                    <button key={c} type="button" onMouseDown={run(() => { editor.chain().setColor(c).run(); setShowColorPicker(false); })}
+                    <button key={c} type="button" onMouseDown={setColor(c)}
                       className={cn("w-6 h-6 rounded border hover:scale-110 transition-transform", currentColor === c ? "ring-2 ring-primary ring-offset-1" : "")}
                       style={{ backgroundColor: c }} />
                   ))}
                 </div>
-                <button type="button" onMouseDown={run(() => { editor.chain().unsetColor().run(); setShowColorPicker(false); })}
+                <button type="button" onMouseDown={unsetColor}
                   className="w-full mt-1 text-xs text-center py-1 rounded hover:bg-accent transition-colors">
                   Predeterminado
                 </button>
@@ -253,7 +302,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
           <div className="mx-1 h-4 w-px bg-border" />
 
           <div className="relative">
-            <button type="button" onMouseDown={run(() => { setShowImageMenu(!showImageMenu); setShowFontPicker(false); setShowColorPicker(false); })}
+            <button type="button" onMouseDown={cmd(() => { setShowImageMenu(!showImageMenu); setShowFontPicker(false); setShowColorPicker(false); })}
               className="rounded p-1.5 hover:bg-accent transition-colors" title="Insertar imagen">
               <ImagePlus className="h-4 w-4" />
             </button>
@@ -263,7 +312,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
                   className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors flex items-center gap-2">
                   <ImagePlus className="h-3.5 w-3.5" /> Subir archivo
                 </button>
-                <button type="button" onMouseDown={run(() => setShowUrlInput(!showUrlInput))}
+                <button type="button" onMouseDown={cmd(() => setShowUrlInput(!showUrlInput))}
                   className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors flex items-center gap-2">
                   <Link2 className="h-3.5 w-3.5" /> Desde URL
                 </button>
@@ -282,18 +331,42 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
 
           <div className="mx-1 h-4 w-px bg-border" />
 
-          <button type="button" onMouseDown={run(() => editor.chain().toggleBulletList().run())}
+          <button type="button" onMouseDown={toggleBulletList}
             className={cn("rounded p-1.5 hover:bg-accent transition-colors", editor.isActive("bulletList") && "bg-accent text-foreground")} title="Viñetas">
             <List className="h-4 w-4" />
           </button>
-          <button type="button" onMouseDown={run(() => editor.chain().toggleOrderedList().run())}
+          <button type="button" onMouseDown={toggleOrderedList}
             className={cn("rounded p-1.5 hover:bg-accent transition-colors", editor.isActive("orderedList") && "bg-accent text-foreground")} title="Numeración">
             <ListOrdered className="h-4 w-4" />
           </button>
 
           <div className="mx-1 h-4 w-px bg-border" />
 
-          <button type="button" onMouseDown={run(() => cycleFontSize(editor, "down"))}
+          <div className="relative group">
+            <button type="button" onMouseDown={cmd((e) => e.stopPropagation())}
+              className="rounded p-1.5 hover:bg-accent transition-colors text-xs flex items-center gap-1" title="Niveles">
+              <Heading className="h-4 w-4" />
+              <ChevronDown className="h-3 w-3" />
+            </button>
+            <div className="absolute top-full left-0 mt-1 bg-popover border rounded-lg shadow-lg z-20 py-1 min-w-[140px] hidden group-hover:block">
+              <button type="button" onMouseDown={applyLevel(1)}
+                className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors font-bold text-base">
+                Título 1
+              </button>
+              <button type="button" onMouseDown={applyLevel(2)}
+                className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors font-bold italic">
+                Título 2
+              </button>
+              <button type="button" onMouseDown={applyLevel(0)}
+                className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors">
+                Normal
+              </button>
+            </div>
+          </div>
+
+          <div className="mx-1 h-4 w-px bg-border" />
+
+          <button type="button" onMouseDown={cycleDown}
             className="rounded p-1.5 hover:bg-accent transition-colors" title="Achicar texto">
             <Minus className="h-4 w-4" />
           </button>
@@ -301,7 +374,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
             <Type className="h-3 w-3" />
             {fontSize.replace("px", "")}
           </div>
-          <button type="button" onMouseDown={run(() => cycleFontSize(editor, "up"))}
+          <button type="button" onMouseDown={cycleUp}
             className="rounded p-1.5 hover:bg-accent transition-colors" title="Agrandar texto">
             <Plus className="h-4 w-4" />
           </button>

@@ -43,7 +43,7 @@ const ETAPAS = [
 ];
 
 const inputClass = "h-11 md:h-8";
-const labelClass = "text-[11px] font-medium text-muted-foreground";
+const labelClass = "text-base font-bold uppercase";
 
 export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuardado }: Props) {
   const [saving, setSaving] = useState(false);
@@ -222,7 +222,7 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
               </div>
 
               <div className="flex flex-col min-h-0 flex-1 gap-2">
-                <p className="text-xs font-semibold uppercase text-muted-foreground shrink-0">Contenido</p>
+                <p className={labelClass}>Contenido</p>
                 {errors.contenido && <p className="text-xs text-destructive shrink-0">{errors.contenido.message}</p>}
                 <div className="flex-1 min-h-0 flex flex-col gap-2">
                   {camposContenido.map((campo, idx) => (
