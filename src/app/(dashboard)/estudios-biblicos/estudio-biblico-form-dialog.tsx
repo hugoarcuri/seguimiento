@@ -43,7 +43,7 @@ const ETAPAS = [
 ];
 
 const inputClass = "h-11 md:h-8";
-const labelClass = "text-base font-bold uppercase";
+const labelClass = "text-[18px] font-bold uppercase";
 
 export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuardado }: Props) {
   const [saving, setSaving] = useState(false);
@@ -216,7 +216,7 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
                 </div>
                 <div className="space-y-1">
                   <Label className={labelClass}>Descripción *</Label>
-                  <Textarea rows={1} className="text-sm" {...register("descripcion")} placeholder="Breve descripción" />
+                  <Textarea rows={1} className="text-sm h-8" {...register("descripcion")} placeholder="Breve descripción" />
                   {errors.descripcion && <p className="text-xs text-destructive">{errors.descripcion.message}</p>}
                 </div>
               </div>
@@ -253,7 +253,7 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
 
               <div className="space-y-2 shrink-0">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase text-muted-foreground">Preguntas de reflexión</p>
+                  <p className={labelClass}>Preguntas de reflexión</p>
                   <Button type="button" size="sm" variant="outline" onClick={() => agregarPregunta({ enunciado: "", tipo: "texto_libre" })}>
                     <Plus className="h-3.5 w-3.5 mr-1" /> Agregar
                   </Button>
