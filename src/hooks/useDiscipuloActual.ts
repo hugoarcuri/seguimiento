@@ -24,9 +24,17 @@ export function useMiembroActual() {
         return;
       }
 
-      const { data: miembroId } = await supabase.rpc("ensure_miembro");
+      const { data: miembroId, error: rpcError } = await supabase.rpc("ensure_miembro");
 
       if (!mounted) return;
+
+      if (rpcError || !miembroId) {
+        cachedUserId = user.id;
+        cachedMiembro = null;
+        setMiembro(null);
+        setLoading(false);
+        return;
+      }
 
       if (miembroId) {
         const { data } = await supabase
@@ -55,23 +63,24 @@ export function useMiembroActual() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data: miembroId } = await supabase.rpc("ensure_miembro");
+    const { data: miembroId, error: rpcError } = await supabase.rpc("ensure_miembro");
 
-    if (miembroId) {
-      const { data } = await supabase
-        .from("miembros")
-        .select("*")
-        .eq("id", miembroId)
-        .single();
-
-      cachedUserId = user.id;
-      cachedMiembro = (data as Miembro) || null;
-      setMiembro(cachedMiembro);
-    } else {
+    if (rpcError || !miembroId) {
       cachedUserId = user.id;
       cachedMiembro = null;
       setMiembro(null);
+      return;
     }
+
+    const { data } = await supabase
+      .from("miembros")
+      .select("*")
+      .eq("id", miembroId)
+      .single();
+
+    cachedUserId = user.id;
+    cachedMiembro = (data as Miembro) || null;
+    setMiembro(cachedMiembro);
   };
 
   return { miembro, loading, refresh };
