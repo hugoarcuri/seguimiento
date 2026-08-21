@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   ChevronDown, ChevronRight, GraduationCap, BookOpen,
-  CheckCircle2, Loader2, Save, Send, Plus, Pencil, Trash2,
+  CheckCircle2, Loader2, Save, Send, Plus, Pencil, Trash2, Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -39,6 +39,11 @@ export function EstudiosBiblicosClient({
   onActualizarRespuestas, onActualizarProgreso, onRecargarEstudios,
 }: Props) {
   const defaultEtapa = etapaMiembro ? String(etapaMiembro) : String(etapas[0]?.id ?? 2);
+
+  const esMiembro = !esAdmin && !puedeVerGuia;
+  const etapasVisibles = esMiembro && etapaMiembro
+    ? etapas.filter((e) => e.id <= etapaMiembro)
+    : etapas;
 
   const [etapaSeleccionada, setEtapaSeleccionada] = useState<string>(defaultEtapa);
   const [pasoAbierto, setPasoAbierto] = useState<number | null>(null);
@@ -218,14 +223,31 @@ export function EstudiosBiblicosClient({
           variant="line"
           className="w-full justify-start overflow-x-auto scrollbar-none"
         >
-          {etapas.map((etapa) => (
+          {etapasVisibles.map((etapa) => (
             <TabsTrigger key={etapa.id} value={String(etapa.id)} className="whitespace-nowrap">
               {etapa.id}. {etapa.nombre}
             </TabsTrigger>
           ))}
+          {esMiembro && etapaMiembro && etapas
+            .filter((e) => e.id > etapaMiembro)
+            .map((etapa) => (
+              <TabsTrigger key={etapa.id} value={String(etapa.id)} disabled className="whitespace-nowrap opacity-50 cursor-not-allowed">
+                <Lock className="h-3 w-3 mr-1" />
+                {etapa.id}. {etapa.nombre}
+              </TabsTrigger>
+            ))
+          }
         </TabsList>
 
-        {etapas.map((etapa) => {
+        {etapasVisibles.length === 0 && esMiembro && (
+          <div className="py-12 text-center">
+            <BookOpen className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">Tu etapa de discipulado no ha sido asignada todavía.</p>
+            <p className="text-xs text-muted-foreground/70 mt-1">Contactá a tu discipulador para que te asigne una etapa.</p>
+          </div>
+        )}
+
+        {etapasVisibles.map((etapa) => {
           const estudiosEtapa = getEstudiosPorEtapa(estudios, etapa.id);
           return (
             <TabsContent key={etapa.id} value={String(etapa.id)}>

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useMiembroActual } from "@/hooks/useDiscipuloActual";
@@ -27,6 +28,7 @@ import type {
 type Encuentro = Agenda;
 
 export function MiCrecimientoClient() {
+  const router = useRouter();
   const { miembro: discipulo, loading: loadingDiscipulo } = useMiembroActual();
   const { etapas } = useEtapas();
 
@@ -39,6 +41,12 @@ export function MiCrecimientoClient() {
   const [loading, setLoading] = useState(true);
 
   const supabase = useMemo(() => createClient(), []);
+
+  useEffect(() => {
+    if (!loadingDiscipulo && !discipulo) {
+      router.replace("/dashboard");
+    }
+  }, [loadingDiscipulo, discipulo, router]);
 
   useEffect(() => {
     if (!discipulo) return;
@@ -97,8 +105,8 @@ export function MiCrecimientoClient() {
   if (!discipulo) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-        <p className="text-muted-foreground">No se encontró tu perfil de miembro</p>
-        <Link href="/configuracion"><Button variant="outline">Ir a Configuración</Button></Link>
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <p className="text-sm text-muted-foreground">Redirigiendo...</p>
       </div>
     );
   }

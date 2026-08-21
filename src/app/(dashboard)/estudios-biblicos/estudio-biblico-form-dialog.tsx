@@ -151,10 +151,10 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
         showCloseButton={false}
         className={maximized
           ? "!inset-0 !w-full !h-full !max-w-none !max-h-none !rounded-none !border-none !p-0 !gap-0 !translate-x-0 !translate-y-0 !overflow-hidden"
-          : "!overflow-hidden sm:max-w-3xl !p-0"
+          : "!overflow-hidden !flex !flex-col sm:max-w-3xl !p-0"
         }
       >
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col flex-1 min-h-0">
           <div className="flex items-center justify-between shrink-0 h-9">
             <div className="px-6">
               <DialogTitle>{esEdicion ? "Editar Estudio" : "Nuevo Estudio Bíblico"}</DialogTitle>

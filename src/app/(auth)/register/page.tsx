@@ -67,7 +67,7 @@ export default function RegisterPage() {
       return;
     }
 
-    toast.success("Registro exitoso. Revisá tu email para confirmar.");
+    toast.success("Registro exitoso. Iniciá sesión.");
     router.push("/login");
   };
 
