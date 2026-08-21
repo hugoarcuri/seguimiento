@@ -23,10 +23,9 @@ import {
   DialogContent,
   DialogDescription,
   DialogFooter,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2, Plus, Trash2, Maximize2, Minimize2 } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -150,27 +149,50 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!saving) onOpenChange(o); }}>
       <DialogContent
+        showCloseButton={false}
         className={maximized
           ? "!inset-0 !w-full !h-full !max-w-none !max-h-full !rounded-none !border-none !p-0 !gap-0 !translate-x-0 !translate-y-0 !overflow-hidden !grid !grid-rows-[auto_1fr]"
           : "sm:max-w-3xl p-0"
         }
       >
-        <DialogHeader className="px-6 pt-6 pb-2 flex flex-row items-start justify-between gap-4">
-          <div>
+        <div className="flex items-center justify-between select-none shrink-0">
+          <div className="px-6 pt-4 pb-2">
             <DialogTitle>{esEdicion ? "Editar Estudio" : "Nuevo Estudio Bíblico"}</DialogTitle>
             <DialogDescription>
               {esEdicion ? "Modificá la información del estudio." : "Completá los datos para crear un nuevo estudio bíblico."}
             </DialogDescription>
           </div>
-          <button
-            type="button"
-            onClick={toggleMaximize}
-            className="shrink-0 rounded-md p-2 hover:bg-accent transition-colors border"
-            title={maximized ? "Restaurar" : "Maximizar"}
-          >
-            {maximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-          </button>
-        </DialogHeader>
+          <div className="flex h-full self-stretch">
+            <button
+              type="button"
+              onClick={toggleMaximize}
+              className="w-11 flex items-center justify-center hover:bg-muted transition-colors"
+              title={maximized ? "Restaurar" : "Maximizar"}
+            >
+              {maximized ? (
+                <svg className="w-3.5 h-3.5" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.2">
+                  <rect x="3" y="0.5" width="8.5" height="8.5" rx="1" />
+                  <rect x="0.5" y="3" width="8.5" height="8.5" rx="1" fill="currentColor" stroke="none" className="text-background" />
+                  <rect x="0.5" y="3" width="8.5" height="8.5" rx="1" />
+                </svg>
+              ) : (
+                <svg className="w-3.5 h-3.5" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.2">
+                  <rect x="1" y="1" width="10" height="10" rx="1" />
+                </svg>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              className="w-11 flex items-center justify-center hover:bg-destructive hover:text-white transition-colors"
+              title="Cerrar"
+            >
+              <svg className="w-3.5 h-3.5" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M2 2L10 10M10 2L2 10" />
+              </svg>
+            </button>
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className={cn("flex flex-col gap-4 min-h-0", maximized ? "flex-1 overflow-y-auto px-6 pb-6" : "px-6 pb-6 space-y-4")}>
           <div className="space-y-3">

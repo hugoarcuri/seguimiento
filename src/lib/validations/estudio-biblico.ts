@@ -12,10 +12,10 @@ export const preguntaEstudioSchema = z.object({
 });
 
 export const guiaDiscipuladorSchema = z.object({
-  objetivo: z.string().min(1, "El objetivo es requerido"),
-  puntosClave: z.array(z.string()).min(1, "Agregá al menos un punto clave"),
-  consejos: z.array(z.string()).min(1, "Agregá al menos un consejo"),
-  preguntas: z.array(z.string()).min(1, "Agregá al menos una pregunta"),
+  objetivo: z.string(),
+  puntosClave: z.array(z.string()),
+  consejos: z.array(z.string()),
+  preguntas: z.array(z.string()),
 });
 
 export const estudioBiblicoSchema = z.object({
