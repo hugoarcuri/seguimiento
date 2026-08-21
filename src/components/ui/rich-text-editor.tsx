@@ -126,7 +126,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
     },
     editorProps: {
       attributes: {
-        class: "prose prose-sm max-w-none px-3 py-2 focus:outline-none break-words min-h-[400px]",
+        class: "prose prose-sm max-w-none px-3 py-2 focus:outline-none break-words min-h-[300px]",
       },
       handlePaste: (_view, event) => {
         const items = event.clipboardData?.items;
@@ -159,7 +159,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
   const cmd = editor?.chain();
 
   return (
-    <div className={cn("rounded-md border bg-background overflow-hidden flex flex-col", className)}>
+    <div className={cn("rounded-md border bg-background flex flex-col min-h-0", className)}>
       <input
         ref={fileInputRef}
         type="file"
@@ -306,7 +306,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
           </button>
         </div>
       )}
-      <div className="overflow-y-auto flex-1">
+      <div className="overflow-y-auto flex-1 min-h-0">
         <EditorContent editor={editor} placeholder={placeholder} />
       </div>
     </div>
