@@ -1,4 +1,4 @@
--- Permitir ensure_miembro para cualquier rol (admin, discipulador, miembro)
+-- Permitir ensure_miembro para cualquier rol (admin, discipulador, miembro).
 CREATE OR REPLACE FUNCTION public.ensure_miembro() RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE v_user_id uuid := auth.uid(); v_rol text; v_profile record; v_miembro_id uuid;
 BEGIN
