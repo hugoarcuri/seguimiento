@@ -26,8 +26,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2, Maximize2, Minimize2 } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface Props {
   open: boolean;
@@ -49,6 +50,7 @@ const labelClass = "text-[11px] font-medium text-muted-foreground";
 
 export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuardado }: Props) {
   const [saving, setSaving] = useState(false);
+  const [maximized, setMaximized] = useState(false);
   const esEdicion = !!estudio;
 
   const {
@@ -143,17 +145,34 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
     onGuardado();
   };
 
+  const toggleMaximize = () => setMaximized((m) => !m);
+
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!saving) onOpenChange(o); }}>
-      <DialogContent className="sm:max-w-3xl p-0">
-        <DialogHeader className="px-6 pt-6 pb-2">
-          <DialogTitle>{esEdicion ? "Editar Estudio" : "Nuevo Estudio Bíblico"}</DialogTitle>
-          <DialogDescription>
-            {esEdicion ? "Modificá la información del estudio." : "Completá los datos para crear un nuevo estudio bíblico."}
-          </DialogDescription>
+      <DialogContent
+        className={maximized
+          ? "inset-0 w-full h-full max-w-none max-h-full rounded-none border-none p-0 gap-0"
+          : "sm:max-w-3xl p-0"
+        }
+      >
+        <DialogHeader className="px-6 pt-6 pb-2 flex flex-row items-start justify-between gap-4">
+          <div>
+            <DialogTitle>{esEdicion ? "Editar Estudio" : "Nuevo Estudio Bíblico"}</DialogTitle>
+            <DialogDescription>
+              {esEdicion ? "Modificá la información del estudio." : "Completá los datos para crear un nuevo estudio bíblico."}
+            </DialogDescription>
+          </div>
+          <button
+            type="button"
+            onClick={toggleMaximize}
+            className="shrink-0 rounded-md p-2 hover:bg-accent transition-colors border"
+            title={maximized ? "Restaurar" : "Maximizar"}
+          >
+            {maximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </button>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="px-6 pb-6 space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className={cn("flex flex-col gap-4 min-h-0", maximized ? "flex-1 overflow-y-auto px-6 pb-6" : "px-6 pb-6 space-y-4")}>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
@@ -207,8 +226,6 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
                         value={field.value || ""}
                         onChange={field.onChange}
                         placeholder="Escribí el contenido del estudio..."
-                        defaultHeight={400}
-                        minHeight={150}
                       />
                     )}
                   />
