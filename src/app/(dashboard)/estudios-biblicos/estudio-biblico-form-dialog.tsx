@@ -151,7 +151,7 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
         showCloseButton={false}
         className={maximized
           ? "!inset-0 !w-full !h-full !max-w-none !max-h-none !rounded-none !border-none !p-0 !gap-0 !translate-x-0 !translate-y-0 !overflow-hidden"
-          : "!max-h-none !overflow-visible sm:max-w-3xl !p-0"
+          : "!overflow-hidden sm:max-w-3xl !p-0"
         }
       >
         <div className="flex flex-col h-full">
@@ -193,11 +193,8 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
             </div>
           </div>
 
-          <div className={cn(
-            "flex flex-col min-h-0",
-            maximized ? "flex-1 overflow-hidden" : ""
-          )}>
-            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col min-h-0 px-6 pb-6 pt-2 gap-4">
+          <div className="flex flex-col min-h-0 flex-1 overflow-hidden">
+            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col min-h-0 flex-1 px-6 pb-6 pt-2 gap-4">
               <div className="space-y-3 shrink-0">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
