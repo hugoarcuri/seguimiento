@@ -17,6 +17,9 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { EstudioBiblicoFormDialog } from "./estudio-biblico-form-dialog";
+import {
+  Dialog, DialogContent, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
 
 interface Props {
   etapas: Etapa[];
@@ -54,6 +57,7 @@ export function EstudiosBiblicosClient({
   const [dialogAbierto, setDialogAbierto] = useState(false);
   const [estudioEditando, setEstudioEditando] = useState<EstudioBiblico | null>(null);
   const [eliminando, setEliminando] = useState<string | null>(null);
+  const [estudioAEliminar, setEstudioAEliminar] = useState<EstudioBiblico | null>(null);
 
   const supabase = useMemo(() => createClient(), []);
 
@@ -83,11 +87,11 @@ export function EstudiosBiblicosClient({
   };
 
   const eliminarEstudio = async (estudio: EstudioBiblico) => {
-    if (!confirm(`¿Eliminar el estudio "${estudio.titulo}"? Esta acción no se puede deshacer.`)) return;
     setEliminando(estudio.id);
     const supabase = createClient();
     const { error } = await supabase.from("estudios_biblicos").delete().eq("id", estudio.id);
     setEliminando(null);
+    setEstudioAEliminar(null);
     if (error) {
       toast.error("Error al eliminar el estudio");
       return;
@@ -323,7 +327,7 @@ export function EstudiosBiblicosClient({
                                 <Button
                                   size="icon-xs"
                                   variant="ghost"
-                                  onClick={() => eliminarEstudio(estudioDb)}
+                                  onClick={() => setEstudioAEliminar(estudioDb)}
                                   disabled={eliminando === estudioDb.id}
                                 >
                                   {eliminando === estudioDb.id ? (
@@ -525,6 +529,24 @@ export function EstudiosBiblicosClient({
         estudio={estudioEditando}
         onGuardado={onRecargarEstudios}
       />
+
+      <Dialog open={!!estudioAEliminar} onOpenChange={(o) => { if (!o || !eliminando) setEstudioAEliminar(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogTitle>Eliminar estudio</DialogTitle>
+          <DialogDescription>
+            ¿Eliminar el estudio <strong>&ldquo;{estudioAEliminar?.titulo}&rdquo;</strong>? Esta acción no se puede deshacer.
+          </DialogDescription>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setEstudioAEliminar(null)} disabled={!!eliminando}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={() => estudioAEliminar && eliminarEstudio(estudioAEliminar)} disabled={!!eliminando}>
+              {eliminando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Eliminar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
