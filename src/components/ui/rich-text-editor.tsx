@@ -259,7 +259,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
             </button>
             {showImageMenu && (
               <div className="absolute top-full left-0 mt-1 bg-popover border rounded-lg shadow-lg z-20 py-1 min-w-[180px]">
-                <button type="button" onMouseDown={run(() => fileInputRef.current?.click())}
+                <button type="button" onMouseDown={(e) => { e.preventDefault(); fileInputRef.current?.click(); }}
                   className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors flex items-center gap-2">
                   <ImagePlus className="h-3.5 w-3.5" /> Subir archivo
                 </button>
@@ -275,7 +275,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleUrlInsert(); } }}
                   placeholder="https://ejemplo.com/imagen.jpg"
                   className="flex-1 h-8 text-sm border rounded px-2 bg-background" autoFocus />
-                <button type="button" onMouseDown={run(handleUrlInsert)} className="h-8 px-3 rounded bg-primary text-primary-foreground text-sm font-medium">OK</button>
+                <button type="button" onMouseDown={(e) => { e.preventDefault(); handleUrlInsert(); }} className="h-8 px-3 rounded bg-primary text-primary-foreground text-sm font-medium">OK</button>
               </div>
             )}
           </div>
