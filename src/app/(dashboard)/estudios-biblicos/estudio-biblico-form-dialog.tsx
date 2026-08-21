@@ -222,12 +222,7 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
               </div>
 
               <div className="flex flex-col min-h-0 flex-1 gap-2">
-                <div className="flex items-center justify-between shrink-0">
-                  <p className="text-xs font-semibold uppercase text-muted-foreground">Contenido</p>
-                  <Button type="button" size="sm" variant="outline" onClick={() => agregarContenido({ tipo: "texto", valor: "" })}>
-                    <Plus className="h-3.5 w-3.5 mr-1" /> Agregar sección
-                  </Button>
-                </div>
+                <p className="text-xs font-semibold uppercase text-muted-foreground shrink-0">Contenido</p>
                 {errors.contenido && <p className="text-xs text-destructive shrink-0">{errors.contenido.message}</p>}
                 <div className="flex-1 min-h-0 flex flex-col gap-2">
                   {camposContenido.map((campo, idx) => (
