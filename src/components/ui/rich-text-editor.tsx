@@ -10,7 +10,7 @@ import { TextStyle, FontSize, FontFamily, Color } from "@tiptap/extension-text-s
 import {
   Bold, Underline as UnderlineIcon, Italic, Highlighter,
   Minus, Plus, Type, List, ListOrdered, ChevronDown, Palette,
-  ImagePlus, Link2,
+  ImagePlus, Link2, Maximize2, Minimize2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -22,6 +22,7 @@ interface Props {
   className?: string;
   minHeight?: number;
   defaultHeight?: number;
+  defaultWidth?: number;
 }
 
 const FONT_SIZES = ["12px", "14px", "16px", "18px", "20px", "24px", "28px", "32px"];
@@ -65,36 +66,67 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
-export function RichTextEditor({ value, onChange, placeholder, className, minHeight = 200, defaultHeight = 400 }: Props) {
+export function RichTextEditor({ value, onChange, placeholder, className, minHeight = 200, defaultHeight = 400, defaultWidth }: Props) {
   const [height, setHeight] = useState(defaultHeight);
+  const [width, setWidth] = useState<string | null>(defaultWidth ? `${defaultWidth}px` : null);
+  const [maximized, setMaximized] = useState(false);
   const [showFontPicker, setShowFontPicker] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showImageMenu, setShowImageMenu] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
+
   const dragging = useRef(false);
+  const dragDir = useRef<"v" | "h" | "corner">("v");
   const startY = useRef(0);
+  const startX = useRef(0);
   const startH = useRef(0);
+  const startW = useRef(0);
+  const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<ReturnType<typeof useEditor>>(null);
 
-  const onPointerDown = useCallback((e: React.PointerEvent) => {
+  const onPointerDown = useCallback((e: React.PointerEvent, dir: "v" | "h" | "corner") => {
+    e.preventDefault();
     dragging.current = true;
+    dragDir.current = dir;
     startY.current = e.clientY;
-    startH.current = height;
+    startX.current = e.clientX;
+    startH.current = containerRef.current?.offsetHeight || height;
+    startW.current = containerRef.current?.offsetWidth || 300;
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   }, [height]);
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
-    if (!dragging.current) return;
-    const delta = e.clientY - startY.current;
-    const next = Math.max(minHeight, startH.current + delta);
-    setHeight(next);
-  }, [minHeight]);
+    if (!dragging.current || maximized) return;
+    const dir = dragDir.current;
+    if (dir === "v" || dir === "corner") {
+      const delta = e.clientY - startY.current;
+      setHeight(Math.max(minHeight, startH.current + delta));
+    }
+    if (dir === "h" || dir === "corner") {
+      const delta = e.clientX - startX.current;
+      const newW = Math.max(200, startW.current + delta);
+      setWidth(`${newW}px`);
+    }
+  }, [minHeight, maximized]);
 
   const onPointerUp = useCallback(() => {
     dragging.current = false;
   }, []);
+
+  const toggleMaximize = useCallback(() => {
+    setMaximized((m) => !m);
+  }, []);
+
+  useEffect(() => {
+    if (maximized) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [maximized]);
 
   const insertImage = useCallback((src: string) => {
     if (!editorRef.current) return;
@@ -151,7 +183,7 @@ export function RichTextEditor({ value, onChange, placeholder, className, minHei
     },
     editorProps: {
       attributes: {
-        class: "prose prose-sm max-w-none px-3 py-2 focus:outline-none",
+        class: "prose prose-sm max-w-none px-3 py-2 focus:outline-none break-words overflow-wrap-anywhere",
       },
       handlePaste: (_view, event) => {
         const items = event.clipboardData?.items;
@@ -183,8 +215,16 @@ export function RichTextEditor({ value, onChange, placeholder, className, minHei
   const fontFamily = getCurrentFontFamily(editor);
   const currentColor = editor?.getAttributes("textStyle").color || "#000000";
 
-  return (
-    <div className={cn("rounded-md border bg-background", className)}>
+  const editorWrapper = (
+    <div
+      ref={containerRef}
+      className={cn(
+        "rounded-md border bg-background overflow-hidden flex flex-col",
+        maximized && "fixed inset-0 z-50 rounded-none border-0",
+        className
+      )}
+      style={maximized ? {} : width ? { width } : undefined}
+    >
       <input
         ref={fileInputRef}
         type="file"
@@ -192,9 +232,9 @@ export function RichTextEditor({ value, onChange, placeholder, className, minHei
         onChange={handleFileUpload}
         className="hidden"
       />
-      <div className="overflow-y-auto" style={{ height: `${height}px` }}>
+      <div className={cn("overflow-y-auto overflow-x-hidden flex-1", maximized && "min-h-0")}>
         {editor && (
-          <div className="flex items-center gap-0.5 border-b px-2 py-1.5 sticky top-0 bg-background z-10 shrink-0 flex-wrap">
+          <div className="flex items-center gap-0.5 border-b px-2 py-1.5 shrink-0 flex-wrap bg-background">
             <div className="relative">
               <button
                 type="button"
@@ -328,18 +368,51 @@ export function RichTextEditor({ value, onChange, placeholder, className, minHei
               className="rounded p-1.5 hover:bg-accent transition-colors" title="Agrandar texto">
               <Plus className="h-4 w-4" />
             </button>
+
+            <div className="mx-1 h-4 w-px bg-border" />
+
+            <button type="button" onClick={toggleMaximize}
+              className="rounded p-1.5 hover:bg-accent transition-colors" title={maximized ? "Restaurar" : "Maximizar"}>
+              {maximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </button>
           </div>
         )}
         <EditorContent editor={editor} placeholder={placeholder} />
       </div>
-      <div
-        className="h-5 cursor-ns-resize flex items-center justify-center border-t bg-muted/50 hover:bg-muted transition-colors shrink-0 select-none"
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-      >
-        <div className="w-8 h-1 rounded-full bg-border" />
-      </div>
+
+      {!maximized && (
+        <>
+          <div
+            className="h-1.5 cursor-ns-resize bg-transparent hover:bg-primary/20 transition-colors shrink-0 select-none"
+            onPointerDown={(e) => onPointerDown(e, "v")}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+          />
+          <div
+            className="w-1.5 absolute right-0 top-0 bottom-0 cursor-ew-resize bg-transparent hover:bg-primary/20 transition-colors select-none"
+            onPointerDown={(e) => onPointerDown(e, "h")}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+          />
+          <div
+            className="w-4 h-4 absolute bottom-0 right-0 cursor-nwse-resize bg-transparent hover:bg-primary/20 transition-colors select-none"
+            onPointerDown={(e) => onPointerDown(e, "corner")}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+          />
+        </>
+      )}
     </div>
   );
+
+  if (maximized) {
+    return (
+      <>
+        <div className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm" onClick={toggleMaximize} />
+        {editorWrapper}
+      </>
+    );
+  }
+
+  return editorWrapper;
 }

@@ -224,3 +224,22 @@
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
+
+.ProseMirror {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  overflow-x: hidden;
+}
+
+.ProseMirror img {
+  max-width: 100%;
+  height: auto;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: muted-foreground;
+  pointer-events: none;
+  height: 0;
+}
