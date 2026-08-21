@@ -151,7 +151,7 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
     <Dialog open={open} onOpenChange={(o) => { if (!saving) onOpenChange(o); }}>
       <DialogContent
         className={maximized
-          ? "inset-0 w-full h-full max-w-none max-h-full rounded-none border-none p-0 gap-0"
+          ? "!inset-0 !w-full !h-full !max-w-none !max-h-full !rounded-none !border-none !p-0 !gap-0 !translate-x-0 !translate-y-0 !overflow-hidden !grid !grid-rows-[auto_1fr]"
           : "sm:max-w-3xl p-0"
         }
       >
