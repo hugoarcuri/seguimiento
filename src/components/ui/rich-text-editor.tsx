@@ -22,7 +22,11 @@ interface Props {
 }
 
 const FONT_SIZES = ["12px", "14px", "16px", "18px", "20px", "24px", "28px", "32px"];
-const FONT_FAMILIES = ["", "Arial", "Georgia", "Times New Roman", "Courier New", "Verdana"];
+const FONT_FAMILIES = [
+  "", "Arial", "Georgia", "Times New Roman", "Courier New", "Verdana",
+  "Trebuchet MS", "Impact", "Comic Sans MS", "Palatino", "Garamond",
+  "Bookman", "Lucida Console", "Tahoma", "Century Gothic", "Calibri",
+];
 
 function getCurrentFontSize(editor: ReturnType<typeof useEditor>): string {
   if (!editor) return "16px";
@@ -116,7 +120,7 @@ export function RichTextEditor({ value, onChange, placeholder, className, minHei
               <button
                 type="button"
                 onClick={() => setShowFontPicker(!showFontPicker)}
-                className="rounded p-1.5 hover:bg-accent transition-colors text-xs flex items-center gap-1 min-w-[90px]"
+                className="rounded p-1.5 hover:bg-accent transition-colors text-xs flex items-center gap-1 w-[90px] truncate"
                 title="Tipo de letra"
               >
                 {fontFamily || "Default"}

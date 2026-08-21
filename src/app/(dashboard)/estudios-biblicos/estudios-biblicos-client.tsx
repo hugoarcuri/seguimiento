@@ -220,7 +220,7 @@ export function EstudiosBiblicosClient({
         >
           {etapas.map((etapa) => (
             <TabsTrigger key={etapa.id} value={String(etapa.id)} className="whitespace-nowrap">
-              {etapa.nombre}
+              {etapa.id}. {etapa.nombre}
             </TabsTrigger>
           ))}
         </TabsList>
@@ -231,7 +231,7 @@ export function EstudiosBiblicosClient({
             <TabsContent key={etapa.id} value={String(etapa.id)}>
               <div className="space-y-4 pt-2">
                 <div className="space-y-1">
-                  <h2 className="text-lg font-semibold">{etapa.nombre}</h2>
+                  <h2 className="text-lg font-semibold">{etapa.id}. {etapa.nombre}</h2>
                   {etapa.descripcion && (
                     <p className="text-sm text-muted-foreground">{etapa.descripcion}</p>
                   )}
