@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -9,7 +9,7 @@ import { ImageResize } from "@/lib/tiptap-image-resize";
 import { TextStyle, FontSize, FontFamily, Color } from "@tiptap/extension-text-style";
 import {
   Bold, Underline as UnderlineIcon, Italic, Highlighter,
-  Minus, Plus, Type, List, ListOrdered, ChevronDown, Palette,
+  Minus, Plus, List, ListOrdered, ChevronDown, Palette,
   ImagePlus, Link2, Heading,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -29,13 +29,13 @@ const FONT_FAMILIES = [
   "Bookman", "Lucida Console", "Tahoma", "Century Gothic", "Calibri",
 ];
 
-function getCurrentFontSize(editor: ReturnType<typeof useEditor>): string {
+function getFontSize(editor: ReturnType<typeof useEditor>): string {
   if (!editor) return "16px";
   const attrs = editor.getAttributes("textStyle");
   return attrs.fontSize || "16px";
 }
 
-function getCurrentFontFamily(editor: ReturnType<typeof useEditor>): string {
+function getFontFamily(editor: ReturnType<typeof useEditor>): string {
   if (!editor) return "Predeterminada";
   const attrs = editor.getAttributes("textStyle");
   const ff = attrs.fontFamily || "";
@@ -58,44 +58,6 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const editorRef = useRef<ReturnType<typeof useEditor> | null>(null);
-
-  const cmd = useCallback((fn: (e: React.MouseEvent) => void) => (e: React.MouseEvent) => {
-    e.preventDefault();
-    fn(e);
-  }, []);
-
-  const insertImage = useCallback((src: string) => {
-    if (!editorRef.current) return;
-    editorRef.current.chain().focus().insertContent({ type: "imageResize", attrs: { src, alt: "", title: "" } }).run();
-  }, []);
-
-  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("La imagen no puede superar 5MB");
-      e.target.value = "";
-      return;
-    }
-    try {
-      const src = await fileToBase64(file);
-      insertImage(src);
-    } catch {
-      toast.error("Error al procesar la imagen");
-    }
-    e.target.value = "";
-    setShowImageMenu(false);
-  }, [insertImage]);
-
-  const handleUrlInsert = useCallback(() => {
-    if (imageUrl.trim()) {
-      insertImage(imageUrl.trim());
-      setImageUrl("");
-      setShowUrlInput(false);
-      setShowImageMenu(false);
-    }
-  }, [imageUrl, insertImage]);
 
   const editor = useEditor({
     extensions: [
@@ -131,7 +93,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
             const file = item.getAsFile();
             if (file) {
               fileToBase64(file).then((src) => {
-                editorRef.current?.chain().focus().insertContent({ type: "imageResize", attrs: { src, alt: "", title: "" } }).run();
+                editor?.chain().focus().insertContent({ type: "imageResize", attrs: { src, alt: "", title: "" } }).run();
               }).catch(() => toast.error("Error al pegar la imagen"));
             }
             return true;
@@ -142,73 +104,113 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
     },
   });
 
-  useEffect(() => {
-    editorRef.current = editor;
-  }, [editor]);
+  const run = useCallback((fn: (e: React.MouseEvent) => void) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    fn(e);
+  }, []);
 
-  const fontSize = getCurrentFontSize(editor);
-  const fontFamily = getCurrentFontFamily(editor);
+  const fontSize = getFontSize(editor);
+  const fontFamily = getFontFamily(editor);
   const currentColor = editor?.getAttributes("textStyle").color || "#000000";
 
-  const applyLevel = (level: 1 | 2 | 0) => cmd(() => {
-    const e = editorRef.current;
-    if (!e) return;
+  const insertImage = (src: string) => {
+    editor?.chain().focus().insertContent({ type: "imageResize", attrs: { src, alt: "", title: "" } }).run();
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("La imagen no puede superar 5MB");
+      e.target.value = "";
+      return;
+    }
+    try {
+      const src = await fileToBase64(file);
+      insertImage(src);
+    } catch {
+      toast.error("Error al procesar la imagen");
+    }
+    e.target.value = "";
+    setShowImageMenu(false);
+  };
+
+  const handleUrlInsert = () => {
+    if (imageUrl.trim()) {
+      insertImage(imageUrl.trim());
+      setImageUrl("");
+      setShowUrlInput(false);
+      setShowImageMenu(false);
+    }
+  };
+
+  const applyLevel = (level: 1 | 2 | 0) => run(() => {
+    if (!editor) return;
     if (level === 1) {
-      e.chain().focus().unsetItalic().setBold().setFontSize("18px").run();
+      editor.chain().focus().unsetItalic().setBold().setFontSize("18px").run();
     } else if (level === 2) {
-      e.chain().focus().setBold().setItalic().setFontSize("16px").run();
+      editor.chain().focus().setBold().setItalic().setFontSize("16px").run();
     } else {
-      e.chain().focus().unsetBold().unsetItalic().setFontSize("12px").run();
+      editor.chain().focus().unsetBold().unsetItalic().setFontSize("12px").run();
     }
   });
 
-  const toggleBulletList = cmd(() => {
-    editorRef.current?.chain().focus().toggleBulletList().run();
+  const toggleBulletList = run(() => {
+    editor?.chain().focus().toggleBulletList().run();
   });
 
-  const toggleOrderedList = cmd(() => {
-    editorRef.current?.chain().focus().toggleOrderedList().run();
+  const toggleOrderedList = run(() => {
+    editor?.chain().focus().toggleOrderedList().run();
   });
 
-  const cycleUp = cmd(() => {
-    const e = editorRef.current;
-    if (!e) return;
-    const current = getCurrentFontSize(e);
+  const cycleUp = run(() => {
+    if (!editor) return;
+    const current = getFontSize(editor);
     const idx = FONT_SIZES.indexOf(current);
     if (idx < FONT_SIZES.length - 1) {
-      e.chain().focus().setFontSize(FONT_SIZES[idx + 1]).run();
+      editor.chain().focus().setFontSize(FONT_SIZES[idx + 1]).run();
     }
   });
 
-  const cycleDown = cmd(() => {
-    const e = editorRef.current;
-    if (!e) return;
-    const current = getCurrentFontSize(e);
+  const cycleDown = run(() => {
+    if (!editor) return;
+    const current = getFontSize(editor);
     const idx = FONT_SIZES.indexOf(current);
     if (idx > 0) {
-      e.chain().focus().setFontSize(FONT_SIZES[idx - 1]).run();
+      editor.chain().focus().setFontSize(FONT_SIZES[idx - 1]).run();
     }
   });
 
-  const toggleBold = cmd(() => editorRef.current?.chain().focus().toggleBold().run());
-  const toggleItalic = cmd(() => editorRef.current?.chain().focus().toggleItalic().run());
-  const toggleUnderline = cmd(() => editorRef.current?.chain().focus().toggleUnderline().run());
-  const toggleHighlight = cmd(() => editorRef.current?.chain().focus().toggleHighlight().run());
+  const toggleBold = run(() => editor?.chain().focus().toggleBold().run());
+  const toggleItalic = run(() => editor?.chain().focus().toggleItalic().run());
+  const toggleUnderline = run(() => editor?.chain().focus().toggleUnderline().run());
+  const toggleHighlight = run(() => editor?.chain().focus().toggleHighlight().run());
 
-  const setColor = (c: string) => cmd(() => {
-    editorRef.current?.chain().focus().setColor(c).run();
+  const setColor = (c: string) => run(() => {
+    editor?.chain().focus().setColor(c).run();
     setShowColorPicker(false);
   });
 
-  const unsetColor = cmd(() => {
-    editorRef.current?.chain().focus().unsetColor().run();
+  const unsetColor = run(() => {
+    editor?.chain().focus().unsetColor().run();
     setShowColorPicker(false);
   });
 
-  const setFontFamily = (ff: string) => cmd(() => {
-    editorRef.current?.chain().focus().setFontFamily(ff).run();
+  const setFontFamily = (ff: string) => run(() => {
+    editor?.chain().focus().setFontFamily(ff).run();
     setShowFontPicker(false);
   });
+
+  const handleFontSizeInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const val = (e.target as HTMLInputElement).value.trim();
+      const num = parseInt(val, 10);
+      if (!isNaN(num) && num >= 6 && num <= 96) {
+        editor?.chain().focus().setFontSize(`${num}px`).run();
+      }
+    }
+  };
 
   return (
     <div className={cn("rounded-md border bg-background flex flex-col min-h-0", className)}>
@@ -224,7 +226,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
           <div className="relative">
             <button
               type="button"
-              onMouseDown={cmd(() => { setShowFontPicker(!showFontPicker); setShowColorPicker(false); setShowImageMenu(false); })}
+              onMouseDown={run(() => { setShowFontPicker(!showFontPicker); setShowColorPicker(false); setShowImageMenu(false); })}
               className="rounded p-1.5 hover:bg-accent transition-colors text-xs flex items-center gap-1 w-[90px] truncate"
               title="Tipo de letra"
             >
@@ -273,7 +275,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
           <div className="mx-1 h-4 w-px bg-border" />
 
           <div className="relative">
-            <button type="button" onMouseDown={cmd(() => { setShowColorPicker(!showColorPicker); setShowFontPicker(false); setShowImageMenu(false); })}
+            <button type="button" onMouseDown={run(() => { setShowColorPicker(!showColorPicker); setShowFontPicker(false); setShowImageMenu(false); })}
               className={cn("rounded p-1.5 hover:bg-accent transition-colors flex items-center gap-1", editor.isActive("textStyle") && editor.getAttributes("textStyle").color && "bg-accent text-foreground")} title="Color de texto">
               <Palette className="h-4 w-4" />
               <div className="w-3 h-3 rounded-sm border" style={{ backgroundColor: currentColor }} />
@@ -302,7 +304,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
           <div className="mx-1 h-4 w-px bg-border" />
 
           <div className="relative">
-            <button type="button" onMouseDown={cmd(() => { setShowImageMenu(!showImageMenu); setShowFontPicker(false); setShowColorPicker(false); })}
+            <button type="button" onMouseDown={run(() => { setShowImageMenu(!showImageMenu); setShowFontPicker(false); setShowColorPicker(false); })}
               className="rounded p-1.5 hover:bg-accent transition-colors" title="Insertar imagen">
               <ImagePlus className="h-4 w-4" />
             </button>
@@ -312,7 +314,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
                   className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors flex items-center gap-2">
                   <ImagePlus className="h-3.5 w-3.5" /> Subir archivo
                 </button>
-                <button type="button" onMouseDown={cmd(() => setShowUrlInput(!showUrlInput))}
+                <button type="button" onMouseDown={run(() => setShowUrlInput(!showUrlInput))}
                   className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors flex items-center gap-2">
                   <Link2 className="h-3.5 w-3.5" /> Desde URL
                 </button>
@@ -343,7 +345,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
           <div className="mx-1 h-4 w-px bg-border" />
 
           <div className="relative group">
-            <button type="button" onMouseDown={cmd((e) => e.stopPropagation())}
+            <button type="button" onMouseDown={run((e) => e.stopPropagation())}
               className="rounded p-1.5 hover:bg-accent transition-colors text-xs flex items-center gap-1" title="Niveles">
               <Heading className="h-4 w-4" />
               <ChevronDown className="h-3 w-3" />
@@ -351,11 +353,11 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
             <div className="absolute top-full left-0 mt-1 bg-popover border rounded-lg shadow-lg z-20 py-1 min-w-[140px] hidden group-hover:block">
               <button type="button" onMouseDown={applyLevel(1)}
                 className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors font-bold text-base">
-                Título 1
+                Titulo 1
               </button>
               <button type="button" onMouseDown={applyLevel(2)}
                 className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors font-bold italic">
-                Título 2
+                Titulo 2
               </button>
               <button type="button" onMouseDown={applyLevel(0)}
                 className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors">
@@ -375,17 +377,8 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
             defaultValue={fontSize.replace("px", "")}
             key={fontSize}
             className="w-10 h-7 text-center text-xs border rounded bg-background focus:outline-none focus:ring-1 focus:ring-primary"
-            title="Tamaño de fuente (Enter para aplicar)"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                const val = (e.target as HTMLInputElement).value.trim();
-                const num = parseInt(val, 10);
-                if (!isNaN(num) && num >= 6 && num <= 96) {
-                  editorRef.current?.chain().focus().setFontSize(`${num}px`).run();
-                }
-              }
-            }}
+            title="Tamano de fuente (Enter para aplicar)"
+            onKeyDown={handleFontSizeInput}
           />
           <button type="button" onMouseDown={cycleUp}
             className="rounded p-1.5 hover:bg-accent transition-colors" title="Agrandar texto">
