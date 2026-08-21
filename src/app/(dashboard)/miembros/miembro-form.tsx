@@ -240,14 +240,11 @@ export function MiembroForm({
       });
       toast.dismiss();
 
-      if (authError) {
-        toast.warning("Miembro creado, pero no se pudo crear la cuenta de acceso. Créala manualmente.");
-      } else {
-        toast.success("Miembro y cuenta de acceso creados exitosamente");
-      }
+      toast.success("Cuenta creada exitosamente. Iniciá sesión.");
 
-      router.push("/miembros");
-      router.refresh();
+      setTimeout(() => {
+        router.push("/login");
+      }, 1500);
     }
   };
 
