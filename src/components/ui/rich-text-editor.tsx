@@ -86,43 +86,54 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
       },
       transformPastedHTML: (html: string) => {
         let cleaned = html;
-        cleaned = cleaned.replace(/<o:p[\s\S]*?<\/o:p>/gi, "");
-        cleaned = cleaned.replace(/<style[\s\S]*?<\/style>/gi, "");
-        cleaned = cleaned.replace(/<meta[\s\S]*?>/gi, "");
-        cleaned = cleaned.replace(/<link[\s\S]*?>/gi, "");
-        cleaned = cleaned.replace(/<xml[\s\S]*?<\/xml>/gi, "");
-        cleaned = cleaned.replace(/<title[\s\S]*?<\/title>/gi, "");
+
         cleaned = cleaned.replace(/<head[\s\S]*?<\/head>/gi, "");
+        cleaned = cleaned.replace(/<style[\s\S]*?<\/style>/gi, "");
         cleaned = cleaned.replace(/<script[\s\S]*?<\/script>/gi, "");
-        cleaned = cleaned.replace(/<winasion[\s\S]*?<\/winasion>/gi, "");
-        cleaned = cleaned.replace(/<br\s*\/?>/gi, "<br>");
-        cleaned = cleaned.replace(/<b:sampledata[\s\S]*?<\/b:sampledata>/gi, "");
+        cleaned = cleaned.replace(/<meta[\s\S]*?>/gi, "");
+        cleaned = cleaned.replace(/<title[\s\S]*?<\/title>/gi, "");
+        cleaned = cleaned.replace(/<xml[\s\S]*?<\/xml>/gi, "");
+        cleaned = cleaned.replace(/<o:p[\s\S]*?<\/o:p>/gi, "");
         cleaned = cleaned.replace(/<w:sdt[\s\S]*?<\/w:sdt>/gi, "");
         cleaned = cleaned.replace(/<v:shapetype[\s\S]*?<\/v:shapetype>/gi, "");
         cleaned = cleaned.replace(/<v:shape[\s\S]*?<\/v:shape>/gi, "");
         cleaned = cleaned.replace(/<v:imagedata[\s\S]*?\/?>/gi, "");
-        cleaned = cleaned.replace(/<w:worddocument[\s\S]*?<\/w:worddocument>/gi, "");
-        cleaned = cleaned.replace(/\s*mso-[^:]+:[^;]+;*/gi, "");
-        cleaned = cleaned.replace(/\s*class="?MsoNormal"?/gi, "");
-        cleaned = cleaned.replace(/font-size:\s*(\d+(?:\.\d+)?)pt/gi, (_match, pt) => {
-          const px = Math.round(parseFloat(pt) * 1.333);
-          return `font-size: ${px}px`;
+
+        cleaned = cleaned.replace(/style="([^"]*)"/gi, (_match, styles: string) => {
+          const kept: string[] = [];
+          const parts = styles.split(";");
+          for (const part of parts) {
+            const [prop, val] = part.split(":").map((s: string) => s.trim());
+            if (!prop || !val) continue;
+            const p = prop.toLowerCase();
+            if (p === "font-size" || p === "font-weight" || p === "font-style" || p === "text-decoration" || p === "color" || p === "background-color" || p === "font-family" || p === "text-align" || p === "text-decoration-line" || p === "text-decoration-style") {
+              let v = val;
+              if (p === "font-size") {
+                v = val.replace(/(\d+(?:\.\d+)?)pt/gi, (_m: string, pt: string) => `${Math.round(parseFloat(pt) * 1.333)}px`);
+              }
+              kept.push(`${prop}: ${v}`);
+            }
+          }
+          return kept.length > 0 ? `style="${kept.join("; ")}"` : "";
         });
+
+        cleaned = cleaned.replace(/<p[^>]*>\s*<\/p>/gi, "");
+        cleaned = cleaned.replace(/<div[^>]*>\s*<\/div>/gi, "");
+        cleaned = cleaned.replace(/<b:sampledata[\s\S]*?<\/b:sampledata>/gi, "");
+
         return cleaned;
       },
       handlePaste: (_view, event) => {
-        const items = event.clipboardData?.items;
-        if (!items) return false;
-        for (const item of items) {
-          if (item.type.startsWith("image/")) {
-            event.preventDefault();
-            const file = item.getAsFile();
-            if (file) {
+        const files = event.clipboardData?.files;
+        if (files && files.length > 0) {
+          for (const file of files) {
+            if (file.type.startsWith("image/")) {
+              event.preventDefault();
               fileToBase64(file).then((src) => {
                 editor?.chain().focus().insertContent({ type: "imageResize", attrs: { src, alt: "", title: "" } }).run();
               }).catch(() => toast.error("Error al pegar la imagen"));
+              return true;
             }
-            return true;
           }
         }
         return false;
