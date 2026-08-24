@@ -5,6 +5,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Highlight from "@tiptap/extension-highlight";
+import Typography from "@tiptap/extension-typography";
 import { ImageResize } from "@/lib/tiptap-image-resize";
 import { TextStyle, FontSize, FontFamily, Color } from "@tiptap/extension-text-style";
 import {
@@ -62,14 +63,15 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        heading: false,
+        heading: {
+          levels: [1, 2, 3],
+        },
         codeBlock: false,
         code: false,
-        horizontalRule: false,
-        blockquote: false,
       }),
       Underline,
       Highlight.configure({ multicolor: true }),
+      Typography,
       ImageResize,
       TextStyle,
       FontSize,
@@ -184,11 +186,11 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
   const applyLevel = (level: 1 | 2 | 0) => run(() => {
     if (!editor) return;
     if (level === 1) {
-      editor.chain().focus().unsetItalic().setBold().setFontSize("18px").run();
+      editor.chain().focus().toggleHeading({ level: 1 }).run();
     } else if (level === 2) {
-      editor.chain().focus().setBold().setItalic().setFontSize("16px").run();
+      editor.chain().focus().toggleHeading({ level: 2 }).run();
     } else {
-      editor.chain().focus().unsetBold().unsetItalic().setFontSize("12px").run();
+      editor.chain().focus().setParagraph().run();
     }
   });
 
@@ -389,15 +391,15 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
             </button>
             <div className="absolute top-full left-0 mt-1 bg-popover border rounded-lg shadow-lg z-20 py-1 min-w-[140px] hidden group-hover:block">
               <button type="button" onMouseDown={applyLevel(1)}
-                className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors font-bold text-base">
+                className={cn("w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors font-bold text-base", editor.isActive("heading", { level: 1 }) && "bg-accent")}>
                 Titulo 1
               </button>
               <button type="button" onMouseDown={applyLevel(2)}
-                className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors font-bold italic">
+                className={cn("w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors font-semibold", editor.isActive("heading", { level: 2 }) && "bg-accent")}>
                 Titulo 2
               </button>
               <button type="button" onMouseDown={applyLevel(0)}
-                className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors">
+                className={cn("w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors", !editor.isActive("heading") && "bg-accent")}>
                 Normal
               </button>
             </div>
