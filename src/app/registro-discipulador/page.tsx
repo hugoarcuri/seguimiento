@@ -95,8 +95,8 @@ export default function RegistroDiscipuladorPage() {
                 Tu cuenta de discipulador fue creada. Ya podés iniciar sesión.
               </p>
             </div>
-            <Button className="w-full mt-4" onClick={() => router.push("/dashboard/")}>
-              Ir al dashboard
+            <Button className="w-full mt-4" onClick={() => router.push("/login")}>
+              Ir a iniciar sesión
             </Button>
           </CardContent>
         </Card>
