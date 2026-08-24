@@ -192,7 +192,7 @@ export function MiembrosClient({ miembros, etapas, esAdmin, onCambio }: Miembros
 
   const handleDelete = async (id: string) => {
     const supabase = createClient();
-    const { error } = await supabase.from("miembros").delete().eq("id", id);
+    const { error } = await supabase.rpc("eliminar_miembro", { p_id: id });
     if (error) {
       toast.error(error.message === 'new row violates row-level security policy for table "miembros"'
         ? "Solo los administradores pueden eliminar miembros"
@@ -209,15 +209,17 @@ export function MiembrosClient({ miembros, etapas, esAdmin, onCambio }: Miembros
     if (!selectedIds.length || bulkDeleting) return;
     setBulkDeleting(true);
     const supabase = createClient();
-    const { error } = await supabase.from("miembros").delete().in("id", selectedIds);
-    setBulkDeleting(false);
-    if (error) {
-      toast.error(error.message.includes("row-level security policy")
-        ? "Solo los administradores pueden eliminar miembros"
-        : `Error al eliminar: ${error.message}`);
-      return;
+    let ok = 0;
+    for (const id of selectedIds) {
+      const { error } = await supabase.rpc("eliminar_miembro", { p_id: id });
+      if (!error) ok++;
     }
-    toast.success(`${selectedIds.length} miembro(s) eliminado(s)`);
+    setBulkDeleting(false);
+    if (ok < selectedIds.length) {
+      toast.error(`Se eliminaron ${ok} de ${selectedIds.length} miembros`);
+    } else {
+      toast.success(`${selectedIds.length} miembro(s) eliminado(s)`);
+    }
     setBulkDeleteOpen(false);
     setSelectedIds([]);
     onCambio?.();

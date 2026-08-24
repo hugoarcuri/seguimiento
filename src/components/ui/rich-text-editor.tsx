@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import type { Editor } from "@tiptap/core";
 
 interface Props {
   value: string;
@@ -33,7 +34,7 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
-const SLASH_ITEMS: { label: string; description: string; action: (editor: Parameters<NonNullable<Parameters<typeof useEditor>[0]>["onUpdate"]>[0]["editor"]) => void }[] = [
+const SLASH_ITEMS: { label: string; description: string; action: (editor: Editor) => void }[] = [
   { label: "Texto", description: "Parrafo normal", action: (e) => e.chain().focus().setParagraph().run() },
   { label: "Titulo 1", description: "Titulo grande", action: (e) => e.chain().focus().toggleHeading({ level: 1 }).run() },
   { label: "Titulo 2", description: "Titulo mediano", action: (e) => e.chain().focus().toggleHeading({ level: 2 }).run() },
