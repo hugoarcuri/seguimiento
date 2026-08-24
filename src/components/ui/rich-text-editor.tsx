@@ -53,6 +53,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
   const [imageUrl, setImageUrl] = useState("");
   const [slashQuery, setSlashQuery] = useState<string | null>(null);
   const [slashIndex, setSlashIndex] = useState(0);
+  const [slashFrom, setSlashFrom] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const headingMenuRef = useRef<HTMLDivElement>(null);
   const slashMenuRef = useRef<HTMLDivElement>(null);
@@ -101,13 +102,20 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
       },
       handleKeyDown: (_view, event) => {
         if (slashQuery !== null) {
-          if (event.key === "Escape") { setSlashQuery(null); return true; }
+          if (event.key === "Escape") {
+            editor.chain().focus().deleteRange({ from: slashFrom, to: editor.state.selection.from }).run();
+            setSlashQuery(null);
+            return true;
+          }
           if (event.key === "ArrowDown") { event.preventDefault(); setSlashIndex((i) => (i + 1) % slashItems.length); return true; }
           if (event.key === "ArrowUp") { event.preventDefault(); setSlashIndex((i) => (i + slashItems.length - 1) % slashItems.length); return true; }
           if (event.key === "Enter" && slashItems.length > 0) {
             event.preventDefault();
             const item = slashItems[slashIndex] ?? slashItems[0];
             if (item && editor) {
+              const from = slashFrom;
+              const to = editor.state.selection.from;
+              editor.chain().focus().deleteRange({ from, to }).run();
               item.action(editor);
             }
             setSlashQuery(null);
@@ -129,6 +137,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
             const { $from } = state.selection;
             const textBefore = $from.parent.textContent.slice(0, $from.parentOffset);
             if (textBefore.trim() === "" || $from.parentOffset === 0) {
+              setSlashFrom($from.pos);
               setSlashQuery("");
               setSlashIndex(0);
               return false;
@@ -357,6 +366,9 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
                 <button key={item.label} type="button"
                   onMouseDown={(e) => {
                     e.preventDefault();
+                    const from = slashFrom;
+                    const to = editor.state.selection.from;
+                    editor.chain().focus().deleteRange({ from, to }).run();
                     item.action(editor);
                     setSlashQuery(null);
                   }}
