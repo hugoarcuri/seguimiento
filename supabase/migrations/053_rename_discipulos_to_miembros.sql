@@ -112,8 +112,9 @@ GRANT EXECUTE ON FUNCTION public.admin_sync_miembros() TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.eliminar_discipuladores(p_ids uuid[]) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
-  UPDATE public.seguimientos SET discipulador_id = NULL WHERE discipulador_id = ANY(p_ids);
+  DELETE FROM public.seguimientos WHERE discipulador_id = ANY(p_ids);
   UPDATE public.miembros SET lider_id = NULL WHERE lider_id = ANY(p_ids);
   DELETE FROM public.profiles WHERE id = ANY(p_ids) AND rol = 'discipulador';
 END;
 $$;
+GRANT EXECUTE ON FUNCTION public.eliminar_discipuladores(p_ids uuid[]) TO authenticated;

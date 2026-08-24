@@ -17,7 +17,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import type { Editor, Extension } from "@tiptap/core";
+import type { Editor } from "@tiptap/core";
+import { Extension } from "@tiptap/core";
 
 interface Props {
   value: string;
@@ -193,7 +194,7 @@ const SlashCommand = Extension.create({
     };
   },
   addProseMirrorPlugins() {
-    return [Suggestion.configure({ ...this.options.suggestion })];
+    return [Suggestion(this.options.suggestion)];
   },
 });
 

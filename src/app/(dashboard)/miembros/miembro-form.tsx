@@ -159,13 +159,8 @@ export function MiembroForm({
       return;
     }
 
-    if (!isEditing && (!data.password || data.password.length < 6)) {
-      toast.error("La contraseña debe tener al menos 6 caracteres");
-      return;
-    }
-
     if (!isEditing && !data.email) {
-      toast.error("El email es requerido para crear la cuenta de acceso");
+      toast.error("El email es requerido para poder vincular la cuenta después");
       return;
     }
 
@@ -209,7 +204,7 @@ export function MiembroForm({
     } else {
       const { data: newMiembro, error } = await supabase
         .from("miembros")
-        .insert({ ...payload, lider_id: data.lider_id || user.id })
+        .insert({ ...payload, user_id: null, lider_id: data.lider_id || user.id })
         .select("id")
         .single();
 
@@ -228,26 +223,11 @@ export function MiembroForm({
         }
       }
 
-      toast.loading("Creando cuenta de acceso...");
-      const { error: authError } = await supabase.functions.invoke("registro-discipulo", {
-        body: {
-          email: data.email,
-          password: data.password,
-          nombre: data.nombre,
-          apellido: data.apellido,
-          miembro_id: newMiembro.id,
-        },
-      });
-      toast.dismiss();
-
-      if (authError) {
-        toast.warning("Cuenta creada, pero hubo un problema al vincular el acceso.");
-      }
-
-      toast.success("Cuenta creada exitosamente. Iniciá sesión.");
+      toast.success("Miembro creado. Cuando se registre con su email, se vinculará automáticamente.");
 
       setTimeout(() => {
-        router.push("/login");
+        router.push("/miembros");
+        router.refresh();
       }, 1500);
     }
   };
@@ -282,7 +262,7 @@ export function MiembroForm({
         ) : (
           <div className="text-center">
             <h2 className="text-lg font-semibold leading-tight">Nuevo miembro</h2>
-            <p className="text-xs text-muted-foreground">Completá los datos para comenzar el seguimiento</p>
+            <p className="text-xs text-muted-foreground">Completá los datos para comenzar el seguimiento. La cuenta de acceso se vincula al registrarse.</p>
           </div>
         )}
       </div>
@@ -316,15 +296,9 @@ export function MiembroForm({
             <Input id="telefono" className={inputClass} {...register("telefono")} />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="email" className={inputLabelClass}>Email</Label>
+            <Label htmlFor="email" className={inputLabelClass}>Email *</Label>
             <Input id="email" type="email" className={inputClass} {...register("email")} />
           </div>
-          {!isEditing && (
-            <div className="space-y-1">
-              <Label htmlFor="password" className={inputLabelClass}>Contraseña *</Label>
-              <Input id="password" type="password" className={inputClass} {...register("password")} placeholder="Mínimo 6 caracteres" />
-            </div>
-          )}
           <div className="space-y-1 sm:col-span-2">
             <Label htmlFor="direccion" className={inputLabelClass}>Dirección</Label>
             <Input id="direccion" className={inputClass} {...register("direccion")} />
@@ -421,9 +395,9 @@ export function MiembroForm({
           </div>
         </div>
 
-        {(errors.nombre || errors.apellido || errors.email || errors.password) && (
+        {(errors.nombre || errors.apellido || errors.email) && (
           <p className="text-xs text-destructive">
-            {errors.apellido?.message || errors.nombre?.message || errors.email?.message || errors.password?.message}
+            {errors.apellido?.message || errors.nombre?.message || errors.email?.message}
           </p>
         )}
       </div>
