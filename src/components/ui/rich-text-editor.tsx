@@ -10,7 +10,7 @@ import { ImageResize } from "@/lib/tiptap-image-resize";
 import { TextStyle, FontSize, FontFamily, Color } from "@tiptap/extension-text-style";
 import {
   Bold, Underline as UnderlineIcon, Italic, Highlighter,
-  Minus, Plus, List, ListOrdered, ChevronDown, Palette,
+  Minus, Plus, ChevronDown, Palette,
   ImagePlus, Link2, Heading,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -23,7 +23,7 @@ interface Props {
   className?: string;
 }
 
-const FONT_SIZES = ["12px", "14px", "16px", "18px", "20px", "24px", "28px", "32px"];
+const FONT_SIZES = ["0.75rem", "0.875rem", "1rem", "1.125rem", "1.25rem", "1.5rem", "1.75rem", "2rem"];
 const FONT_FAMILIES = [
   "", "Arial", "Georgia", "Times New Roman", "Courier New", "Verdana",
   "Trebuchet MS", "Impact", "Comic Sans MS", "Palatino", "Garamond",
@@ -125,7 +125,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
 
   if (!editor) return <div className={cn("rounded-md border bg-background min-h-[200px]", className)} />;
 
-  const fontSize = editor.getAttributes("textStyle").fontSize || "16px";
+  const fontSize = editor.getAttributes("textStyle").fontSize || "1rem";
   const fontFamily = FONT_FAMILIES.find((f) => f === (editor.getAttributes("textStyle").fontFamily || "")) || "Predeterminada";
   const currentColor = editor.getAttributes("textStyle").color || "#000000";
 
@@ -254,19 +254,6 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
 
         <div className="mx-1 h-4 w-px bg-border" />
 
-        <button type="button" title="Viñetas"
-          onMouseDown={(e) => cmd(e, () => editor.chain().focus().toggleBulletList().run())}
-          className={cn("rounded p-1.5 hover:bg-accent transition-colors", editor.isActive("bulletList") && "bg-accent text-foreground")}>
-          <List className="h-4 w-4" />
-        </button>
-        <button type="button" title="Numeracion"
-          onMouseDown={(e) => cmd(e, () => editor.chain().focus().toggleOrderedList().run())}
-          className={cn("rounded p-1.5 hover:bg-accent transition-colors", editor.isActive("orderedList") && "bg-accent text-foreground")}>
-          <ListOrdered className="h-4 w-4" />
-        </button>
-
-        <div className="mx-1 h-4 w-px bg-border" />
-
         <div className="relative group">
           <button type="button"
             onMouseDown={(e) => e.preventDefault()}
@@ -301,15 +288,15 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
         <div className="mx-1 h-4 w-px bg-border" />
 
         <button type="button" title="Achicar texto"
-          onMouseDown={(e) => cmd(e, () => { const cur = editor.getAttributes("textStyle").fontSize || "16px"; const idx = FONT_SIZES.indexOf(cur); if (idx > 0) editor.chain().focus().setFontSize(FONT_SIZES[idx - 1]).run(); })}>
+          onMouseDown={(e) => cmd(e, () => { const cur = editor.getAttributes("textStyle").fontSize || "1rem"; const idx = FONT_SIZES.indexOf(cur); if (idx > 0) editor.chain().focus().setFontSize(FONT_SIZES[idx - 1]).run(); })}>
           <Minus className="h-4 w-4" />
         </button>
-        <input type="text" defaultValue={fontSize.replace("px", "")} key={fontSize}
+        <input type="text" defaultValue={fontSize.replace("rem", "")} key={fontSize}
           className="w-10 h-7 text-center text-xs border rounded bg-background focus:outline-none focus:ring-1 focus:ring-primary"
-          title="Tamano de fuente (Enter para aplicar)"
-          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); const num = parseInt((e.target as HTMLInputElement).value.trim(), 10); if (!isNaN(num) && num >= 6 && num <= 96) editor.chain().focus().setFontSize(`${num}px`).run(); } }} />
+          title="Tamano de fuente en rem (Enter para aplicar)"
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); const num = parseFloat((e.target as HTMLInputElement).value.trim()); if (!isNaN(num) && num >= 0.5 && num <= 4) editor.chain().focus().setFontSize(`${num}rem`).run(); } }} />
         <button type="button" title="Agrandar texto"
-          onMouseDown={(e) => cmd(e, () => { const cur = editor.getAttributes("textStyle").fontSize || "16px"; const idx = FONT_SIZES.indexOf(cur); if (idx < FONT_SIZES.length - 1) editor.chain().focus().setFontSize(FONT_SIZES[idx + 1]).run(); })}>
+          onMouseDown={(e) => cmd(e, () => { const cur = editor.getAttributes("textStyle").fontSize || "1rem"; const idx = FONT_SIZES.indexOf(cur); if (idx < FONT_SIZES.length - 1) editor.chain().focus().setFontSize(FONT_SIZES[idx + 1]).run(); })}>
           <Plus className="h-4 w-4" />
         </button>
       </div>
