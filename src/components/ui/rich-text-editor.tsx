@@ -1,24 +1,19 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useEditor, EditorContent, ReactRenderer } from "@tiptap/react";
+import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Highlight from "@tiptap/extension-highlight";
 import { ImageResize } from "@/lib/tiptap-image-resize";
 import { TextStyle, FontSize, FontFamily, Color } from "@tiptap/extension-text-style";
-import Suggestion from "@tiptap/suggestion";
-import tippy, { type Instance as TippyInstance } from "tippy.js";
 import {
   Bold, Underline as UnderlineIcon, Italic, Highlighter,
   Minus, Plus, ChevronDown, Palette,
-  ImagePlus, Link2, Heading1, Heading2, Heading3,
-  List, ListOrdered, Quote, Minus as MinusIcon, Type,
+  ImagePlus, Link2, Heading1,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import type { Editor } from "@tiptap/core";
-import { Extension } from "@tiptap/core";
 
 interface Props {
   value: string;
@@ -29,64 +24,6 @@ interface Props {
 
 const FONT_SIZES = ["0.75rem", "0.875rem", "1rem", "1.125rem", "1.25rem", "1.5rem", "1.75rem", "2rem"];
 
-interface SlashCommandItem {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  command: (editor: Editor) => void;
-}
-
-const slashCommandItems: SlashCommandItem[] = [
-  {
-    title: "Texto",
-    description: "Bloque de texto normal",
-    icon: <Type className="h-4 w-4" />,
-    command: (editor) => editor.chain().focus().setParagraph().run(),
-  },
-  {
-    title: "Titulo 1",
-    description: "Titulo grande",
-    icon: <Heading1 className="h-4 w-4" />,
-    command: (editor) => editor.chain().focus().toggleHeading({ level: 1 }).run(),
-  },
-  {
-    title: "Titulo 2",
-    description: "Titulo mediano",
-    icon: <Heading2 className="h-4 w-4" />,
-    command: (editor) => editor.chain().focus().toggleHeading({ level: 2 }).run(),
-  },
-  {
-    title: "Titulo 3",
-    description: "Titulo pequeno",
-    icon: <Heading3 className="h-4 w-4" />,
-    command: (editor) => editor.chain().focus().toggleHeading({ level: 3 }).run(),
-  },
-  {
-    title: "Lista con viñetas",
-    description: "Lista simple con puntos",
-    icon: <List className="h-4 w-4" />,
-    command: (editor) => editor.chain().focus().toggleBulletList().run(),
-  },
-  {
-    title: "Lista numerada",
-    description: "Lista con numeros",
-    icon: <ListOrdered className="h-4 w-4" />,
-    command: (editor) => editor.chain().focus().toggleOrderedList().run(),
-  },
-  {
-    title: "Cita",
-    description: "Bloque de cita",
-    icon: <Quote className="h-4 w-4" />,
-    command: (editor) => editor.chain().focus().toggleBlockquote().run(),
-  },
-  {
-    title: "Linea horizontal",
-    description: "Separador horizontal",
-    icon: <MinusIcon className="h-4 w-4" />,
-    command: (editor) => editor.chain().focus().setHorizontalRule().run(),
-  },
-];
-
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -96,130 +33,47 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
-function SlashCommandList({ items, command }: { items: SlashCommandItem[]; command: (item: SlashCommandItem) => void }) {
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const clampedIndex = Math.min(selectedIndex, items.length - 1);
-
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowUp") { e.preventDefault(); setSelectedIndex((i) => (i + items.length - 1) % items.length); return true; }
-      if (e.key === "ArrowDown") { e.preventDefault(); setSelectedIndex((i) => (i + 1) % items.length); return true; }
-      if (e.key === "Enter") { e.preventDefault(); command(items[clampedIndex]); return true; }
-      return false;
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [items, clampedIndex, command]);
-
-  if (items.length === 0) {
-    return <div className="bg-popover border rounded-lg shadow-lg p-2 text-sm text-muted-foreground">Sin resultados</div>;
-  }
-
-  return (
-    <div className="bg-popover border rounded-lg shadow-lg py-1 min-w-[220px] max-h-[280px] overflow-y-auto">
-      {items.map((item, i) => (
-        <button key={item.title} type="button"
-          onMouseDown={(e) => { e.preventDefault(); command(item); }}
-          onMouseEnter={() => setSelectedIndex(i)}
-          className={cn(
-            "w-full text-left px-3 py-2 text-sm flex items-center gap-3 transition-colors",
-            i === clampedIndex ? "bg-accent text-foreground" : "text-foreground hover:bg-accent"
-          )}>
-          <div className="flex-shrink-0 w-8 h-8 rounded border bg-background flex items-center justify-center text-muted-foreground">
-            {item.icon}
-          </div>
-          <div>
-            <div className="font-medium">{item.title}</div>
-            <div className="text-xs text-muted-foreground">{item.description}</div>
-          </div>
-        </button>
-      ))}
-    </div>
-  );
-}
-
-const SlashCommand = Extension.create({
-  name: "slashCommand",
-  addOptions() {
-    return {
-      suggestion: {
-        char: "/",
-        allowSpaces: true,
-        items: ({ query }: { query: string }) => {
-          return slashCommandItems.filter((item) =>
-            item.title.toLowerCase().includes(query.toLowerCase())
-          );
-        },
-        render: () => {
-          let component: ReactRenderer;
-          let popup: TippyInstance[];
-
-          return {
-            onStart: (props: { editor: Editor; clientRect: () => DOMRect }) => {
-              component = new ReactRenderer(SlashCommandList, {
-                props,
-                editor: props.editor,
-              });
-              popup = tippy("body", {
-                getReferenceClientRect: props.clientRect,
-                appendTo: () => document.body,
-                content: component.element,
-                showOnCreate: true,
-                interactive: true,
-                trigger: "manual",
-                placement: "bottom-start",
-              });
-            },
-            onUpdate: (props: { editor: Editor; clientRect: () => DOMRect }) => {
-              component.updateProps(props);
-              popup[0].setProps({ getReferenceClientRect: props.clientRect });
-            },
-            onKeyDown: (props: { event: KeyboardEvent }) => {
-              if (props.event.key === "Escape") {
-                popup[0].hide();
-                return true;
-              }
-              return (component.ref as { onKeyDown: (props: { event: KeyboardEvent }) => boolean })?.onKeyDown?.(props) ?? false;
-            },
-            onExit: () => {
-              popup[0].destroy();
-              component.destroy();
-            },
-          };
-        },
-        command: ({ editor, props }: { editor: Editor; props: SlashCommandItem }) => {
-          props.command(editor);
-        },
-      } as Record<string, unknown>,
-    };
-  },
-  addProseMirrorPlugins() {
-    return [Suggestion(this.options.suggestion)];
-  },
-});
+const SLASH_ITEMS: { label: string; description: string; action: (editor: Parameters<NonNullable<Parameters<typeof useEditor>[0]>["onUpdate"]>[0]["editor"]) => void }[] = [
+  { label: "Texto", description: "Parrafo normal", action: (e) => e.chain().focus().setParagraph().run() },
+  { label: "Titulo 1", description: "Titulo grande", action: (e) => e.chain().focus().toggleHeading({ level: 1 }).run() },
+  { label: "Titulo 2", description: "Titulo mediano", action: (e) => e.chain().focus().toggleHeading({ level: 2 }).run() },
+  { label: "Titulo 3", description: "Titulo pequeno", action: (e) => e.chain().focus().toggleHeading({ level: 3 }).run() },
+  { label: "Viñetas", description: "Lista con puntos", action: (e) => e.chain().focus().toggleBulletList().run() },
+  { label: "Numerada", description: "Lista con numeros", action: (e) => e.chain().focus().toggleOrderedList().run() },
+  { label: "Cita", description: "Bloque de cita", action: (e) => e.chain().focus().toggleBlockquote().run() },
+  { label: "Linea", description: "Separador horizontal", action: (e) => e.chain().focus().setHorizontalRule().run() },
+];
 
 export function RichTextEditor({ value, onChange, placeholder, className }: Props) {
-  const [showFontPicker, setShowFontPicker] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showHeadingMenu, setShowHeadingMenu] = useState(false);
   const [showImageMenu, setShowImageMenu] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
+  const [slashQuery, setSlashQuery] = useState<string | null>(null);
+  const [slashIndex, setSlashIndex] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const headingMenuRef = useRef<HTMLDivElement>(null);
+  const slashMenuRef = useRef<HTMLDivElement>(null);
+
+  const slashItems = SLASH_ITEMS.filter((item) =>
+    slashQuery !== null ? item.label.toLowerCase().includes(slashQuery.toLowerCase()) : true
+  );
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (headingMenuRef.current && !headingMenuRef.current.contains(e.target as Node)) {
         setShowHeadingMenu(false);
       }
-      if (showFontPicker) setShowFontPicker(false);
-      if (showColorPicker) setShowColorPicker(false);
-      if (showImageMenu) setShowImageMenu(false);
+      if (slashMenuRef.current && !slashMenuRef.current.contains(e.target as Node)) {
+        setSlashQuery(null);
+      }
+      setShowColorPicker(false);
+      setShowImageMenu(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showFontPicker, showColorPicker, showImageMenu]);
+  }, []);
 
   const editor = useEditor({
     extensions: [
@@ -235,7 +89,6 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
       FontSize,
       FontFamily,
       Color,
-      SlashCommand,
     ],
     content: value || "",
     onUpdate: ({ editor }) => {
@@ -244,6 +97,44 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
     editorProps: {
       attributes: {
         class: "max-w-none px-3 py-2 focus:outline-none break-words min-h-[300px]",
+      },
+      handleKeyDown: (_view, event) => {
+        if (slashQuery !== null) {
+          if (event.key === "Escape") { setSlashQuery(null); return true; }
+          if (event.key === "ArrowDown") { event.preventDefault(); setSlashIndex((i) => (i + 1) % slashItems.length); return true; }
+          if (event.key === "ArrowUp") { event.preventDefault(); setSlashIndex((i) => (i + slashItems.length - 1) % slashItems.length); return true; }
+          if (event.key === "Enter" && slashItems.length > 0) {
+            event.preventDefault();
+            const item = slashItems[slashIndex] ?? slashItems[0];
+            if (item && editor) {
+              item.action(editor);
+            }
+            setSlashQuery(null);
+            return true;
+          }
+          return false;
+        }
+        return false;
+      },
+      handleTextInput: (_view, _from, _to, text) => {
+        if (slashQuery !== null) {
+          setSlashQuery(slashQuery + text);
+          setSlashIndex(0);
+          return false;
+        }
+        if (text === "/") {
+          if (editor) {
+            const { state } = editor;
+            const { $from } = state.selection;
+            const textBefore = $from.parent.textContent.slice(0, $from.parentOffset);
+            if (textBefore.trim() === "" || $from.parentOffset === 0) {
+              setSlashQuery("");
+              setSlashIndex(0);
+              return false;
+            }
+          }
+        }
+        return false;
       },
       transformPastedHTML: (html: string) => {
         let cleaned = html;
@@ -302,11 +193,6 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
   const fontSize = editor.getAttributes("textStyle").fontSize || "1rem";
   const currentColor = editor.getAttributes("textStyle").color || "#000000";
 
-  const cmd = (e: React.MouseEvent, fn: () => void) => {
-    e.preventDefault();
-    fn();
-  };
-
   return (
     <div className={cn("rounded-md border bg-background flex flex-col min-h-0", className)}>
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
@@ -324,20 +210,20 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
         <div className="relative" ref={headingMenuRef}>
           <button type="button"
             className="rounded p-1.5 hover:bg-accent transition-colors text-xs flex items-center gap-1"
-            onClick={(e) => { e.stopPropagation(); setShowHeadingMenu(!showHeadingMenu); }}>
+            onMouseDown={(e) => { e.preventDefault(); setShowHeadingMenu(!showHeadingMenu); }}>
             <Heading1 className="h-4 w-4" />
             <ChevronDown className="h-3 w-3" />
           </button>
           {showHeadingMenu && (
             <div className="absolute top-full left-0 mt-1 bg-popover border rounded-lg shadow-lg z-50 py-1 min-w-[160px]">
               {[
-                { label: "Normal", level: null, cls: "text-sm" },
+                { label: "Normal", level: null as null, cls: "text-sm" },
                 { label: "Titulo 1", level: 1 as const, cls: "text-xl font-bold" },
                 { label: "Titulo 2", level: 2 as const, cls: "text-lg font-semibold" },
                 { label: "Titulo 3", level: 3 as const, cls: "text-base font-medium" },
               ].map((opt) => (
                 <button key={opt.label} type="button"
-                  onClick={(e) => {
+                  onMouseDown={(e) => {
                     e.preventDefault();
                     if (opt.level) editor.chain().focus().toggleHeading({ level: opt.level }).run();
                     else editor.chain().focus().setParagraph().run();
@@ -358,19 +244,19 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
 
         <div className="mx-1 h-4 w-px bg-border" />
 
-        <button type="button" onMouseDown={(e) => cmd(e, () => editor.chain().focus().toggleBold().run())}
+        <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleBold().run(); }}
           className={cn("rounded p-1.5 hover:bg-accent transition-colors", editor.isActive("bold") && "bg-accent text-foreground")} title="Negrita (Ctrl+B)">
           <Bold className="h-4 w-4" />
         </button>
-        <button type="button" onMouseDown={(e) => cmd(e, () => editor.chain().focus().toggleItalic().run())}
+        <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleItalic().run(); }}
           className={cn("rounded p-1.5 hover:bg-accent transition-colors", editor.isActive("italic") && "bg-accent text-foreground")} title="Cursiva (Ctrl+I)">
           <Italic className="h-4 w-4" />
         </button>
-        <button type="button" onMouseDown={(e) => cmd(e, () => editor.chain().focus().toggleUnderline().run())}
+        <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleUnderline().run(); }}
           className={cn("rounded p-1.5 hover:bg-accent transition-colors", editor.isActive("underline") && "bg-accent text-foreground")} title="Subrayado (Ctrl+U)">
           <UnderlineIcon className="h-4 w-4" />
         </button>
-        <button type="button" onMouseDown={(e) => cmd(e, () => editor.chain().focus().toggleHighlight().run())}
+        <button type="button" onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().toggleHighlight().run(); }}
           className={cn("rounded p-1.5 hover:bg-accent transition-colors", editor.isActive("highlight") && "bg-accent text-foreground")} title="Resaltar">
           <Highlighter className="h-4 w-4" />
         </button>
@@ -379,7 +265,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
 
         <div className="relative">
           <button type="button" title="Color de texto"
-            onClick={(e) => { e.stopPropagation(); setShowColorPicker(!showColorPicker); }}
+            onMouseDown={(e) => { e.preventDefault(); setShowColorPicker(!showColorPicker); }}
             className={cn("rounded p-1.5 hover:bg-accent transition-colors flex items-center gap-1", editor.isActive("textStyle") && editor.getAttributes("textStyle").color && "bg-accent text-foreground")}>
             <Palette className="h-4 w-4" />
             <div className="w-3 h-3 rounded-sm border" style={{ backgroundColor: currentColor }} />
@@ -411,7 +297,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
 
         <div className="relative">
           <button type="button" title="Insertar imagen"
-            onClick={(e) => { e.stopPropagation(); setShowImageMenu(!showImageMenu); }}
+            onMouseDown={(e) => { e.preventDefault(); setShowImageMenu(!showImageMenu); }}
             className="rounded p-1.5 hover:bg-accent transition-colors">
             <ImagePlus className="h-4 w-4" />
           </button>
@@ -444,7 +330,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
         <div className="mx-1 h-4 w-px bg-border" />
 
         <button type="button" title="Achicar texto"
-          onMouseDown={(e) => cmd(e, () => { const cur = editor.getAttributes("textStyle").fontSize || "1rem"; const idx = FONT_SIZES.indexOf(cur); if (idx > 0) editor.chain().focus().setFontSize(FONT_SIZES[idx - 1]).run(); })}>
+          onMouseDown={(e) => { e.preventDefault(); const cur = editor.getAttributes("textStyle").fontSize || "1rem"; const idx = FONT_SIZES.indexOf(cur); if (idx > 0) editor.chain().focus().setFontSize(FONT_SIZES[idx - 1]).run(); }}>
           <Minus className="h-4 w-4" />
         </button>
         <input type="text" defaultValue={fontSize.replace("rem", "")} key={fontSize}
@@ -452,13 +338,40 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
           title="Tamano de fuente en rem (Enter para aplicar)"
           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); const num = parseFloat((e.target as HTMLInputElement).value.trim()); if (!isNaN(num) && num >= 0.5 && num <= 4) editor.chain().focus().setFontSize(`${num}rem`).run(); } }} />
         <button type="button" title="Agrandar texto"
-          onMouseDown={(e) => cmd(e, () => { const cur = editor.getAttributes("textStyle").fontSize || "1rem"; const idx = FONT_SIZES.indexOf(cur); if (idx < FONT_SIZES.length - 1) editor.chain().focus().setFontSize(FONT_SIZES[idx + 1]).run(); })}>
+          onMouseDown={(e) => { e.preventDefault(); const cur = editor.getAttributes("textStyle").fontSize || "1rem"; const idx = FONT_SIZES.indexOf(cur); if (idx < FONT_SIZES.length - 1) editor.chain().focus().setFontSize(FONT_SIZES[idx + 1]).run(); }}>
           <Plus className="h-4 w-4" />
         </button>
       </div>
 
-      <div className="overflow-y-auto flex-1 min-h-0">
+      <div className="overflow-y-auto flex-1 min-h-0 relative">
         <EditorContent editor={editor} placeholder={placeholder} />
+        {slashQuery !== null && (
+          <div ref={slashMenuRef}
+            className="absolute z-50 bg-popover border rounded-lg shadow-lg py-1 min-w-[200px] max-h-[260px] overflow-y-auto"
+            style={{ top: 40, left: 12 }}>
+            {slashItems.length === 0 ? (
+              <div className="px-3 py-2 text-sm text-muted-foreground">Sin resultados</div>
+            ) : (
+              slashItems.map((item, i) => (
+                <button key={item.label} type="button"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    item.action(editor);
+                    setSlashQuery(null);
+                  }}
+                  className={cn(
+                    "w-full text-left px-3 py-2 text-sm flex items-center gap-3 transition-colors",
+                    i === slashIndex ? "bg-accent text-foreground" : "text-foreground hover:bg-accent"
+                  )}>
+                  <div>
+                    <div className="font-medium">{item.label}</div>
+                    <div className="text-xs text-muted-foreground">{item.description}</div>
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
