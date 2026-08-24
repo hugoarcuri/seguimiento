@@ -84,7 +84,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Prop
     },
     editorProps: {
       attributes: {
-        class: "prose prose-sm max-w-none px-3 py-2 focus:outline-none break-words min-h-[300px]",
+        class: "max-w-none px-3 py-2 focus:outline-none break-words min-h-[300px]",
       },
       transformPastedHTML: (html: string) => {
         let cleaned = html;

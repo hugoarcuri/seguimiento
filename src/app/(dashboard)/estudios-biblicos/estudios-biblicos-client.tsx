@@ -356,7 +356,7 @@ export function EstudiosBiblicosClient({
                                     );
                                   }
                                   return (
-                                    <div key={i} className="text-sm leading-relaxed prose prose-sm max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: seccion.valor }} />
+                                    <div key={i} className="text-sm leading-relaxed text-foreground [&_h1]:text-xl [&_h1]:font-bold [&_h1]:mt-4 [&_h1]:mb-2 [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:mt-3 [&_h2]:mb-1.5 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mt-2 [&_h3]:mb-1 [&_blockquote]:border-l-3 [&_blockquote]:border-primary/40 [&_blockquote]:pl-4 [&_blockquote]:py-1 [&_blockquote]:italic [&_blockquote]:text-muted-foreground [&_blockquote]:my-3 [&_ul]:pl-6 [&_ul]:my-2 [&_ol]:pl-6 [&_ol]:my-2 [&_li]:mb-1 [&_p]:mb-2 [&_p]:leading-relaxed" dangerouslySetInnerHTML={{ __html: seccion.valor }} />
                                   );
                                 })}
                               </div>
