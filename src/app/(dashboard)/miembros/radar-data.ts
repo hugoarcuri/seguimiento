@@ -136,7 +136,7 @@ export async function cargarRadar(): Promise<{ miembros: MiembroRadar[]; etapas:
   const perfMap = new Map((perfRes.data || [] as ProfileRaw[]).map((p) => [p.id, p]));
 
   const miembros: MiembroRadar[] = ((miembrosRes.data || []) as Miembro[])
-    .filter((d) => d.estado !== "retirado" && d.estado !== "eliminado")
+    .filter((d) => d.estado !== "retirado")
     .map((d) => {
       const seg = segPorMiembro.get(d.id);
       const segId = seg?.id || null;
