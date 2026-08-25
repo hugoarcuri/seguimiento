@@ -64,8 +64,6 @@ interface ProfileRaw {
 export async function cargarRadar(): Promise<{ miembros: MiembroRadar[]; etapas: Etapa[] }> {
   const supabase = createClient();
 
-  await supabase.rpc("admin_sync_miembros");
-
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
   const hoyISO = hoy.toISOString().slice(0, 10);

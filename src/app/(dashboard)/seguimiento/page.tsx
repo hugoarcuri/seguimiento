@@ -65,8 +65,6 @@ export default function SeguimientoPage() {
     if (!authUser) return;
     setCurrentUserId(authUser.id);
 
-    await supabase.rpc("admin_sync_miembros");
-
     const { data: profile } = await supabase.from("profiles").select("rol").eq("id", authUser.id).single();
     const admin = profile?.rol === "admin";
     setIsAdmin(admin);
