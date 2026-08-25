@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -37,8 +38,14 @@ const crearSchema = z.object({
   telefono: z.string().optional(),
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
   fecha_nacimiento: z.string().optional(),
+  sexo: z.enum(["M", "F"]).optional().nullable(),
+  direccion: z.string().optional(),
+  convive_con: z.string().optional(),
+  fecha_conversion: z.string().optional(),
   don_espiritual: z.string().optional(),
   don_espiritual_otro: z.string().optional(),
+  bautizado: z.boolean().optional(),
+  es_miembro: z.boolean().optional(),
   fortalezas: z.string().optional(),
   debilidades: z.string().optional(),
 });
@@ -66,6 +73,7 @@ export function CrearDiscipuladorDialog({ open, onOpenChange, onCreado }: CrearD
     formState: { errors },
   } = useForm<CrearInput>({ resolver: zodResolver(crearSchema) });
 
+  const sexo = watch("sexo") as "M" | "F" | null | undefined;
   const fechaNacimiento = watch("fecha_nacimiento");
   const edad = fechaNacimiento ? calcularEdad(fechaNacimiento) : null;
   const donEspiritual = watch("don_espiritual");
@@ -86,7 +94,13 @@ export function CrearDiscipuladorDialog({ open, onOpenChange, onCreado }: CrearD
           ...data,
           telefono: data.telefono || null,
           fecha_nacimiento: data.fecha_nacimiento || null,
+          sexo: data.sexo || null,
+          direccion: data.direccion || null,
+          convive_con: data.convive_con || null,
+          fecha_conversion: data.fecha_conversion || null,
           don_espiritual: donEspiritualFinal,
+          bautizado: data.bautizado ?? false,
+          es_miembro: data.es_miembro ?? false,
           fortalezas: data.fortalezas || null,
           debilidades: data.debilidades || null,
         },
@@ -169,25 +183,63 @@ export function CrearDiscipuladorDialog({ open, onOpenChange, onCreado }: CrearD
                 {edad !== null && <p className="text-xs text-muted-foreground">Edad: {edad} años</p>}
               </div>
               <div className="space-y-1">
-                <Label htmlFor="crear-don-espiritual" className={labelClass}>Don espiritual</Label>
-                <Select value={donEspiritual || undefined} onValueChange={(v) => setValue("don_espiritual", v?.toString() ?? "")} items={OPCIONES_DON_ESPIRITUAL.map((don) => ({ value: don, label: don }))}>
-                  <SelectTrigger id="crear-don-espiritual" className="h-11 md:h-8">
-                    <SelectValue placeholder="Seleccionar don" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {OPCIONES_DON_ESPIRITUAL.map((don) => (
-                      <SelectItem key={don} value={don}>{don}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {esDonOtro && (
-                  <Input
-                    id="crear-don-otro"
-                    className="mt-2 h-11 md:h-8"
-                    placeholder="Escribí el don..."
-                    {...register("don_espiritual_otro")}
-                  />
-                )}
+                <Label className={labelClass}>Sexo</Label>
+                <div className="flex gap-1.5">
+                  {(["M", "F"] as const).map((v) => (
+                    <button key={v} type="button" onClick={() => setValue("sexo", sexo === v ? null : v, { shouldValidate: true })}
+                      className={`flex-1 h-8 rounded-md text-[11px] font-medium transition-colors ${sexo === v ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>
+                      {v === "M" ? "Masculino" : "Femenino"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="crear-direccion" className={labelClass}>Dirección</Label>
+                <Input id="crear-direccion" className={inputClass} {...register("direccion")} />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="crear-convive" className={labelClass}>¿Con quién vive?</Label>
+                <Input id="crear-convive" className={inputClass} {...register("convive_con")} placeholder="Ej.: con sus padres, solo/a..." />
+              </div>
+            </div>
+            <div className="border-t pt-4 space-y-4">
+              <p className="text-xs font-medium text-muted-foreground">Vida espiritual</p>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label htmlFor="crear-fecha-conversion" className={labelClass}>Conversión</Label>
+                  <Input id="crear-fecha-conversion" type="date" className={inputClass} {...register("fecha_conversion")} />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="crear-don-espiritual" className={labelClass}>Don espiritual</Label>
+                  <Select value={donEspiritual || undefined} onValueChange={(v) => setValue("don_espiritual", v?.toString() ?? "")} items={OPCIONES_DON_ESPIRITUAL.map((don) => ({ value: don, label: don }))}>
+                    <SelectTrigger id="crear-don-espiritual" className="h-11 md:h-8">
+                      <SelectValue placeholder="Seleccionar don" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {OPCIONES_DON_ESPIRITUAL.map((don) => (
+                        <SelectItem key={don} value={don}>{don}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {esDonOtro && (
+                    <Input
+                      id="crear-don-otro"
+                      className="mt-2 h-11 md:h-8"
+                      placeholder="Escribí el don..."
+                      {...register("don_espiritual_otro")}
+                    />
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-6">
+                <label className="flex items-center gap-2 text-xs">
+                  <Checkbox checked={!!watch("bautizado")} onCheckedChange={(v) => setValue("bautizado", !!v)} />
+                  Bautizado
+                </label>
+                <label className="flex items-center gap-2 text-xs">
+                  <Checkbox checked={!!watch("es_miembro")} onCheckedChange={(v) => setValue("es_miembro", !!v)} />
+                  Es miembro
+                </label>
               </div>
             </div>
             <div className="space-y-1">

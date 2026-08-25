@@ -105,6 +105,7 @@ export default function RegisterPage() {
       password: data.password,
       options: {
         data: {
+          registro_miembro: true,
           nombre: data.nombre,
           apellido: data.apellido,
           sexo: data.sexo || null,
@@ -116,6 +117,8 @@ export default function RegisterPage() {
           don_espiritual: donFinal,
           bautizado: data.bautizado ?? false,
           es_miembro: data.es_miembro ?? false,
+          estudia: data.estudia || null,
+          trabaja: data.trabaja || null,
         },
       },
     });

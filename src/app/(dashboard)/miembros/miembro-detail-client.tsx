@@ -518,12 +518,7 @@ export function MiembroDetailClient({
           <CardHeader>
             <div className="flex items-center justify-between gap-2">
               <CardTitle className="text-base">Datos personales</CardTitle>
-              {!editandoDatos ? (
-                <Button variant="outline" size="sm" className="min-h-11 md:min-h-7 text-xs" onClick={iniciarEdicionDatos}>
-                  <Edit className="mr-1 h-3.5 w-3.5" />
-                  Editar
-                </Button>
-              ) : (
+              {editandoDatos && (
                 <div className="flex items-center gap-1.5">
                   <Button variant="outline" size="sm" className="min-h-11 md:min-h-7 text-xs" onClick={() => setEditandoDatos(false)} disabled={guardandoDatos}>
                     Cancelar

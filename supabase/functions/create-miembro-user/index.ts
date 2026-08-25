@@ -32,74 +32,105 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const { miembro_id, email, password, nombre, apellido } = await req.json();
+    const body = await req.json();
+    const miembro_id = body.miembro_id;
+    const email = body.email;
+    const password = body.password;
+    const nombre = body.nombre;
+    const apellido = body.apellido;
 
-    if (!miembro_id || !email || !password || !nombre || !apellido) {
-      return json({ error: "Faltan campos obligatorios (miembro_id, email, password, nombre, apellido)" }, 400);
+    if (!miembro_id || !email || !password) {
+      return json({ error: "Faltan campos: miembro_id, email, password" }, 400);
     }
 
-    // 1. Verificar si ya existe un auth user con este email
-    const { data: authUsers } = await supabase.auth.admin.listUsers();
-    const existingUser = authUsers?.users?.find((u) => u.email?.toLowerCase() === email.toLowerCase());
-
-    let userId: string;
-
-    if (existingUser) {
-      userId = existingUser.id;
-      await supabase.auth.admin.updateUserById(userId, { password });
-    } else {
-      const { data: userData, error: authError } = await supabase.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-        user_metadata: { nombre, apellido },
-      });
-
-      if (authError || !userData.user) {
-        return json({ error: authError?.message || "Error al crear usuario" }, 400);
-      }
-      userId = userData.user.id;
-    }
-
-    // 2. Vincular miembro al usuario auth (solo si no estaba vinculado)
-    const { data: miembroActual } = await supabase
+    // 1. Verificar si el miembro ya tiene un user_id
+    const { data: miembro, error: miembroError } = await supabase
       .from("miembros")
       .select("user_id")
       .eq("id", miembro_id)
       .single();
 
-    if (!miembroActual?.user_id) {
-      const { error: linkError } = await supabase
-        .from("miembros")
-        .update({ user_id: userId })
-        .eq("id", miembro_id);
+    if (miembroError) {
+      return json({ error: `Error al buscar miembro: ${miembroError.message}` }, 500);
+    }
 
-      if (linkError) {
-        return json({ error: `Miembro no vinculado: ${linkError.message}` }, 500);
+    let userId: string;
+
+    if (miembro && miembro.user_id) {
+      // Ya tiene usuario auth: solo actualizar contraseña
+      userId = miembro.user_id;
+      const { error: pwError } = await supabase.auth.admin.updateUserById(userId, { password });
+      if (pwError) {
+        return json({ error: `Error al actualizar contraseña: ${pwError.message}` }, 500);
       }
+      return json({ id: userId, email, updated: true }, 200);
     }
 
-    // 3. Asegurar que existe un seguimiento para este miembro
-    const { data: segExistente } = await supabase
-      .from("seguimientos")
-      .select("id")
-      .eq("miembro_id", miembro_id)
-      .eq("estado", "activo")
-      .maybeSingle();
+    // 2. No tiene usuario: intentar crear uno nuevo
+    const { data: userData, error: authError } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { nombre: nombre || "", apellido: apellido || "" },
+    });
 
-    if (!segExistente) {
-      await supabase
-        .from("seguimientos")
-        .insert({
-          miembro_id,
-          discipulador_id: userId,
-          etapa: 1,
-          progreso: 0,
-          estado: "activo",
+    if (!authError && userData && userData.user) {
+      userId = userData.user.id;
+
+      // Vincular miembro
+      await supabase.from("miembros").update({ user_id: userId }).eq("id", miembro_id);
+
+      // Crear seguimiento si no existe
+      const { data: seg } = await supabase
+        .from("seguimientos").select("id")
+        .eq("miembro_id", miembro_id).eq("estado", "activo").maybeSingle();
+
+      if (!seg) {
+        await supabase.from("seguimientos").insert({
+          miembro_id, discipulador_id: userId, etapa: 1, progreso: 0, estado: "activo",
         });
+      }
+
+      return json({ id: userId, email, created: true }, 200);
     }
 
-    return json({ id: userId, email, linked: true }, 200);
+    // 3. Error al crear: puede que el email ya exista en auth
+    if (authError && authError.message && authError.message.includes("already registered")) {
+      // Buscar el usuario existente por email usando la tabla profiles
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("email", email)
+        .maybeSingle();
+
+      if (profiles) {
+        userId = profiles.id;
+        await supabase.auth.admin.updateUserById(userId, { password });
+        await supabase.from("miembros").update({ user_id: userId }).eq("id", miembro_id);
+        return json({ id: userId, email, restored: true }, 200);
+      }
+
+      // Si no hay profile, intentar con listUsers como último recurso
+      try {
+        const { data: lista } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+        const existente = lista?.users?.find(
+          (u: { email?: string }) => u.email && u.email.toLowerCase() === email.toLowerCase()
+        );
+
+        if (existente) {
+          userId = existente.id;
+          await supabase.auth.admin.updateUserById(userId, { password });
+          await supabase.from("miembros").update({ user_id: userId }).eq("id", miembro_id);
+          return json({ id: userId, email, restored: true }, 200);
+        }
+      } catch (_listErr) {
+        // Ignorar error de listUsers
+      }
+
+      return json({ error: "El email ya existe pero no se pudo recuperar el usuario. Contacte al administrador." }, 400);
+    }
+
+    return json({ error: authError?.message || "Error al crear usuario" }, 400);
   } catch (err) {
     return json({ error: (err as Error).message || "Error interno" }, 500);
   }

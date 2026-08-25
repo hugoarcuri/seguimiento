@@ -50,22 +50,21 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const { nombre, apellido, email, telefono, password, fecha_nacimiento, don_espiritual, fortalezas, debilidades } = await req.json();
+    const { nombre, apellido, email, telefono, password, fecha_nacimiento, sexo, direccion, convive_con, fecha_conversion, don_espiritual, bautizado, es_miembro, fortalezas, debilidades } = await req.json();
 
     if (!nombre || !apellido || !email || !password) {
       return json({ error: "Faltan campos obligatorios" }, 400);
     }
 
-    // Verificar si existe un perfil eliminado con este email
-    const { data: perfilEliminado } = await supabase
+    // 1. Buscar perfil existente con este email (eliminado o no)
+    const { data: perfilExistente } = await supabase
       .from("profiles")
-      .select("id")
+      .select("id, deleted_at")
       .eq("email", email)
-      .not("deleted_at", "is", null)
       .maybeSingle();
 
-    if (perfilEliminado) {
-      // Restaurar el perfil existente en vez de crear uno nuevo
+    if (perfilExistente) {
+      // Restaurar/actualizar el perfil existente en vez de crear uno nuevo
       const { error: restoreError } = await supabase
         .from("profiles")
         .update({
@@ -74,20 +73,26 @@ Deno.serve(async (req) => {
           rol: "discipulador",
           telefono: telefono || null,
           fecha_nacimiento: fecha_nacimiento || null,
+          sexo: sexo || null,
+          direccion: direccion || null,
+          convive_con: convive_con || null,
+          fecha_conversion: fecha_conversion || null,
           don_espiritual: don_espiritual || null,
+          bautizado: bautizado ?? false,
+          es_miembro: es_miembro ?? false,
           fortalezas: fortalezas || null,
           debilidades: debilidades || null,
           deleted_at: null,
         })
-        .eq("id", perfilEliminado.id);
+        .eq("id", perfilExistente.id);
 
       if (restoreError) {
         return json({ error: `Error al restaurar perfil: ${restoreError.message}` }, 500);
       }
 
-      // Restaurar la contraseña del usuario auth
+      // Actualizar la contraseña del usuario auth
       const { error: pwError } = await supabase.auth.admin.updateUserById(
-        perfilEliminado.id,
+        perfilExistente.id,
         { password }
       );
 
@@ -96,11 +101,12 @@ Deno.serve(async (req) => {
       }
 
       return json(
-        { id: perfilEliminado.id, nombre, apellido, email, restored: true },
+        { id: perfilExistente.id, nombre, apellido, email, restored: true },
         200
       );
     }
 
+    // 2. No hay perfil: intentar crear usuario auth nuevo
     const { data: userData, error: authError } = await supabase.auth.admin.createUser({
       email,
       password,
@@ -108,26 +114,73 @@ Deno.serve(async (req) => {
       user_metadata: { nombre, apellido, telefono: telefono || null },
     });
 
-    if (authError || !userData.user) {
-      return json({ error: authError?.message || "Error al crear el usuario" }, 400);
+    // 3. Si falla porque el email ya existe en auth.users, buscar el usuario y recrear el perfil
+    if (authError) {
+      const { data: authUsers } = await supabase.auth.admin.listUsers();
+      const existingUser = authUsers?.users?.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+
+      if (existingUser) {
+        // Actualizar contraseña del usuario existente
+        await supabase.auth.admin.updateUserById(existingUser.id, { password });
+
+        // Crear o actualizar perfil
+        const { error: upsertError } = await supabase
+          .from("profiles")
+          .upsert({
+            id: existingUser.id,
+            email,
+            nombre,
+            apellido,
+            rol: "discipulador",
+            telefono: telefono || null,
+            fecha_nacimiento: fecha_nacimiento || null,
+            sexo: sexo || null,
+            direccion: direccion || null,
+            convive_con: convive_con || null,
+            fecha_conversion: fecha_conversion || null,
+            don_espiritual: don_espiritual || null,
+            bautizado: bautizado ?? false,
+            es_miembro: es_miembro ?? false,
+            fortalezas: fortalezas || null,
+            debilidades: debilidades || null,
+            deleted_at: null,
+          }, { onConflict: "id" });
+
+        if (upsertError) {
+          return json({ error: `Usuario auth recuperado pero error en perfil: ${upsertError.message}` }, 500);
+        }
+
+        return json({ id: existingUser.id, nombre, apellido, email, restored: true }, 200);
+      }
+
+      return json({ error: authError.message || "Error al crear el usuario" }, 400);
     }
 
-    // El trigger handle_new_user crea el perfil con rol 'discipulo';
-    // aquí se promueve a 'discipulador' y se completan los datos.
+    if (!userData.user) {
+      return json({ error: "Error al crear el usuario" }, 400);
+    }
+
+    // 4. Crear perfil para el nuevo usuario
     const { error: profileError } = await supabase
       .from("profiles")
-      .update({
-        rol: "discipulador",
+      .upsert({
+        id: userData.user.id,
+        email,
         nombre,
         apellido,
-        email,
+        rol: "discipulador",
         telefono: telefono || null,
         fecha_nacimiento: fecha_nacimiento || null,
+        sexo: sexo || null,
+        direccion: direccion || null,
+        convive_con: convive_con || null,
+        fecha_conversion: fecha_conversion || null,
         don_espiritual: don_espiritual || null,
+        bautizado: bautizado ?? false,
+        es_miembro: es_miembro ?? false,
         fortalezas: fortalezas || null,
         debilidades: debilidades || null,
-      })
-      .eq("id", userData.user.id);
+      }, { onConflict: "id" });
 
     if (profileError) {
       return json({ error: `Perfil no actualizado: ${profileError.message}` }, 500);

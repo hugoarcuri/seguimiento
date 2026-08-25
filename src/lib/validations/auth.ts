@@ -21,6 +21,8 @@ export const registerSchema = z
     don_espiritual: z.string().optional().nullable(),
     bautizado: z.boolean().optional(),
     es_miembro: z.boolean().optional(),
+    estudia: z.string().optional().nullable(),
+    trabaja: z.string().optional().nullable(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Las contraseñas no coinciden",
