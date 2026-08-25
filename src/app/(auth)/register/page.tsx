@@ -9,23 +9,16 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, type RegisterInput } from "@/lib/validations/auth";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { BASE_PATH } from "@/lib/constants/paths";
 import { GoogleIcon } from "@/components/icons/google-icon";
 import { OPCION_OTRO_DON } from "@/app/(dashboard)/discipuladores/discipulador-constants";
 import { PersonaFormFields } from "@/components/persona-form-fields";
 
-const inputClass = "h-11 md:h-10 text-sm";
-const inputLabelClass = "text-xs font-medium text-muted-foreground";
-
 export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
   const router = useRouter();
 
   const {
@@ -100,7 +93,7 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-      <Card className="w-full max-w-2xl">
+      <Card className="w-full max-w-3xl">
         <CardHeader className="text-center space-y-2">
           <div className="flex justify-center mb-2">
             <Image src={`${BASE_PATH}/logo.png`} alt="JH" width={48} height={48} className="rounded" />
@@ -122,38 +115,6 @@ export default function RegisterPage() {
                 <span className="bg-card px-2 text-muted-foreground">o</span>
               </div>
             </div>
-
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <Label htmlFor="email" className={inputLabelClass}>Email *</Label>
-                  <Input id="email" type="email" className={inputClass} {...register("email")} />
-                  {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
-                </div>
-                <div className="space-y-1">
-                  <Label className={inputLabelClass}>Contraseña *</Label>
-                  <div className="relative">
-                    <Input type={showPassword ? "text" : "password"} placeholder="••••••••" className={`${inputClass} pr-10`} {...register("password")} />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                  {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
-                </div>
-                <div className="space-y-1 sm:col-span-2">
-                  <Label className={inputLabelClass}>Confirmar Contraseña *</Label>
-                  <div className="relative">
-                    <Input type={showConfirm ? "text" : "password"} placeholder="••••••••" className={`${inputClass} pr-10`} {...register("confirmPassword")} />
-                    <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
-                      {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                  {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
-                </div>
-              </div>
-            </div>
-
-            <hr className="border-border" />
 
             <PersonaFormFields
               mode="self-register"

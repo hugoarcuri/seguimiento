@@ -63,9 +63,9 @@ export function PersonaFormFields<T extends FieldValues>({
   const donField = (watch("dones" as Path<T>) as string) || undefined;
 
   const isEditing = mode === "admin-edit";
-  const showPassword = mode === "admin-create" || mode === "admin-edit" || mode === "admin-discipulador";
-  const showConfirmPassword = false;
-  const showEmail = mode !== "self-register";
+  const showPassword = true;
+  const showConfirmPassword = mode === "self-register";
+  const showEmail = true;
   const showEtapa = mode === "admin-create" || mode === "admin-edit";
   const showDiscipulador = mode === "admin-create" || mode === "admin-edit";
   const showMinisterio = mode === "admin-create" || mode === "admin-edit";
@@ -123,7 +123,7 @@ export function PersonaFormFields<T extends FieldValues>({
         )}
         {showPassword && (
           <div className="space-y-1">
-            <Label htmlFor="password" className={inputLabelClass}>{isEditing ? "Nueva contraseña" : "Contraseña"}</Label>
+            <Label htmlFor="password" className={inputLabelClass}>{isEditing ? "Nueva contraseña" : "Contraseña"}{mode === "self-register" ? " *" : ""}</Label>
             <Input
               id="password" type="password" className={inputClass}
               {...register("password" as Path<T>)}
