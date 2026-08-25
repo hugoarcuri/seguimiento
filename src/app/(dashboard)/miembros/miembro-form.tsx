@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Camera } from "lucide-react";
+import { Loader2, Camera, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useRef } from "react";
 import type { Etapa } from "@/types/database";
@@ -92,6 +92,7 @@ export function MiembroForm({
   const [subiendoAvatar, setSubiendoAvatar] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -165,8 +166,9 @@ export function MiembroForm({
       return;
     }
 
+    const { password: _password, ...dataWithoutPassword } = data;
     const payload = {
-      ...data,
+      ...dataWithoutPassword,
       lider_id: data.lider_id || null,
       bautizado: data.bautizado ?? false,
       es_miembro: data.es_miembro ?? false,
