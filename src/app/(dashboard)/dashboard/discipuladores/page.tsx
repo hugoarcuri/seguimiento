@@ -15,52 +15,14 @@ import {
   calcularEstado,
   type Periodo,
 } from "./constants";
-
-interface MiembroRaw {
-  id: string;
-  nombre: string;
-  apellido: string;
-  avatar_url?: string | null;
-  etapa_id: number;
-  estado: string;
-  lider_id?: string | null;
-  created_at: string;
-}
-
-interface SeguimientoRaw {
-  id: string;
-  miembro_id: string;
-  progreso: number;
-  estado: string;
-}
-
-interface AgendaRaw {
-  id: string;
-  miembro_id: string;
-  lider_id: string;
-  fecha: string;
-  tema_tratado?: string | null;
-  realizada?: boolean | null;
-  miembros?: { nombre: string; apellido: string } | null;
-}
-
-interface TareaRaw {
-  id: string;
-  miembro_id: string;
-  lider_id: string;
-  titulo: string;
-  estado: string;
-  completed_at?: string | null;
-  created_at: string;
-}
-
-interface DiscipuladorRaw {
-  id: string;
-  nombre: string;
-  apellido: string;
-  email: string;
-  avatar_url?: string | null;
-}
+import {
+  BUCKET_DIAS,
+  type MiembroRaw,
+  type SeguimientoRaw,
+  type AgendaRaw,
+  type TareaRaw,
+  type DiscipuladorRaw,
+} from "@/types/raw-queries";
 
 interface RawData {
   discipuladores: DiscipuladorRaw[];
@@ -77,13 +39,6 @@ const ESTADO_RANK: Record<string, number> = {
   bueno: 3,
   excelente: 4,
   sin_discipulos: 5,
-};
-
-const BUCKET_DIAS: Record<Periodo, number> = {
-  "7d": 1,
-  "30d": 1,
-  "90d": 7,
-  todo: 30,
 };
 
 export default function DiscipuladoresDashboardPage() {
@@ -159,7 +114,7 @@ export default function DiscipuladoresDashboardPage() {
     const enRiesgo = (d: MiembroRaw, seg?: SeguimientoRaw): string[] => {
       const razones: string[] = [];
       if (!seg) razones.push("Sin seguimiento");
-      else if (seg.progreso < PROGRESO_BAJO) razones.push(`Progreso bajo (${seg.progreso}%)`);
+      else if (seg.progreso != null && seg.progreso < PROGRESO_BAJO) razones.push(`Progreso bajo (${seg.progreso}%)`);
       const f = ultimoEncuentro.get(d.id);
       if (!f) razones.push("Sin encuentros");
       else if (diasDesde(f) >= SIN_CONTACTO_DIAS) razones.push(`Sin encuentro (${diasDesde(f)} días)`);
@@ -189,7 +144,7 @@ export default function DiscipuladoresDashboardPage() {
       const susMiembros = porLider.get(disc.id) || [];
       const susActivos = susMiembros.filter((d) => d.estado === "activo");
       const conSeg = susActivos.map((d) => ({ d, seg: segPorMiembro.get(d.id) }));
-      const progresos = conSeg.filter((x) => x.seg && x.seg.estado === "activo" && x.seg.progreso != null).map((x) => x.seg!.progreso);
+      const progresos = conSeg.filter((x) => x.seg && x.seg.estado === "activo" && x.seg.progreso != null).map((x) => x.seg!.progreso!);
       const progresoPromedio = progresos.length ? Math.round(progresos.reduce((a, b) => a + b, 0) / progresos.length) : null;
       const reunidos = susActivos.filter((d) => reunidosEnPeriodo.has(d.id)).length;
       const reunionesPct = susActivos.length ? Math.round((reunidos / susActivos.length) * 100) : null;
@@ -200,7 +155,7 @@ export default function DiscipuladoresDashboardPage() {
         const f = ultimoEncuentro.get(d.id);
         return !f || diasDesde(f) >= SIN_CONTACTO_DIAS;
       }).length;
-      const listosAvanzar = conSeg.filter((x) => x.seg && x.seg.estado === "activo" && x.seg.progreso >= 80).length;
+      const listosAvanzar = conSeg.filter((x) => x.seg && x.seg.estado === "activo" && x.seg.progreso != null && x.seg.progreso >= 80).length;
 
       const fechasEncuentro = susActivos
         .map((d) => ultimoEncuentro.get(d.id))
@@ -257,7 +212,7 @@ export default function DiscipuladoresDashboardPage() {
               progreso: seg?.progreso ?? null,
               razones: enRiesgo(d, seg),
               diasSinContacto: f ? diasDesde(f) : null,
-              listoAvanzar: Boolean(seg && seg.estado === "activo" && seg.progreso >= 80),
+              listoAvanzar: Boolean(seg && seg.estado === "activo" && seg.progreso != null && seg.progreso >= 80),
             };
           }),
           reunionesRecientes,
@@ -389,9 +344,9 @@ export default function DiscipuladoresDashboardPage() {
     const discipuladoresActivos = tabla.filter((d) => d.activos > 0 || (porLider.get(d.id)?.length ?? 0) > 0).length;
     const pctActivos = discipuladores.length ? Math.round((discipuladoresActivos / discipuladores.length) * 100) : 0;
 
-    const segActivos = seguimientos.filter((s) => s.estado === "activo");
+    const segActivos = seguimientos.filter((s) => s.estado === "activo" && s.progreso != null);
     const progresoPromedioGlobal = segActivos.length
-      ? Math.round(segActivos.reduce((acc, s) => acc + s.progreso, 0) / segActivos.length)
+      ? Math.round(segActivos.reduce((acc, s) => acc + (s.progreso ?? 0), 0) / segActivos.length)
       : null;
 
     const reunionesRealizadas = agenda.filter((a) => a.realizada && a.fecha <= hoy.toISOString().slice(0, 10) && enPeriodoFecha(a.fecha)).length;

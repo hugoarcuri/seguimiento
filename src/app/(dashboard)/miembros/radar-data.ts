@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/client";
 import { calcularSalud, contarEncuentrosMes, type SaludResultado } from "@/lib/discipulo-health";
 import { differenceInCalendarDays } from "date-fns";
 import type { Miembro, Etapa } from "@/types/database";
+import type { SeguimientoRaw, ObjetivoRaw, AgendaRaw, PerfilRaw } from "@/types/raw-queries";
 
 export interface MiembroRadar {
   id: string;
@@ -27,38 +28,14 @@ export interface MiembroRadar {
   salud: SaludResultado;
 }
 
-interface SeguimientoRaw {
-  id: string;
-  miembro_id: string;
-  progreso: number | null;
-  estado: string;
-}
-
 interface EvaluacionRaw {
   seguimiento_id: string;
   fecha: string;
 }
 
-interface ObjetivoRaw {
-  seguimiento_id: string;
-  completado: boolean;
-}
-
-interface AgendaRaw {
-  miembro_id: string;
-  fecha: string;
-  realizada?: boolean;
-}
-
 interface OracionRaw {
   miembro_id: string;
   estado: string;
-}
-
-interface ProfileRaw {
-  id: string;
-  nombre: string;
-  apellido: string;
 }
 
 export async function cargarRadar(): Promise<{ miembros: MiembroRadar[]; etapas: Etapa[] }> {
@@ -112,7 +89,7 @@ export async function cargarRadar(): Promise<{ miembros: MiembroRadar[]; etapas:
   for (const a of (agendaRes.data || []) as AgendaRaw[]) {
     const f = a.fecha.length === 10 ? a.fecha : a.fecha.split("T")[0];
     const fechas = fechasMesPorMiembro.get(a.miembro_id) || [];
-    fechas.push({ fecha: f, realizada: a.realizada });
+    fechas.push({ fecha: f, realizada: a.realizada ?? undefined });
     fechasMesPorMiembro.set(a.miembro_id, fechas);
     if (a.realizada && f <= hoyISO) {
       if (!ultimaPorMiembro.has(a.miembro_id)) ultimaPorMiembro.set(a.miembro_id, f);
@@ -131,7 +108,7 @@ export async function cargarRadar(): Promise<{ miembros: MiembroRadar[]; etapas:
     }
   }
 
-  const perfMap = new Map((perfRes.data || [] as ProfileRaw[]).map((p) => [p.id, p]));
+  const perfMap = new Map((perfRes.data || [] as PerfilRaw[]).map((p) => [p.id, p]));
 
   const miembros: MiembroRadar[] = ((miembrosRes.data || []) as Miembro[])
     .filter((d) => d.estado !== "retirado")

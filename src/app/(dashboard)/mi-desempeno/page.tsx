@@ -6,34 +6,7 @@ import { useRequireRol } from "@/hooks/useRequireRol";
 import { useUser } from "@/hooks/useUser";
 import { useEtapas } from "@/hooks/useEtapas";
 import { MiDesempenoClient, type DesempenoData } from "./mi-desempeno-client";
-
-interface MiembroRaw {
-  id: string;
-  nombre: string;
-  apellido: string;
-  avatar_url?: string | null;
-  etapa_id: number;
-  estado: string;
-}
-
-interface AgendaRaw {
-  miembro_id: string;
-  fecha: string;
-  realizada: boolean;
-}
-
-interface TareaRaw {
-  miembro_id: string;
-  estado: string;
-  fecha_limite: string | null;
-}
-
-interface SeguimientoRaw {
-  miembro_id: string;
-  etapa: number;
-  progreso: number;
-  estado: string;
-}
+import type { MiembroRaw, AgendaRaw, TareaRaw, SeguimientoRaw } from "@/types/raw-queries";
 
 export default function MiDesempenoPage() {
   const { permitido } = useRequireRol(["discipulador", "admin"]);

@@ -8,58 +8,14 @@ import { differenceInCalendarDays } from "date-fns";
 import { calcularSalud, SALUD_CONFIG } from "@/lib/discipulo-health";
 import { ReportesClient, type PeriodoReporte, PERIODOS } from "./reportes-client";
 import type { ReporteData, EncuentroReporte } from "@/lib/reporte-pdf";
-
-interface DiscipuladorRaw {
-  id: string;
-  nombre: string;
-  apellido: string;
-  email: string;
-}
-
-interface MiembroRaw {
-  id: string;
-  nombre: string;
-  apellido: string;
-  lider_id?: string | null;
-  etapa_id: number;
-  estado: string;
-  bautizado: boolean;
-  es_miembro: boolean;
-}
-
-interface SeguimientoRaw {
-  id: string;
-  miembro_id: string;
-  discipulador_id: string;
-  progreso: number;
-  estado: string;
-}
-
-interface AgendaRaw {
-  id: string;
-  miembro_id: string;
-  fecha: string;
-  tema_tratado?: string | null;
-  realizada?: boolean | null;
-}
-
-interface TareaRaw {
-  id: string;
-  miembro_id: string;
-  titulo: string;
-  tipo: string;
-  estado: string;
-  fecha_limite?: string | null;
-  completed_at?: string | null;
-}
-
-interface ObjetivoRaw {
-  id: string;
-  seguimiento_id: string;
-  descripcion: string;
-  completado: boolean;
-  fecha_cumplimiento?: string | null;
-}
+import type {
+  MiembroRaw,
+  SeguimientoRaw,
+  AgendaRaw,
+  TareaRaw,
+  ObjetivoRaw,
+  DiscipuladorRaw,
+} from "@/types/raw-queries";
 
 interface OracionRaw {
   id: string;
@@ -201,7 +157,7 @@ export default function ReportesPage() {
 
     const segActivos = [...segPorMiembro.values()].filter((s) => s.estado === "activo" && s.progreso != null);
     const progresoPromedio = segActivos.length
-      ? Math.round(segActivos.reduce((a, b) => a + b.progreso, 0) / segActivos.length)
+      ? Math.round(segActivos.reduce((a, b) => a + (b.progreso ?? 0), 0) / segActivos.length)
       : null;
 
     const objetivosDelLider = objetivos.filter((o) => {
@@ -230,8 +186,8 @@ export default function ReportesPage() {
       const salud = calcularSalud({
         encuentrosMes: agendaRealizada.filter((a) => a.miembro_id === d.id && enPeriodo(a.fecha)).length,
         etapa: d.etapa_id,
-        bautizado: d.bautizado,
-        es_miembro: d.es_miembro,
+        bautizado: d.bautizado ?? false,
+        es_miembro: d.es_miembro ?? false,
         objetivosPendientes,
         oracionesPendientes,
       });
@@ -248,8 +204,8 @@ export default function ReportesPage() {
         ultimaReunion: f || null,
         diasSinContacto: f ? differenceInCalendarDays(hoy, new Date(f + "T00:00:00")) : null,
         tareasPendientes: tareasPendientesDelLider.filter((t) => t.miembro_id === d.id).length,
-        bautizado: d.bautizado,
-        esMiembro: d.es_miembro,
+        bautizado: d.bautizado ?? false,
+        esMiembro: d.es_miembro ?? false,
       };
     });
 
@@ -271,7 +227,7 @@ export default function ReportesPage() {
         id: t.id,
         miembro: nombreMiembro(t.miembro_id),
         titulo: t.titulo,
-        tipo: TIPO_TAREA[t.tipo] || t.tipo,
+        tipo: (t.tipo ? TIPO_TAREA[t.tipo] : null) || t.tipo || "",
         estado: ESTADO_TAREA[t.estado] || t.estado,
         fechaLimite: t.fecha_limite || null,
       }));

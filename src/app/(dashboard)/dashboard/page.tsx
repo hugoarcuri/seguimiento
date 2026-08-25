@@ -16,13 +16,15 @@ import {
   SIN_CONTACTO_DIAS,
   type Periodo,
 } from "./discipuladores/constants";
-
-const BUCKET_DIAS: Record<Periodo, number> = {
-  "7d": 1,
-  "30d": 1,
-  "90d": 7,
-  todo: 30,
-};
+import {
+  BUCKET_DIAS,
+  type MiembroRaw,
+  type PerfilRaw,
+  type SeguimientoRaw,
+  type AgendaRaw,
+  type ObjetivoRaw,
+  type TareaRaw,
+} from "@/types/raw-queries";
 
 const ESTADO_RANK: Record<EstadoDiscipulo, number> = {
   critico: 0,
@@ -34,63 +36,6 @@ const ESTADO_RANK: Record<EstadoDiscipulo, number> = {
 };
 
 const ESTADOS_PROBLEMA: EstadoDiscipulo[] = ["en_riesgo", "necesita_ayuda", "critico"];
-
-interface MiembroRaw {
-  id: string;
-  nombre: string;
-  apellido: string;
-  avatar_url?: string | null;
-  etapa_id: number;
-  estado: string;
-  lider_id?: string | null;
-  bautizado?: boolean | null;
-  es_miembro?: boolean | null;
-  created_at: string;
-}
-
-interface PerfilRaw {
-  id: string;
-  nombre: string;
-  apellido: string;
-}
-
-interface SeguimientoRaw {
-  id: string;
-  miembro_id: string;
-  discipulador_id: string;
-  etapa: number;
-  progreso: number;
-  estado: string;
-}
-
-interface AgendaRaw {
-  id: string;
-  miembro_id: string;
-  lider_id: string;
-  fecha: string;
-  hora?: string | null;
-  tema_tratado?: string | null;
-  realizada?: boolean | null;
-}
-
-interface ObjetivoRaw {
-  id: string;
-  seguimiento_id: string;
-  descripcion: string;
-  completado: boolean;
-  fecha_cumplimiento?: string | null;
-  created_at: string;
-}
-
-interface TareaRaw {
-  id: string;
-  miembro_id: string;
-  lider_id: string;
-  titulo: string;
-  estado: string;
-  completed_at?: string | null;
-  created_at: string;
-}
 
 interface RawData {
   miembros: MiembroRaw[];
@@ -309,7 +254,7 @@ export default function DashboardPage() {
 
     const segsActivos = seguimientosVisibles.filter((s) => s.estado === "activo" && s.progreso != null);
     const progresoPromedio = segsActivos.length
-      ? Math.round(segsActivos.reduce((acc, s) => acc + s.progreso, 0) / segsActivos.length)
+      ? Math.round(segsActivos.reduce((acc, s) => acc + (s.progreso ?? 0), 0) / segsActivos.length)
       : null;
 
     const seguimientoIds = seguimientosVisibles.map((s) => s.id);
