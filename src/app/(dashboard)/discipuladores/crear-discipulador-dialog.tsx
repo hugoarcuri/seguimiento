@@ -75,6 +75,7 @@ export function CrearDiscipuladorDialog({ open, onOpenChange, onCreado }: CrearD
     setInvoking(true);
     const supabase = createClient();
     let msg: string | null = null;
+    let restored = false;
     try {
       const donEspiritualFinal =
         data.don_espiritual === OPCION_OTRO_DON
@@ -101,6 +102,8 @@ export function CrearDiscipuladorDialog({ open, onOpenChange, onCreado }: CrearD
         } else {
           msg = error.message || "Error al crear el discipulador";
         }
+      } else {
+        restored = !!result?.restored;
       }
     } catch (err) {
       msg = (err as Error)?.message || "Error al conectar con el servidor";
@@ -118,7 +121,7 @@ export function CrearDiscipuladorDialog({ open, onOpenChange, onCreado }: CrearD
       return;
     }
 
-    const texto = result?.restored ? "Discipulador restaurado exitosamente" : "Discipulador creado exitosamente";
+    const texto = restored ? "Discipulador restaurado exitosamente" : "Discipulador creado exitosamente";
     toast.success(texto);
     reset();
     onOpenChange(false);

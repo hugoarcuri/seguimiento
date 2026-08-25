@@ -30,7 +30,7 @@ export function Navbar() {
         <div className="flex-1" />
         <div className="flex items-center gap-1.5">
           <FontControls className="hidden md:flex mr-1 border-r pr-2" />
-          <PalettePicker />
+          {user?.rol === "admin" && <PalettePicker />}
           <Button
             variant="ghost"
             size="icon"
