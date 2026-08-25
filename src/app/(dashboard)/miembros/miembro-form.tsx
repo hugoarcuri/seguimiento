@@ -6,80 +6,19 @@ import { createClient } from "@/lib/supabase/client";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { miembroSchema, type MiembroInput } from "@/lib/validations/discipulo";
-import { generarAvatarUrl, calcularEdad } from "@/lib/utils";
+import { generarAvatarUrl } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Loader2, Camera } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useRef } from "react";
 import type { Etapa } from "@/types/database";
-import { OPCIONES_DON_ESPIRITUAL } from "@/app/(dashboard)/discipuladores/discipulador-constants";
+import { PersonaFormFields } from "@/components/persona-form-fields";
 
 interface MiembroFormProps {
   etapas: Etapa[];
   discipuladores?: Array<{ id: string; nombre: string; apellido: string }>;
   initialData?: MiembroInput & { id?: string };
   isEditing?: boolean;
-}
-
-const inputClass = "h-11 md:h-10 text-sm";
-const inputLabelClass = "text-xs font-medium text-muted-foreground";
-
-const sexoOptions: Array<{ value: "M" | "F"; label: string }> = [
-  { value: "M", label: "Masculino" },
-  { value: "F", label: "Femenino" },
-];
-
-function EtapaLabel({ etapa }: { etapa: Etapa }) {
-  return (
-    <div className="flex flex-col gap-0.5 min-w-0 py-0.5">
-      <span className="truncate text-sm font-medium">{etapa.nombre}</span>
-      {etapa.descripcion && (
-        <span className="truncate text-[11px] text-muted-foreground leading-snug">{etapa.descripcion}</span>
-      )}
-    </div>
-  );
-}
-
-function ChipGroup<T extends string>({
-  options,
-  value,
-  onChange,
-}: {
-  options: Array<{ value: T; label: string }>;
-  value?: T | null;
-  onChange: (v: T) => void;
-}) {
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {options.map((opt) => {
-        const active = value === opt.value;
-        return (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => onChange(opt.value)}
-            className={`min-h-11 md:min-h-8 px-3 rounded-lg text-xs font-medium transition-colors ${
-              active
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
-            }`}
-          >
-            {opt.label}
-          </button>
-        );
-      })}
-    </div>
-  );
 }
 
 export function MiembroForm({
@@ -117,12 +56,6 @@ export function MiembroForm({
           lider_id: "",
         },
   });
-
-  const sexo = watch("sexo") as "M" | "F" | null | undefined;
-  const fechaNacimiento = watch("fecha_nacimiento") as string | undefined;
-  const edad = fechaNacimiento ? calcularEdad(fechaNacimiento) : null;
-  const bautizado = !!watch("bautizado");
-  const esMiembro = !!watch("es_miembro");
 
   const uploadAvatar = async (file: File, miembroId: string): Promise<string | null> => {
     setSubiendoAvatar(true);
@@ -304,158 +237,15 @@ export function MiembroForm({
       </div>
 
       {/* DATOS PERSONALES */}
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3">
-          <div className="space-y-1">
-            <Label htmlFor="apellido" className={inputLabelClass}>Apellido *</Label>
-            <Input id="apellido" className={inputClass} {...register("apellido")} aria-invalid={!!errors.apellido} />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="nombre" className={inputLabelClass}>Nombre *</Label>
-            <Input id="nombre" className={inputClass} {...register("nombre")} aria-invalid={!!errors.nombre} />
-          </div>
-          <div className="space-y-1">
-            <Label className={inputLabelClass}>Sexo</Label>
-            <ChipGroup
-              options={sexoOptions}
-              value={sexo}
-              onChange={(v) => setValue("sexo", v, { shouldValidate: true })}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="fecha_nacimiento" className={inputLabelClass}>Nacimiento</Label>
-            <Input id="fecha_nacimiento" type="date" className={inputClass} {...register("fecha_nacimiento")} />
-            {edad !== null && <p className="text-xs text-muted-foreground">Edad: {edad} años</p>}
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="telefono" className={inputLabelClass}>Teléfono</Label>
-            <Input id="telefono" className={inputClass} {...register("telefono")} />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="email" className={inputLabelClass}>Email *</Label>
-            <Input id="email" type="email" className={inputClass} {...register("email")} />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="password" className={inputLabelClass}>{isEditing ? "Nueva contraseña" : "Contraseña"}</Label>
-            <Input id="password" type="password" className={inputClass} {...register("password")} placeholder={isEditing ? "Dejar vacío para mantener actual" : "Opcional"} />
-            <p className="text-[11px] text-muted-foreground">
-              {isEditing ? "Solo completar si desea cambiar la contraseña" : "Si se completa, el miembro podrá iniciar sesión"}
-            </p>
-          </div>
-          <div className="space-y-1 sm:col-span-2">
-            <Label htmlFor="direccion" className={inputLabelClass}>Dirección</Label>
-            <Input id="direccion" className={inputClass} {...register("direccion")} />
-          </div>
-          <div className="space-y-1 sm:col-span-2 lg:col-span-4">
-            <Label htmlFor="convive_con" className={inputLabelClass}>¿Con quién vive?</Label>
-            <Input id="convive_con" className={inputClass} {...register("convive_con")} placeholder="Ej.: con sus padres, solo/a..." />
-          </div>
-        </div>
-
-        {/* ETAPA */}
-        <div className="space-y-1 pt-2">
-          <Label className={inputLabelClass}>Etapa *</Label>
-          <Select
-            onValueChange={(v) => setValue("etapa_id", parseInt(v?.toString() ?? "1"))}
-            defaultValue={String(initialData?.etapa_id || 1)}
-            items={etapas.map((e) => ({ value: String(e.id), label: <EtapaLabel etapa={e} /> }))}
-          >
-            <SelectTrigger className="w-full sm:w-auto sm:min-w-[20rem] min-h-14 *:data-[slot=select-value]:items-start *:data-[slot=select-value]:!line-clamp-none">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="min-w-[15rem]">
-              {etapas.map((etapa) => (
-                <SelectItem key={etapa.id} value={String(etapa.id)}>
-                  <EtapaLabel etapa={etapa} />
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.etapa_id && <p className="text-sm text-destructive">{errors.etapa_id.message}</p>}
-        </div>
-
-        {/* DISCIPULADOR */}
-        <div className="space-y-1 pt-2">
-          <Label className={inputLabelClass}>Discipulador</Label>
-          <Select
-            onValueChange={(v) => setValue("lider_id", v?.toString() === "none" ? "" : v?.toString() ?? "", { shouldValidate: true })}
-            defaultValue={String(initialData?.lider_id || "none")}
-            items={[
-              { value: "none", label: "Sin asignar" },
-              ...discipuladores.map((d) => ({ value: d.id, label: `${d.apellido}, ${d.nombre}` })),
-            ]}
-          >
-            <SelectTrigger className="w-full sm:w-auto sm:min-w-[15rem] min-h-11 md:min-h-8">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="min-w-[15rem]">
-              <SelectItem value="none">Sin asignar</SelectItem>
-              {discipuladores.map((d) => (
-                <SelectItem key={d.id} value={d.id}>{d.apellido}, {d.nombre}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* VIDA ESPIRITUAL */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 pt-2">
-          <div className="space-y-1">
-            <Label htmlFor="fecha_conversion" className={inputLabelClass}>Conversión</Label>
-            <Input id="fecha_conversion" type="date" className={inputClass} {...register("fecha_conversion")} />
-          </div>
-          <div className="space-y-1">
-            <Label className={inputLabelClass}>Don Espiritual</Label>
-            <Select value={watch("dones") || undefined} onValueChange={(v) => setValue("dones", v?.toString() === "none" ? "" : v?.toString() ?? "", { shouldValidate: true })}>
-              <SelectTrigger className={inputClass}><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Sin don</SelectItem>
-                {OPCIONES_DON_ESPIRITUAL.map((d) => (
-                  <SelectItem key={d} value={d}>{d}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <Label className={inputLabelClass}>Marcas espirituales</Label>
-            <div className="flex h-11 md:h-8 flex-wrap items-center gap-6">
-              <label className="flex cursor-pointer items-center gap-2 text-sm">
-                <Checkbox
-                  checked={bautizado}
-                  onCheckedChange={(v) => { setValue("bautizado", !!v); if (!v) setValue("fecha_bautismo", ""); }}
-                />
-                Está bautizado
-              </label>
-              <label className="flex cursor-pointer items-center gap-2 text-sm">
-                <Checkbox
-                  checked={esMiembro}
-                  onCheckedChange={(v) => setValue("es_miembro", !!v)}
-                />
-                Es miembro
-              </label>
-            </div>
-          </div>
-          {bautizado && (
-            <div className="space-y-1">
-              <Label htmlFor="fecha_bautismo" className={inputLabelClass}>Fecha de bautismo</Label>
-              <Input id="fecha_bautismo" type="date" className={inputClass} {...register("fecha_bautismo")} />
-            </div>
-          )}
-          <div className="space-y-1">
-            <Label className={inputLabelClass}>Ministerio</Label>
-            <Input id="ministerio" className={inputClass} {...register("ministerio")} />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="observaciones" className={inputLabelClass}>Observaciones</Label>
-            <Input id="observaciones" className={inputClass} {...register("observaciones")} />
-          </div>
-        </div>
-
-        {(errors.nombre || errors.apellido || errors.email) && (
-          <p className="text-xs text-destructive">
-            {errors.apellido?.message || errors.nombre?.message || errors.email?.message}
-          </p>
-        )}
-      </div>
+      <PersonaFormFields
+        mode={isEditing ? "admin-edit" : "admin-create"}
+        register={register}
+        watch={watch}
+        setValue={setValue}
+        errors={errors}
+        etapas={etapas}
+        discipuladores={discipuladores}
+      />
 
       {/* STICKY FOOTER */}
       <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm pt-3 pb-2 mt-6 flex justify-end gap-3">
