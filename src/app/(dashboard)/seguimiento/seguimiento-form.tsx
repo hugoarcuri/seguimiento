@@ -104,6 +104,7 @@ export function SeguimientoForm({
     if (editing) {
       const { error } = await supabase.from("seguimientos").update(payload).eq("id", editing.id);
       if (error) { toast.error("Error al actualizar el seguimiento"); return; }
+      await supabase.from("miembros").update({ etapa_id: data.etapa }).eq("id", data.miembro_id);
       toast.success("Seguimiento actualizado");
     } else {
       const { error } = await supabase.from("seguimientos").insert({ ...payload, progreso: 0 });
@@ -112,6 +113,7 @@ export function SeguimientoForm({
         else toast.error("Error al crear el seguimiento");
         return;
       }
+      await supabase.from("miembros").update({ etapa_id: data.etapa }).eq("id", data.miembro_id);
       toast.success("Seguimiento creado");
     }
     onOpenChange(false);

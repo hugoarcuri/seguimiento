@@ -224,6 +224,9 @@ function SeguimientoDetalle({ id }: { id: string }) {
     if (!seguimiento || etapa === seguimiento.etapa) return;
     const { error } = await supabase.from("seguimientos").update({ etapa }).eq("id", id);
     if (error) { toast.error("Error al actualizar la etapa"); return; }
+    if (seguimiento.miembros?.id) {
+      await supabase.from("miembros").update({ etapa_id: etapa }).eq("id", seguimiento.miembros.id);
+    }
     setSeguimiento((prev) => prev ? { ...prev, etapa } : prev);
     await registrarHistorial("etapa", `Etapa cambiada a: ${etapas.find((e) => e.id === etapa)?.nombre || `Etapa ${etapa}`}`);
     await supabase.from("seguimientos").update({ ultima_actualizacion: new Date().toISOString() }).eq("id", id);
