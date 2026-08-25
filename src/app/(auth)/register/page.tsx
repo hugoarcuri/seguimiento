@@ -8,20 +8,76 @@ import { createClient } from "@/lib/supabase/client";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, type RegisterInput } from "@/lib/validations/auth";
+import { calcularEdad } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { BASE_PATH } from "@/lib/constants/paths";
 import { GoogleIcon } from "@/components/icons/google-icon";
+import { OPCIONES_DON_ESPIRITUAL, OPCION_OTRO_DON } from "@/app/(dashboard)/discipuladores/discipulador-constants";
+
+const inputClass = "h-11 md:h-10 text-sm";
+const inputLabelClass = "text-xs font-medium text-muted-foreground";
+
+const sexoOptions: Array<{ value: "M" | "F"; label: string }> = [
+  { value: "M", label: "Masculino" },
+  { value: "F", label: "Femenino" },
+];
+
+function SexoChips({ value, onChange }: { value?: "M" | "F" | null; onChange: (v: "M" | "F") => void }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {sexoOptions.map((opt) => {
+        const active = value === opt.value;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onChange(opt.value)}
+            className={`min-h-11 md:min-h-8 px-3 rounded-lg text-xs font-medium transition-colors ${
+              active
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
+            }`}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const router = useRouter();
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<RegisterInput>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      bautizado: false,
+      es_miembro: false,
+    },
+  });
+
+  const sexo = watch("sexo") as "M" | "F" | null | undefined;
+  const fechaNacimiento = watch("fecha_nacimiento") as string | undefined;
+  const edad = fechaNacimiento ? calcularEdad(fechaNacimiento) : null;
+  const bautizado = !!watch("bautizado");
+  const donEspiritual = watch("don_espiritual") as string | undefined;
 
   const handleGoogle = async () => {
     setLoading(true);
@@ -38,17 +94,11 @@ export default function RegisterPage() {
     }
   };
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<RegisterInput>({
-    resolver: zodResolver(registerSchema),
-  });
-
   const onSubmit = async (data: RegisterInput) => {
     setLoading(true);
     const supabase = createClient();
+
+    const donFinal = donEspiritual === OPCION_OTRO_DON ? null : donEspiritual || null;
 
     const { error } = await supabase.auth.signUp({
       email: data.email,
@@ -57,6 +107,15 @@ export default function RegisterPage() {
         data: {
           nombre: data.nombre,
           apellido: data.apellido,
+          sexo: data.sexo || null,
+          fecha_nacimiento: data.fecha_nacimiento || null,
+          telefono: data.telefono || null,
+          direccion: data.direccion || null,
+          convive_con: data.convive_con || null,
+          fecha_conversion: data.fecha_conversion || null,
+          don_espiritual: donFinal,
+          bautizado: data.bautizado ?? false,
+          es_miembro: data.es_miembro ?? false,
         },
       },
     });
@@ -73,7 +132,7 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-      <Card className="w-full max-w-sm">
+      <Card className="w-full max-w-2xl">
         <CardHeader className="text-center space-y-2">
           <div className="flex justify-center mb-2">
             <Image src={`${BASE_PATH}/logo.png`} alt="JH" width={48} height={48} className="rounded" />
@@ -95,52 +154,114 @@ export default function RegisterPage() {
                 <span className="bg-card px-2 text-muted-foreground">o</span>
               </div>
             </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="nombre">Nombre</Label>
-                <Input id="nombre" placeholder="Juan" {...register("nombre")} />
-                {errors.nombre && (
-                  <p className="text-sm text-destructive">{errors.nombre.message}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="apellido">Apellido</Label>
-                <Input id="apellido" placeholder="Pérez" {...register("apellido")} />
-                {errors.apellido && (
-                  <p className="text-sm text-destructive">{errors.apellido.message}</p>
-                )}
+
+            {/* ACCESO */}
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label htmlFor="email" className={inputLabelClass}>Email *</Label>
+                  <Input id="email" type="email" className={inputClass} {...register("email")} />
+                  {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+                </div>
+                <div className="space-y-1">
+                  <Label className={inputLabelClass}>Contraseña *</Label>
+                  <div className="relative">
+                    <Input type={showPassword ? "text" : "password"} placeholder="••••••••" className={`${inputClass} pr-10`} {...register("password")} />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
+                </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <Label className={inputLabelClass}>Confirmar Contraseña *</Label>
+                  <div className="relative">
+                    <Input type={showConfirm ? "text" : "password"} placeholder="••••••••" className={`${inputClass} pr-10`} {...register("confirmPassword")} />
+                    <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                      {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
+                </div>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="tu@email.com" {...register("email")} />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
-              <div className="relative">
-                <Input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••" {...register("password")} className="pr-10" />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+
+            <hr className="border-border" />
+
+            {/* DATOS PERSONALES */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="apellido" className={inputLabelClass}>Apellido *</Label>
+                <Input id="apellido" className={inputClass} {...register("apellido")} />
+                {errors.apellido && <p className="text-sm text-destructive">{errors.apellido.message}</p>}
               </div>
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
-              <div className="relative">
-                <Input id="confirmPassword" type={showConfirm ? "text" : "password"} placeholder="••••••••" {...register("confirmPassword")} className="pr-10" />
-                <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
-                  {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+              <div className="space-y-1">
+                <Label htmlFor="nombre" className={inputLabelClass}>Nombre *</Label>
+                <Input id="nombre" className={inputClass} {...register("nombre")} />
+                {errors.nombre && <p className="text-sm text-destructive">{errors.nombre.message}</p>}
               </div>
-              {errors.confirmPassword && (
-                <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
-              )}
+              <div className="space-y-1">
+                <Label className={inputLabelClass}>Sexo</Label>
+                <SexoChips
+                  value={sexo}
+                  onChange={(v) => setValue("sexo", v, { shouldValidate: true })}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="fecha_nacimiento" className={inputLabelClass}>Nacimiento</Label>
+                <Input id="fecha_nacimiento" type="date" className={inputClass} {...register("fecha_nacimiento")} />
+                {edad !== null && <p className="text-xs text-muted-foreground">Edad: {edad} años</p>}
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="telefono" className={inputLabelClass}>Teléfono</Label>
+                <Input id="telefono" className={inputClass} {...register("telefono")} />
+              </div>
+              <div className="space-y-1 sm:col-span-2">
+                <Label htmlFor="direccion" className={inputLabelClass}>Dirección</Label>
+                <Input id="direccion" className={inputClass} {...register("direccion")} />
+              </div>
+              <div className="space-y-1 sm:col-span-2 lg:col-span-4">
+                <Label htmlFor="convive_con" className={inputLabelClass}>¿Con quién vive?</Label>
+                <Input id="convive_con" className={inputClass} {...register("convive_con")} placeholder="Ej.: con sus padres, solo/a..." />
+              </div>
+            </div>
+
+            {/* VIDA ESPIRITUAL */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="fecha_conversion" className={inputLabelClass}>Conversión</Label>
+                <Input id="fecha_conversion" type="date" className={inputClass} {...register("fecha_conversion")} />
+              </div>
+              <div className="space-y-1">
+                <Label className={inputLabelClass}>Don Espiritual</Label>
+                <Select value={donEspiritual || undefined} onValueChange={(v) => setValue("don_espiritual", v?.toString() || null, { shouldValidate: true })}>
+                  <SelectTrigger className={inputClass}><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                  <SelectContent>
+                    {OPCIONES_DON_ESPIRITUAL.map((d) => (
+                      <SelectItem key={d} value={d}>{d}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className={inputLabelClass}>Marcas espirituales</Label>
+                <div className="flex h-11 md:min-h-8 flex-wrap items-center gap-6">
+                  <label className="flex cursor-pointer items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={bautizado}
+                      onCheckedChange={(v) => setValue("bautizado", !!v)}
+                    />
+                    Bautizado
+                  </label>
+                  <label className="flex cursor-pointer items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={!!watch("es_miembro")}
+                      onCheckedChange={(v) => setValue("es_miembro", !!v)}
+                    />
+                    Es miembro
+                  </label>
+                </div>
+              </div>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">

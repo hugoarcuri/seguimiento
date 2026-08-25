@@ -22,6 +22,7 @@ import { Loader2, Camera } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useRef } from "react";
 import type { Etapa } from "@/types/database";
+import { OPCIONES_DON_ESPIRITUAL } from "@/app/(dashboard)/discipuladores/discipulador-constants";
 
 interface MiembroFormProps {
   etapas: Etapa[];
@@ -359,6 +360,18 @@ export function MiembroForm({
           <div className="space-y-1">
             <Label htmlFor="fecha_conversion" className={inputLabelClass}>Conversión</Label>
             <Input id="fecha_conversion" type="date" className={inputClass} {...register("fecha_conversion")} />
+          </div>
+          <div className="space-y-1">
+            <Label className={inputLabelClass}>Don Espiritual</Label>
+            <Select value={watch("dones") || undefined} onValueChange={(v) => setValue("dones", v?.toString() === "none" ? "" : v?.toString() ?? "", { shouldValidate: true })}>
+              <SelectTrigger className={inputClass}><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Sin don</SelectItem>
+                {OPCIONES_DON_ESPIRITUAL.map((d) => (
+                  <SelectItem key={d} value={d}>{d}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-1">
             <Label className={inputLabelClass}>Marcas espirituales</Label>
