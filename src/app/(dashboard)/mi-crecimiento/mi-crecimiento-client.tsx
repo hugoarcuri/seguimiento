@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useMiembroActual } from "@/hooks/useDiscipuloActual";
@@ -13,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import {
   Loader2, BookOpen, CheckCircle2, Clock, CalendarDays,
-  Hand, ChevronRight, Flame,
+  Hand, ChevronRight, Flame, Inbox,
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -27,7 +26,6 @@ import type {
 type Encuentro = Agenda;
 
 export function MiCrecimientoClient() {
-  const router = useRouter();
   const { miembro: discipulo, loading: loadingDiscipulo } = useMiembroActual();
   const { etapas } = useEtapas();
 
@@ -40,12 +38,7 @@ export function MiCrecimientoClient() {
   const [loading, setLoading] = useState(true);
 
   const supabase = useMemo(() => createClient(), []);
-
-  useEffect(() => {
-    if (!loadingDiscipulo && !discipulo) {
-      router.replace("/dashboard");
-    }
-  }, [loadingDiscipulo, discipulo, router]);
+  const isLoading = loadingDiscipulo || (!discipulo ? false : loading);
 
   useEffect(() => {
     if (!discipulo) return;
@@ -104,13 +97,13 @@ export function MiCrecimientoClient() {
   if (!discipulo) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-        <Loader2 className="h-8 w-8 animate-spin" />
-        <p className="text-sm text-muted-foreground">Redirigiendo...</p>
+        <Inbox className="h-12 w-12 text-muted-foreground/50" />
+        <p className="text-muted-foreground">Aún no hay datos para mostrar</p>
       </div>
     );
   }
 
-  if (loading) {
+  if (isLoading) {
     return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
