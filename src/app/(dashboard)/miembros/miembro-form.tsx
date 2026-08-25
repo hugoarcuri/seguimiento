@@ -224,7 +224,25 @@ export function MiembroForm({
         }
       }
 
-      toast.success("Miembro creado. Cuando se registre con su email, se vinculará automáticamente.");
+      if (data.password && data.email) {
+        const { error: fnError } = await supabase.functions.invoke("create-miembro-user", {
+          body: {
+            miembro_id: newMiembro.id,
+            email: data.email,
+            password: data.password,
+            nombre: data.nombre,
+            apellido: data.apellido,
+          },
+        });
+
+        if (fnError) {
+          toast.success("Miembro creado. Error al crear cuenta de acceso: " + fnError.message);
+        } else {
+          toast.success("Miembro y cuenta de acceso creados. Ya puede iniciar sesión.");
+        }
+      } else {
+        toast.success("Miembro creado. Cuando se registre con su email, se vinculará automáticamente.");
+      }
 
       setTimeout(() => {
         router.push("/miembros");
@@ -300,6 +318,13 @@ export function MiembroForm({
             <Label htmlFor="email" className={inputLabelClass}>Email *</Label>
             <Input id="email" type="email" className={inputClass} {...register("email")} />
           </div>
+          {!isEditing && (
+            <div className="space-y-1">
+              <Label htmlFor="password" className={inputLabelClass}>Contraseña</Label>
+              <Input id="password" type="password" className={inputClass} {...register("password")} placeholder="Opcional" />
+              <p className="text-[11px] text-muted-foreground">Si se completa, el miembro podrá iniciar sesión</p>
+            </div>
+          )}
           <div className="space-y-1 sm:col-span-2">
             <Label htmlFor="direccion" className={inputLabelClass}>Dirección</Label>
             <Input id="direccion" className={inputClass} {...register("direccion")} />
