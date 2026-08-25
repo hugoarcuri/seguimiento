@@ -129,8 +129,7 @@ export default function SeguimientoPage() {
     (async () => {
       try {
         await fetchData();
-      } catch (err) {
-        console.error(err);
+      } catch {
       } finally {
         setLoading(false);
       }

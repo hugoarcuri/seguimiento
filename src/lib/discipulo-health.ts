@@ -146,7 +146,3 @@ export function calcularSalud(input: InputSalud): SaludResultado {
 
   return { salud, alertas, accion };
 }
-
-// Backward-compat aliases
-export type SaludDiscipulo = SaludMiembro;
-export type AlertaDiscipulo = AlertaMiembro;

@@ -20,8 +20,8 @@ export function useEtapas() {
         const list = (data as Etapa[]) || [];
         cachedEtapas = list;
         setEtapas(list);
-      } catch (err) {
-        console.error(err);
+      } catch {
+        // silent
       } finally {
         if (mounted) setLoading(false);
       }

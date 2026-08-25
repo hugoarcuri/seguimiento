@@ -1,5 +1,3 @@
-import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -18,7 +16,6 @@ export interface MiembroReporte {
   bautizado: boolean;
   esMiembro: boolean;
 }
-export type DiscipuloReporte = MiembroReporte;
 
 export interface EncuentroReporte {
   id: string;
@@ -86,7 +83,11 @@ const COLOR_TEXTO: [number, number, number] = [51, 65, 85];
 const fFecha = (f: string | null | undefined): string =>
   f ? format(new Date(f + "T00:00:00"), "dd/MM/yyyy", { locale: es }) : "—";
 
-export function generarReportePDF(data: ReporteData): void {
+export async function generarReportePDF(data: ReporteData): Promise<void> {
+  const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+    import("jspdf"),
+    import("jspdf-autotable"),
+  ]);
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 14;

@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { DashboardClient, type DashboardData, type ActividadItem, type EstadoDiscipulo } from "./dashboard-client";
 import { useEtapas } from "@/hooks/useEtapas";
 import { useUser } from "@/hooks/useUser";
-import { useSyncMiembros } from "@/hooks/useSyncMiembros";
+
 import { differenceInCalendarDays, format } from "date-fns";
 import { es } from "date-fns/locale";
 import {
@@ -105,7 +105,6 @@ export default function DashboardPage() {
   const { etapas } = useEtapas();
   const { user, loading: loadingUser } = useUser();
   const router = useRouter();
-  useSyncMiembros();
   const [periodo, setPeriodo] = useState<Periodo>(DEFAULT_PERIODO);
   const [raw, setRaw] = useState<RawData | null>(null);
 
@@ -134,7 +133,7 @@ export default function DashboardPage() {
         objetivos: (objetivosRes.data || []) as ObjetivoRaw[],
         tareas: (tareasRes.data || []) as TareaRaw[],
       });
-    }).catch(console.error);
+    }).catch(() => {});
   }, []);
 
   const data = useMemo<DashboardData | null>(() => {

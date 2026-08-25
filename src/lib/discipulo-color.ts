@@ -11,4 +11,3 @@ export function getMiembroColor(id: string): { fg: string; bg: string } {
     bg: `oklch(0.88 0.07 ${hue})`,
   };
 }
-export const getDiscipuloColor = getMiembroColor;

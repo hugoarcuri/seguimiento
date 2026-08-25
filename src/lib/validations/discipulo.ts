@@ -24,5 +24,3 @@ export const miembroSchema = z.object({
 });
 
 export type MiembroInput = z.infer<typeof miembroSchema>;
-export const discipuloSchema = miembroSchema;
-export type DiscipuloInput = MiembroInput;

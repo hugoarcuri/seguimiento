@@ -108,9 +108,3 @@ export const discipuladorMenuItems: NavItem[] = [
   { href: "/oracion", label: "Oración", icon: MessagesSquare },
   { href: "/estudios-biblicos", label: "Estudios Bíblicos", icon: BookOpen },
 ];
-
-export function getMenuItems(rol?: string): NavItem[] {
-  if (rol === "admin") return adminMenuItems;
-  if (rol === "discipulador") return discipuladorMenuItems;
-  return miembroMenuItems;
-}

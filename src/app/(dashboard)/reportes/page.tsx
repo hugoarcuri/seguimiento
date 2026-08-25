@@ -152,7 +152,7 @@ export default function ReportesPage() {
       if (dRes.data && dRes.data.length > 0 && !discipuladorId) {
         setDiscipuladorId(dRes.data[0].id);
       }
-    }).catch(console.error);
+    }).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

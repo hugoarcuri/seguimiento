@@ -109,7 +109,7 @@ export default function DiscipuladoresDashboardPage() {
         agenda: (agendaRes.data || []) as unknown as AgendaRaw[],
         tareas: (tareasRes.data || []) as TareaRaw[],
       });
-    }).catch(console.error);
+    }).catch(() => {});
   }, []);
 
   const data = useMemo<DiscipuladoresDashboardData | null>(() => {

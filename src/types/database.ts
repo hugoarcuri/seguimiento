@@ -44,7 +44,6 @@ export interface Miembro {
   created_at: string;
   updated_at: string;
 }
-export type Discipulo = Miembro;
 
 export interface Agenda {
   id: string;
@@ -71,18 +70,6 @@ export interface Oracion {
   pedido: string;
   respuesta?: string;
   estado: "pendiente" | "respondida" | "en_oracion";
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Material {
-  id: string;
-  titulo: string;
-  tipo: "libro" | "pdf" | "video" | "audio" | "link" | "nota";
-  descripcion?: string;
-  url?: string;
-  etapa_id: number;
-  creado_por: string;
   created_at: string;
   updated_at: string;
 }
@@ -117,13 +104,6 @@ export interface Etapa {
   orden: number;
   objetivos: string[] | null;
   material_recomendado?: string | null;
-}
-
-export interface Configuracion {
-  id: number;
-  seguimiento: Record<string, unknown>;
-  personal: Record<string, unknown>;
-  updated_at: string;
 }
 
 export interface Seguimiento {

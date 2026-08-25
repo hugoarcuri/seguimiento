@@ -20,8 +20,7 @@ export default function NuevoMiembroPage() {
         ]);
         setEtapas(etapasRes.data || []);
         setDiscipuladores(discipuladoresRes.data || []);
-      } catch (err) {
-        console.error(err);
+      } catch {
       } finally {
         setLoading(false);
       }

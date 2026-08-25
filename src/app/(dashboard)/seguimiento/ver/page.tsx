@@ -149,8 +149,7 @@ function SeguimientoDetalle({ id }: { id: string }) {
     (async () => {
       try {
         await refresh();
-      } catch (err) {
-        console.error(err);
+      } catch {
       } finally {
         setLoading(false);
       }

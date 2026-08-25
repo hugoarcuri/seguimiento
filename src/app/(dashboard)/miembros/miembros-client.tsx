@@ -662,5 +662,3 @@ export function MiembrosClient({ miembros, etapas, esAdmin, onCambio }: Miembros
     </div>
   );
 }
-
-export { MiembrosClient as DiscipulosClient };

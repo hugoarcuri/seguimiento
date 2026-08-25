@@ -22,8 +22,7 @@ export default function MiembrosPage() {
     (async () => {
       try {
         await cargarDatos();
-      } catch (err) {
-        console.error(err);
+      } catch {
       } finally {
         setLoading(false);
       }

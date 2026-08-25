@@ -51,7 +51,7 @@ export default function EvangelismoPage() {
       setPersonas((pRes.data || []) as PersonaData[]);
       setEventos((eRes.data || []) as EventoData[]);
       setLoading(false);
-    }).catch(console.error);
+    }).catch(() => {});
   }, [supabase]);
 
   const filteredPersonas = personas.filter((p) => {
@@ -87,7 +87,7 @@ export default function EvangelismoPage() {
       observaciones: nuevaPersona.observaciones || null,
       estado: "oracion_salvacion",
     });
-    if (error) { toast.error("Error al agregar: " + error.message); console.error("INSERT ERROR", JSON.stringify(error, null, 2)); return; }
+    if (error) { toast.error("Error al agregar: " + error.message); return; }
 
     setShowAddDialog(false);
     setNuevaPersona({ miembro_id: "", nombre: "", apellido: "", telefono: "", edad: "", observaciones: "" });

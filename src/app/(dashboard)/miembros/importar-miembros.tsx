@@ -12,7 +12,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Loader2, Upload, FileText, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import * as XLSX from "xlsx";
+let XLSX: typeof import("xlsx") | null = null;
+const loadXLSX = async () => {
+  if (!XLSX) XLSX = await import("xlsx");
+  return XLSX;
+};
 import { generarAvatarUrl } from "@/lib/utils";
 import type { Etapa } from "@/types/database";
 
@@ -124,9 +128,10 @@ export function ImportarMiembros({ etapas, onImportado }: { etapas: Etapa[]; onI
   const parseDesdeExcel = async (file: File) => {
     try {
       const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, { type: "array" });
+      const XLSXMod = await loadXLSX();
+      const wb = XLSXMod.read(buf, { type: "array" });
       const ws = wb.Sheets[wb.SheetNames[0]];
-      const raw: Record<string, string>[] = XLSX.utils.sheet_to_json(ws, { defval: "" });
+      const raw: Record<string, string>[] = XLSXMod.utils.sheet_to_json(ws, { defval: "" });
 
       if (raw.length === 0) {
         toast.error("El archivo está vacío");
@@ -377,4 +382,4 @@ export function ImportarMiembros({ etapas, onImportado }: { etapas: Etapa[]; onI
   );
 }
 
-export { ImportarMiembros as ImportarDiscipulos };
+

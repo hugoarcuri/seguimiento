@@ -93,8 +93,7 @@ function MiembroVerInner() {
           discipuladores,
         });
         setLoading(false);
-      } catch (err) {
-        console.error(err);
+      } catch {
         if (!cancelado) setLoading(false);
       }
     })();
