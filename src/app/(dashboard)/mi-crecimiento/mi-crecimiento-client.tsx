@@ -161,14 +161,14 @@ export function MiCrecimientoClient() {
             <CardContent className="space-y-4">
               <div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
-                  <span>Etapa {discipulo.etapa_id} de {etapas.length}</span>
+                  <span>Etapa {discipulo.etapa_id} de {etapaIdx + 1}</span>
                   <span>{progresoSeguimiento}%</span>
                 </div>
                 <Progress value={progresoSeguimiento} className="h-2" />
               </div>
               <div className="flex items-center gap-1">
-                {etapas.map((e, i) => (
-                  <span key={e.id} className={cn("h-2.5 flex-1 rounded-sm", i <= etapaIdx ? "bg-primary" : "bg-muted")} />
+                {etapas.filter((e) => e.id <= discipulo.etapa_id).map((e, i) => (
+                  <span key={e.id} className={cn("h-2.5 flex-1 rounded-sm", i < etapaIdx ? "bg-primary" : i === etapaIdx ? "bg-primary" : "bg-muted")} />
                 ))}
               </div>
               <div className="grid grid-cols-3 gap-3 text-center">
