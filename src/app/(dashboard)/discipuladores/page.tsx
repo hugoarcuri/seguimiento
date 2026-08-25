@@ -10,6 +10,7 @@ import { useSyncMiembros } from "@/hooks/useSyncMiembros";
 export default function DiscipuladoresPage() {
   const { permitido, loading: autorizando } = useRequireRol(["admin"]);
   const [discipuladores, setDiscipuladores] = useState<Profile[]>([]);
+  const [discipuladoresEliminados, setDiscipuladoresEliminados] = useState<Profile[]>([]);
   const [miembros, setMiembros] = useState<Miembro[]>([]);
   const [etapas, setEtapas] = useState<Etapa[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,8 +19,9 @@ export default function DiscipuladoresPage() {
 
   const cargarDatos = useCallback(async () => {
     const supabase = createClient();
-    const [discipuladoresRes, miembrosRes, etapasRes] = await Promise.all([
+    const [discipuladoresRes, eliminadosRes, miembrosRes, etapasRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("rol", "discipulador").is("deleted_at", null).order("apellido", { ascending: true }),
+      supabase.from("profiles").select("*").eq("rol", "discipulador").not("deleted_at", "is", null).order("apellido", { ascending: true }),
       supabase
         .from("miembros")
         .select("id, apellido, nombre, avatar_url, etapa_id, estado, lider_id, created_at, updated_at")
@@ -27,6 +29,7 @@ export default function DiscipuladoresPage() {
       supabase.from("etapas").select("*").order("orden", { ascending: true }),
     ]);
     setDiscipuladores(discipuladoresRes.data || []);
+    setDiscipuladoresEliminados(eliminadosRes.data || []);
     setMiembros((miembrosRes.data as Miembro[] | null) || []);
     setEtapas(etapasRes.data || []);
   }, []);
@@ -46,5 +49,5 @@ export default function DiscipuladoresPage() {
   if (loading || autorizando) return <div className="flex items-center justify-center min-h-[50vh]"><p className="text-muted-foreground">Cargando...</p></div>;
   if (!permitido) return null;
 
-  return <DiscipuladoresClient discipuladores={discipuladores} miembros={miembros} etapas={etapas} onCambio={cargarDatos} />;
+  return <DiscipuladoresClient discipuladores={discipuladores} discipuladoresEliminados={discipuladoresEliminados} miembros={miembros} etapas={etapas} onCambio={cargarDatos} />;
 }

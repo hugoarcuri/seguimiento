@@ -36,6 +36,7 @@ import {
   Download,
   ChevronLeft,
   ChevronRight,
+  RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn, estadoColors, calcularEdad } from "@/lib/utils";
@@ -61,12 +62,13 @@ function iniciales(p: Profile): string {
 
 interface DiscipuladoresClientProps {
   discipuladores: Profile[];
+  discipuladoresEliminados?: Profile[];
   miembros: Miembro[];
   etapas: Etapa[];
   onCambio?: () => void;
 }
 
-export function DiscipuladoresClient({ discipuladores, miembros, etapas, onCambio }: DiscipuladoresClientProps) {
+export function DiscipuladoresClient({ discipuladores, discipuladoresEliminados = [], miembros, etapas, onCambio }: DiscipuladoresClientProps) {
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [crearOpen, setCrearOpen] = useState(false);
@@ -79,6 +81,7 @@ export function DiscipuladoresClient({ discipuladores, miembros, etapas, onCambi
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [listaReducida, setListaReducida] = useState(false);
+  const [restaurando, setRestaurando] = useState<string | null>(null);
 
   const selected = useMemo(
     () => discipuladores.find((p) => p.id === selectedId) || null,
@@ -163,6 +166,19 @@ export function DiscipuladoresClient({ discipuladores, miembros, etapas, onCambi
     setBulkDeleteOpen(false);
     setSelectedIds([]);
     if (selectedId && selectedIds.includes(selectedId)) setSelectedId(null);
+    onCambio?.();
+  };
+
+  const handleRestaurar = async (id: string) => {
+    setRestaurando(id);
+    const supabase = createClient();
+    const { error } = await supabase.rpc("restaurar_discipulador", { p_id: id });
+    setRestaurando(null);
+    if (error) {
+      toast.error(`Error al restaurar: ${error.message}`);
+      return;
+    }
+    toast.success("Discipulador restaurado exitosamente");
     onCambio?.();
   };
 
@@ -301,6 +317,48 @@ export function DiscipuladoresClient({ discipuladores, miembros, etapas, onCambi
                 </div>
               );
             })
+          )}
+
+          {discipuladoresEliminados.length > 0 && (
+            <div className="mt-4 border-t pt-3">
+              <p className="text-xs font-medium text-muted-foreground px-1 mb-2">
+                Eliminados ({discipuladoresEliminados.length})
+              </p>
+              <div className="space-y-0.5">
+                {discipuladoresEliminados.map((p) => (
+                  <div
+                    key={p.id}
+                    className="w-full flex items-center gap-3 p-2 rounded-lg text-left bg-destructive/5 opacity-70"
+                  >
+                    {p.avatar_url ? (
+                      <Image src={p.avatar_url} alt="" width={36} height={36} className="w-9 h-9 rounded-full object-cover shrink-0 grayscale" />
+                    ) : (
+                      <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 bg-muted">
+                        {iniciales(p) || "?"}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">{p.apellido}, {p.nombre}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{p.email || "Sin email"}</p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      title="Restaurar discipulador"
+                      disabled={restaurando === p.id}
+                      onClick={() => handleRestaurar(p.id)}
+                      className="shrink-0 text-muted-foreground hover:text-green-600"
+                    >
+                      {restaurando === p.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RotateCcw className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       </div>
