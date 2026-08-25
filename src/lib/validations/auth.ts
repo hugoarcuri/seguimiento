@@ -12,6 +12,15 @@ export const registerSchema = z
     confirmPassword: z.string(),
     nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
     apellido: z.string().min(2, "El apellido debe tener al menos 2 caracteres"),
+    sexo: z.enum(["M", "F"]).optional().nullable(),
+    fecha_nacimiento: z.string().optional().nullable(),
+    telefono: z.string().optional().nullable(),
+    direccion: z.string().optional().nullable(),
+    convive_con: z.string().optional().nullable(),
+    fecha_conversion: z.string().optional().nullable(),
+    don_espiritual: z.string().optional().nullable(),
+    bautizado: z.boolean().optional(),
+    es_miembro: z.boolean().optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Las contraseñas no coinciden",

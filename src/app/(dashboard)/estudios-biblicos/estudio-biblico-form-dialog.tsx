@@ -231,7 +231,8 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
                 </div>
                 <div className="space-y-1">
                   <Label className={labelClass}>Descripción *</Label>
-                  <Textarea rows={1} className="text-sm h-8" {...register("descripcion")} placeholder="Breve descripción" />
+                  <Textarea rows={1} className="text-sm h-8" {...register("descripcion")} placeholder="Breve descripción"
+                    onInput={(e) => { const t = e.target as HTMLTextAreaElement; t.style.height = "auto"; t.style.height = `${t.scrollHeight}px`; }} />
                   {errors.descripcion && <p className="text-xs text-destructive">{errors.descripcion.message}</p>}
                 </div>
               </div>
@@ -301,7 +302,8 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
                   <div className="space-y-3 pl-4 border-l-2 border-primary/20">
                     <div className="space-y-1">
                       <Label className="text-sm font-semibold uppercase">Objetivo</Label>
-                      <Textarea rows={2} className="text-sm" value={guiaObjetivo || ""} onChange={(e) => setValue("guia.objetivo", e.target.value)} placeholder="Objetivo de la guía..." />
+                      <Textarea rows={2} className="text-sm" value={guiaObjetivo || ""} onChange={(e) => setValue("guia.objetivo", e.target.value)} placeholder="Objetivo de la guía..."
+                        onInput={(e) => { const t = e.target as HTMLTextAreaElement; t.style.height = "auto"; t.style.height = `${t.scrollHeight}px`; }} />
                     </div>
                     <div className="space-y-1">
                       <div className="flex items-center justify-between">
