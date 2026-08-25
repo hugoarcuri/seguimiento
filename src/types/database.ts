@@ -15,6 +15,7 @@ export interface Profile {
   debilidades?: string;
   created_at: string;
   updated_at: string;
+  deleted_at?: string | null;
 }
 
 export interface Miembro {

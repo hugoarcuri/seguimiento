@@ -40,6 +40,14 @@ export function useUser() {
       if (authUser) {
         const profile = await fetchProfile(authUser.id);
         if (!mounted) return;
+        if (profile?.deleted_at) {
+          const supabase = createClient();
+          await supabase.auth.signOut();
+          cachedProfile = null;
+          setUser(null);
+          router.replace("/login");
+          return;
+        }
         setUser(profile);
       } else {
         cachedProfile = null;
@@ -56,8 +64,15 @@ export function useUser() {
       if (!mounted) return;
       if (session?.user) {
         cachedProfile = null;
-        fetchProfile(session.user.id).then((profile) => {
+        fetchProfile(session.user.id).then(async (profile) => {
           if (!mounted) return;
+          if (profile?.deleted_at) {
+            await supabase.auth.signOut();
+            cachedProfile = null;
+            setUser(null);
+            router.replace("/login");
+            return;
+          }
           setUser(profile);
         });
       } else {
