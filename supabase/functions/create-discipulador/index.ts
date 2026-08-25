@@ -56,6 +56,51 @@ Deno.serve(async (req) => {
       return json({ error: "Faltan campos obligatorios" }, 400);
     }
 
+    // Verificar si existe un perfil eliminado con este email
+    const { data: perfilEliminado } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("email", email)
+      .not("deleted_at", "is", null)
+      .maybeSingle();
+
+    if (perfilEliminado) {
+      // Restaurar el perfil existente en vez de crear uno nuevo
+      const { error: restoreError } = await supabase
+        .from("profiles")
+        .update({
+          nombre,
+          apellido,
+          rol: "discipulador",
+          telefono: telefono || null,
+          fecha_nacimiento: fecha_nacimiento || null,
+          don_espiritual: don_espiritual || null,
+          fortalezas: fortalezas || null,
+          debilidades: debilidades || null,
+          deleted_at: null,
+        })
+        .eq("id", perfilEliminado.id);
+
+      if (restoreError) {
+        return json({ error: `Error al restaurar perfil: ${restoreError.message}` }, 500);
+      }
+
+      // Restaurar la contraseña del usuario auth
+      const { error: pwError } = await supabase.auth.admin.updateUserById(
+        perfilEliminado.id,
+        { password }
+      );
+
+      if (pwError) {
+        return json({ error: `Perfil restaurado pero error al actualizar contraseña: ${pwError.message}` }, 500);
+      }
+
+      return json(
+        { id: perfilEliminado.id, nombre, apellido, email, restored: true },
+        200
+      );
+    }
+
     const { data: userData, error: authError } = await supabase.auth.admin.createUser({
       email,
       password,

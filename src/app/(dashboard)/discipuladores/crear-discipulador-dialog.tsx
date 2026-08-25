@@ -80,7 +80,7 @@ export function CrearDiscipuladorDialog({ open, onOpenChange, onCreado }: CrearD
         data.don_espiritual === OPCION_OTRO_DON
           ? data.don_espiritual_otro?.trim() || null
           : data.don_espiritual || null;
-      const { error } = await supabase.functions.invoke("create-discipulador", {
+      const { data: result, error } = await supabase.functions.invoke("create-discipulador", {
         body: {
           ...data,
           telefono: data.telefono || null,
@@ -118,7 +118,8 @@ export function CrearDiscipuladorDialog({ open, onOpenChange, onCreado }: CrearD
       return;
     }
 
-    toast.success("Discipulador creado exitosamente");
+    const texto = result?.restored ? "Discipulador restaurado exitosamente" : "Discipulador creado exitosamente";
+    toast.success(texto);
     reset();
     onOpenChange(false);
     onCreado?.();
