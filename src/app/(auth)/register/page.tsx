@@ -8,50 +8,19 @@ import { createClient } from "@/lib/supabase/client";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, type RegisterInput } from "@/lib/validations/auth";
-import { calcularEdad } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { BASE_PATH } from "@/lib/constants/paths";
 import { GoogleIcon } from "@/components/icons/google-icon";
-import { OPCIONES_DON_ESPIRITUAL, OPCION_OTRO_DON } from "@/app/(dashboard)/discipuladores/discipulador-constants";
+import { OPCION_OTRO_DON } from "@/app/(dashboard)/discipuladores/discipulador-constants";
+import { PersonaFormFields } from "@/components/persona-form-fields";
 
 const inputClass = "h-11 md:h-10 text-sm";
 const inputLabelClass = "text-xs font-medium text-muted-foreground";
-
-const sexoOptions: Array<{ value: "M" | "F"; label: string }> = [
-  { value: "M", label: "Masculino" },
-  { value: "F", label: "Femenino" },
-];
-
-function SexoChips({ value, onChange }: { value?: "M" | "F" | null; onChange: (v: "M" | "F") => void }) {
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {sexoOptions.map((opt) => {
-        const active = value === opt.value;
-        return (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => onChange(opt.value)}
-            className={`min-h-11 md:min-h-8 px-3 rounded-lg text-xs font-medium transition-colors ${
-              active
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
-            }`}
-          >
-            {opt.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
 
 export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
@@ -73,11 +42,7 @@ export default function RegisterPage() {
     },
   });
 
-  const sexo = watch("sexo") as "M" | "F" | null | undefined;
-  const fechaNacimiento = watch("fecha_nacimiento") as string | undefined;
-  const edad = fechaNacimiento ? calcularEdad(fechaNacimiento) : null;
-  const bautizado = !!watch("bautizado");
-  const donEspiritual = watch("don_espiritual") as string | undefined;
+  const donEspiritual = watch("dones") as string | undefined;
 
   const handleGoogle = async () => {
     setLoading(true);
@@ -158,7 +123,6 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* ACCESO */}
             <div className="space-y-3">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-1">
@@ -191,81 +155,13 @@ export default function RegisterPage() {
 
             <hr className="border-border" />
 
-            {/* DATOS PERSONALES */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3">
-              <div className="space-y-1">
-                <Label htmlFor="apellido" className={inputLabelClass}>Apellido *</Label>
-                <Input id="apellido" className={inputClass} {...register("apellido")} />
-                {errors.apellido && <p className="text-sm text-destructive">{errors.apellido.message}</p>}
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="nombre" className={inputLabelClass}>Nombre *</Label>
-                <Input id="nombre" className={inputClass} {...register("nombre")} />
-                {errors.nombre && <p className="text-sm text-destructive">{errors.nombre.message}</p>}
-              </div>
-              <div className="space-y-1">
-                <Label className={inputLabelClass}>Sexo</Label>
-                <SexoChips
-                  value={sexo}
-                  onChange={(v) => setValue("sexo", v, { shouldValidate: true })}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="fecha_nacimiento" className={inputLabelClass}>Nacimiento</Label>
-                <Input id="fecha_nacimiento" type="date" className={inputClass} {...register("fecha_nacimiento")} />
-                {edad !== null && <p className="text-xs text-muted-foreground">Edad: {edad} años</p>}
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="telefono" className={inputLabelClass}>Teléfono</Label>
-                <Input id="telefono" className={inputClass} {...register("telefono")} />
-              </div>
-              <div className="space-y-1 sm:col-span-2">
-                <Label htmlFor="direccion" className={inputLabelClass}>Dirección</Label>
-                <Input id="direccion" className={inputClass} {...register("direccion")} />
-              </div>
-              <div className="space-y-1 sm:col-span-2 lg:col-span-4">
-                <Label htmlFor="convive_con" className={inputLabelClass}>¿Con quién vive?</Label>
-                <Input id="convive_con" className={inputClass} {...register("convive_con")} placeholder="Ej.: con sus padres, solo/a..." />
-              </div>
-            </div>
-
-            {/* VIDA ESPIRITUAL */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
-              <div className="space-y-1">
-                <Label htmlFor="fecha_conversion" className={inputLabelClass}>Conversión</Label>
-                <Input id="fecha_conversion" type="date" className={inputClass} {...register("fecha_conversion")} />
-              </div>
-              <div className="space-y-1">
-                <Label className={inputLabelClass}>Don Espiritual</Label>
-                <Select value={donEspiritual || undefined} onValueChange={(v) => setValue("don_espiritual", v?.toString() || null, { shouldValidate: true })}>
-                  <SelectTrigger className={inputClass}><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                  <SelectContent>
-                    {OPCIONES_DON_ESPIRITUAL.map((d) => (
-                      <SelectItem key={d} value={d}>{d}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label className={inputLabelClass}>Marcas espirituales</Label>
-                <div className="flex h-11 md:min-h-8 flex-wrap items-center gap-6">
-                  <label className="flex cursor-pointer items-center gap-2 text-sm">
-                    <Checkbox
-                      checked={bautizado}
-                      onCheckedChange={(v) => setValue("bautizado", !!v)}
-                    />
-                    Bautizado
-                  </label>
-                  <label className="flex cursor-pointer items-center gap-2 text-sm">
-                    <Checkbox
-                      checked={!!watch("es_miembro")}
-                      onCheckedChange={(v) => setValue("es_miembro", !!v)}
-                    />
-                    Es miembro
-                  </label>
-                </div>
-              </div>
-            </div>
+            <PersonaFormFields
+              mode="self-register"
+              register={register}
+              watch={watch}
+              setValue={setValue}
+              errors={errors}
+            />
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
             <Button type="submit" className="w-full" disabled={loading}>

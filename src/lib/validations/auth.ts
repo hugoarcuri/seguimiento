@@ -18,7 +18,7 @@ export const registerSchema = z
     direccion: z.string().optional().nullable(),
     convive_con: z.string().optional().nullable(),
     fecha_conversion: z.string().optional().nullable(),
-    don_espiritual: z.string().optional().nullable(),
+    dones: z.string().optional().nullable(),
     bautizado: z.boolean().optional(),
     es_miembro: z.boolean().optional(),
     estudia: z.string().optional().nullable(),

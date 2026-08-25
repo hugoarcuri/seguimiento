@@ -77,6 +77,7 @@ interface MiembrosClientProps {
 
 export function MiembrosClient({ miembros, etapas, esAdmin, onCambio }: MiembrosClientProps) {
   const router = useRouter();
+  const supabase = useMemo(() => createClient(), []);
   const [search, setSearch] = useState("");
   const [etapaFilter, setEtapaFilter] = useState<number | null>(null);
   const [foco, setFoco] = useState<Foco>("todos");
@@ -133,7 +134,6 @@ export function MiembrosClient({ miembros, etapas, esAdmin, onCambio }: Miembros
   const cargarDetalle = async (id: string) => {
     setLoadingDetail(true);
     setSelectedId(id);
-    const supabase = createClient();
     const [dRes, eRes, oRes, tRes, tlRes, segRes] = await Promise.all([
       supabase.from("miembros").select("*").eq("id", id).single(),
       supabase.from("agenda").select("*").eq("miembro_id", id).order("fecha", { ascending: false }),
@@ -191,7 +191,6 @@ export function MiembrosClient({ miembros, etapas, esAdmin, onCambio }: Miembros
   };
 
   const handleDelete = async (id: string) => {
-    const supabase = createClient();
     const { error } = await supabase.rpc("eliminar_miembro", { p_id: id });
     if (error) {
       toast.error(error.message === 'new row violates row-level security policy for table "miembros"'
@@ -208,7 +207,6 @@ export function MiembrosClient({ miembros, etapas, esAdmin, onCambio }: Miembros
   const handleBulkDelete = async () => {
     if (!selectedIds.length || bulkDeleting) return;
     setBulkDeleting(true);
-    const supabase = createClient();
     let ok = 0;
     for (const id of selectedIds) {
       const { error } = await supabase.rpc("eliminar_miembro", { p_id: id });
@@ -264,7 +262,6 @@ export function MiembrosClient({ miembros, etapas, esAdmin, onCambio }: Miembros
 
   const iniciarSeguimiento = async (d: MiembroRadar) => {
     setIniciandoSeg(d.id);
-    const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("seguimientos").insert({
       miembro_id: d.id,
@@ -311,7 +308,6 @@ export function MiembrosClient({ miembros, etapas, esAdmin, onCambio }: Miembros
       return;
     }
     setEncuentroGuardando(true);
-    const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("agenda").insert({
       miembro_id: encuentroDialog.id,

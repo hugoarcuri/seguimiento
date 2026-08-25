@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { DiscipuladoresClient } from "./discipuladores-client";
 import type { Profile, Miembro, Etapa } from "@/types/database";
@@ -9,6 +9,7 @@ import { useRequireRol } from "@/hooks/useRequireRol";
 
 export default function DiscipuladoresPage() {
   const { permitido, loading: autorizando } = useRequireRol(["admin"]);
+  const supabase = useMemo(() => createClient(), []);
   const [discipuladores, setDiscipuladores] = useState<Profile[]>([]);
   const [discipuladoresEliminados, setDiscipuladoresEliminados] = useState<Profile[]>([]);
   const [miembros, setMiembros] = useState<Miembro[]>([]);
@@ -16,7 +17,6 @@ export default function DiscipuladoresPage() {
   const [loading, setLoading] = useState(true);
 
   const cargarDatos = useCallback(async () => {
-    const supabase = createClient();
     const [discipuladoresRes, eliminadosRes, miembrosRes, etapasRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("rol", "discipulador").is("deleted_at", null).order("apellido", { ascending: true }),
       supabase.from("profiles").select("*").eq("rol", "discipulador").not("deleted_at", "is", null).order("apellido", { ascending: true }),
