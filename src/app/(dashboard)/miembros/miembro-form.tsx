@@ -197,11 +197,31 @@ export function MiembroForm({
 
       if (error) {
         toast.error("Error al actualizar miembro");
+        return;
+      }
+
+      if (data.password && data.email) {
+        const { error: fnError } = await supabase.functions.invoke("create-miembro-user", {
+          body: {
+            miembro_id: initialData.id,
+            email: data.email,
+            password: data.password,
+            nombre: data.nombre,
+            apellido: data.apellido,
+          },
+        });
+
+        if (fnError) {
+          toast.success("Miembro actualizado. Error al actualizar contraseña: " + fnError.message);
+        } else {
+          toast.success("Miembro y contraseña actualizados");
+        }
       } else {
         toast.success("Miembro actualizado");
-        router.push("/miembros");
-        router.refresh();
       }
+
+      router.push("/miembros");
+      router.refresh();
     } else {
       const { data: newMiembro, error } = await supabase
         .from("miembros")
@@ -318,13 +338,13 @@ export function MiembroForm({
             <Label htmlFor="email" className={inputLabelClass}>Email *</Label>
             <Input id="email" type="email" className={inputClass} {...register("email")} />
           </div>
-          {!isEditing && (
-            <div className="space-y-1">
-              <Label htmlFor="password" className={inputLabelClass}>Contraseña</Label>
-              <Input id="password" type="password" className={inputClass} {...register("password")} placeholder="Opcional" />
-              <p className="text-[11px] text-muted-foreground">Si se completa, el miembro podrá iniciar sesión</p>
-            </div>
-          )}
+          <div className="space-y-1">
+            <Label htmlFor="password" className={inputLabelClass}>{isEditing ? "Nueva contraseña" : "Contraseña"}</Label>
+            <Input id="password" type="password" className={inputClass} {...register("password")} placeholder={isEditing ? "Dejar vacío para mantener actual" : "Opcional"} />
+            <p className="text-[11px] text-muted-foreground">
+              {isEditing ? "Solo completar si desea cambiar la contraseña" : "Si se completa, el miembro podrá iniciar sesión"}
+            </p>
+          </div>
           <div className="space-y-1 sm:col-span-2">
             <Label htmlFor="direccion" className={inputLabelClass}>Dirección</Label>
             <Input id="direccion" className={inputClass} {...register("direccion")} />

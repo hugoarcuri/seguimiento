@@ -61,28 +61,43 @@ Deno.serve(async (req) => {
       userId = userData.user.id;
     }
 
-    // 2. Vincular miembro al usuario auth
-    const { error: linkError } = await supabase
+    // 2. Vincular miembro al usuario auth (solo si no estaba vinculado)
+    const { data: miembroActual } = await supabase
       .from("miembros")
-      .update({ user_id: userId })
-      .eq("id", miembro_id);
+      .select("user_id")
+      .eq("id", miembro_id)
+      .single();
 
-    if (linkError) {
-      return json({ error: `Miembro no vinculado: ${linkError.message}` }, 500);
+    if (!miembroActual?.user_id) {
+      const { error: linkError } = await supabase
+        .from("miembros")
+        .update({ user_id: userId })
+        .eq("id", miembro_id);
+
+      if (linkError) {
+        return json({ error: `Miembro no vinculado: ${linkError.message}` }, 500);
+      }
     }
 
     // 3. Asegurar que existe un seguimiento para este miembro
-    await supabase
+    const { data: segExistente } = await supabase
       .from("seguimientos")
-      .insert({
-        miembro_id,
-        discipulador_id: userId,
-        etapa: 1,
-        progreso: 0,
-        estado: "activo",
-      })
-      .select()
+      .select("id")
+      .eq("miembro_id", miembro_id)
+      .eq("estado", "activo")
       .maybeSingle();
+
+    if (!segExistente) {
+      await supabase
+        .from("seguimientos")
+        .insert({
+          miembro_id,
+          discipulador_id: userId,
+          etapa: 1,
+          progreso: 0,
+          estado: "activo",
+        });
+    }
 
     return json({ id: userId, email, linked: true }, 200);
   } catch (err) {
