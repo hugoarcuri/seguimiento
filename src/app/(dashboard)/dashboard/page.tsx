@@ -119,7 +119,7 @@ export default function DashboardPage() {
     const supabase = createClient();
 
     Promise.all([
-      supabase.from("miembros").select("id, nombre, apellido, avatar_url, etapa_id, estado, lider_id, bautizado, es_miembro, created_at"),
+      supabase.from("miembros").select("id, nombre, apellido, avatar_url, etapa_id, estado, lider_id, bautizado, es_miembro, created_at").neq("estado", "eliminado"),
       supabase.from("profiles").select("id, nombre, apellido"),
       supabase.from("seguimientos").select("id, miembro_id, discipulador_id, etapa, progreso, estado"),
       supabase.from("agenda").select("id, miembro_id, lider_id, fecha, hora, tema_tratado, realizada"),

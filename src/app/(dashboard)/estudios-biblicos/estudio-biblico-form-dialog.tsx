@@ -24,7 +24,7 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2, ChevronDown, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -74,6 +74,10 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
 
   const { fields: camposContenido, append: agregarContenido, remove: eliminarContenido } = useFieldArray({ control, name: "contenido" });
   const { fields: camposPreguntas, append: agregarPregunta, remove: eliminarPregunta } = useFieldArray({ control, name: "preguntas" });
+  const { fields: camposPuntos, append: agregarPunto, remove: eliminarPunto } = useFieldArray({ control, name: "guia.puntosClave" });
+  const { fields: camposConsejos, append: agregarConsejo, remove: eliminarConsejo } = useFieldArray({ control, name: "guia.consejos" });
+  const { fields: camposGuiaPreguntas, append: agregarGuiaPregunta, remove: eliminarGuiaPregunta } = useFieldArray({ control, name: "guia.preguntas" });
+  const [guiaOpen, setGuiaOpen] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -274,6 +278,73 @@ export function EstudioBiblicoFormDialog({ open, onOpenChange, estudio, onGuarda
                     </div>
                   ))}
                 </div>
+              </div>
+
+              <div className="space-y-2 shrink-0">
+                <button type="button" onClick={() => setGuiaOpen(!guiaOpen)}
+                  className="flex items-center gap-1 hover:bg-accent rounded px-1 py-0.5 transition-colors">
+                  {guiaOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  <p className={labelClass}>Guía del discipulador</p>
+                </button>
+                {guiaOpen && (
+                  <div className="space-y-3 pl-4 border-l-2 border-primary/20">
+                    <div className="space-y-1">
+                      <Label className="text-sm font-semibold uppercase">Objetivo</Label>
+                      <Textarea rows={2} className="text-sm" {...register("guia.objetivo")} placeholder="Objetivo de la guía..." />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-semibold uppercase">Puntos clave</Label>
+                        <Button type="button" size="sm" variant="outline" onClick={() => agregarPunto("")}>
+                          <Plus className="h-3.5 w-3.5 mr-1" /> Agregar
+                        </Button>
+                      </div>
+                      {camposPuntos.map((campo, idx) => (
+                        <div key={campo.id} className="flex gap-2 items-center">
+                          <span className="text-xs font-bold text-muted-foreground shrink-0 w-4 text-right">{idx + 1}.</span>
+                          <Input {...register(`guia.puntosClave.${idx}`)} className="h-8 text-sm flex-1" placeholder="Punto clave..." />
+                          <Button type="button" size="icon-xs" variant="ghost" onClick={() => eliminarPunto(idx)} className="shrink-0">
+                            <Trash2 className="h-3 w-3 text-destructive" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-semibold uppercase">Consejos</Label>
+                        <Button type="button" size="sm" variant="outline" onClick={() => agregarConsejo("")}>
+                          <Plus className="h-3.5 w-3.5 mr-1" /> Agregar
+                        </Button>
+                      </div>
+                      {camposConsejos.map((campo, idx) => (
+                        <div key={campo.id} className="flex gap-2 items-center">
+                          <span className="text-xs font-bold text-muted-foreground shrink-0 w-4 text-right">{idx + 1}.</span>
+                          <Input {...register(`guia.consejos.${idx}`)} className="h-8 text-sm flex-1" placeholder="Consejo..." />
+                          <Button type="button" size="icon-xs" variant="ghost" onClick={() => eliminarConsejo(idx)} className="shrink-0">
+                            <Trash2 className="h-3 w-3 text-destructive" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-semibold uppercase">Preguntas de la guía</Label>
+                        <Button type="button" size="sm" variant="outline" onClick={() => agregarGuiaPregunta("")}>
+                          <Plus className="h-3.5 w-3.5 mr-1" /> Agregar
+                        </Button>
+                      </div>
+                      {camposGuiaPreguntas.map((campo, idx) => (
+                        <div key={campo.id} className="flex gap-2 items-center">
+                          <span className="text-xs font-bold text-muted-foreground shrink-0 w-4 text-right">{idx + 1}.</span>
+                          <Input {...register(`guia.preguntas.${idx}`)} className="h-8 text-sm flex-1" placeholder="Pregunta..." />
+                          <Button type="button" size="icon-xs" variant="ghost" onClick={() => eliminarGuiaPregunta(idx)} className="shrink-0">
+                            <Trash2 className="h-3 w-3 text-destructive" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="shrink-0 flex justify-end gap-2">

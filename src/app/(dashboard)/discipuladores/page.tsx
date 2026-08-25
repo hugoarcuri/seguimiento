@@ -19,7 +19,7 @@ export default function DiscipuladoresPage() {
   const cargarDatos = useCallback(async () => {
     const supabase = createClient();
     const [discipuladoresRes, miembrosRes, etapasRes] = await Promise.all([
-      supabase.from("profiles").select("*").eq("rol", "discipulador").order("apellido", { ascending: true }),
+      supabase.from("profiles").select("*").eq("rol", "discipulador").is("deleted_at", null).order("apellido", { ascending: true }),
       supabase
         .from("miembros")
         .select("id, apellido, nombre, avatar_url, etapa_id, estado, lider_id, created_at, updated_at")

@@ -43,7 +43,7 @@ export default function EvangelismoPage() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user));
     Promise.all([
-      supabase.from("miembros").select("*, etapas:etapa_id(*)").order("apellido"),
+      supabase.from("miembros").select("*, etapas:etapa_id(*)").neq("estado", "eliminado").order("apellido"),
       supabase.from("acompanamiento_evangelistico").select("*").order("fecha_inicio_estado", { ascending: false }),
       supabase.from("eventos_evangelismo").select("*").order("fecha", { ascending: false }),
     ]).then(([dRes, pRes, eRes]) => {

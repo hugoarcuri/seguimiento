@@ -97,7 +97,7 @@ export default function DiscipuladoresDashboardPage() {
 
     Promise.all([
       supabase.from("profiles").select("id, nombre, apellido, email, avatar_url").eq("rol", "discipulador").order("apellido", { ascending: true }),
-      supabase.from("miembros").select("id, nombre, apellido, avatar_url, etapa_id, estado, lider_id, created_at"),
+      supabase.from("miembros").select("id, nombre, apellido, avatar_url, etapa_id, estado, lider_id, created_at").neq("estado", "eliminado"),
       supabase.from("seguimientos").select("id, miembro_id, progreso, estado"),
       supabase.from("agenda").select("id, miembro_id, lider_id, fecha, tema_tratado, realizada, miembros:miembro_id(nombre, apellido)").order("fecha", { ascending: false }),
       supabase.from("tareas").select("id, miembro_id, lider_id, titulo, estado, completed_at, created_at").order("created_at", { ascending: false }).limit(200),

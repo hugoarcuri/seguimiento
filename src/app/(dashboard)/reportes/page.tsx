@@ -129,7 +129,7 @@ export default function ReportesPage() {
 
     Promise.all([
       supabase.from("profiles").select("id, nombre, apellido, email").eq("rol", "discipulador").order("apellido", { ascending: true }),
-      supabase.from("miembros").select("id, nombre, apellido, lider_id, etapa_id, estado, bautizado, es_miembro"),
+      supabase.from("miembros").select("id, nombre, apellido, lider_id, etapa_id, estado, bautizado, es_miembro").neq("estado", "eliminado"),
       supabase.from("seguimientos").select("id, miembro_id, discipulador_id, progreso, estado"),
       supabase.from("agenda").select("id, miembro_id, fecha, tema_tratado, realizada"),
       supabase.from("tareas").select("id, miembro_id, titulo, tipo, estado, fecha_limite, completed_at"),
