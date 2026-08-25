@@ -203,18 +203,16 @@ export function MiembroForm({
       }
 
       if (data.password && data.email) {
-        const { error: fnError } = await supabase.functions.invoke("create-miembro-user", {
-          body: {
-            miembro_id: initialData.id,
-            email: data.email,
-            password: data.password,
-            nombre: data.nombre,
-            apellido: data.apellido,
-          },
+        const { error: fnError } = await supabase.rpc("set_miembro_password", {
+          p_miembro_id: initialData.id,
+          p_email: data.email,
+          p_password: data.password,
+          p_nombre: data.nombre,
+          p_apellido: data.apellido,
         });
 
         if (fnError) {
-          toast.success("Miembro actualizado. Error al actualizar contraseña: " + fnError.message);
+          toast.error("Error al actualizar contraseña: " + fnError.message);
         } else {
           toast.success("Miembro y contraseña actualizados");
         }
@@ -247,18 +245,16 @@ export function MiembroForm({
       }
 
       if (data.password && data.email) {
-        const { error: fnError } = await supabase.functions.invoke("create-miembro-user", {
-          body: {
-            miembro_id: newMiembro.id,
-            email: data.email,
-            password: data.password,
-            nombre: data.nombre,
-            apellido: data.apellido,
-          },
+        const { error: fnError } = await supabase.rpc("set_miembro_password", {
+          p_miembro_id: newMiembro.id,
+          p_email: data.email,
+          p_password: data.password,
+          p_nombre: data.nombre,
+          p_apellido: data.apellido,
         });
 
         if (fnError) {
-          toast.success("Miembro creado. Error al crear cuenta de acceso: " + fnError.message);
+          toast.success("Miembro creado. Error al crear cuenta: " + fnError.message);
         } else {
           toast.success("Miembro y cuenta de acceso creados. Ya puede iniciar sesión.");
         }
