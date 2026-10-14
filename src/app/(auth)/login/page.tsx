@@ -117,7 +117,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
+    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center space-y-2">
           <div className="flex justify-center mb-2">
@@ -186,12 +186,12 @@ export default function LoginPage() {
                 <Label htmlFor="password">Contraseña</Label>
                 <div className="relative">
                   <Input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••" {...register("password")} className="pr-10" />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors h-9 w-9 flex items-center justify-center">
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
                 {errors.password && (<p className="text-sm text-destructive">{errors.password.message}</p>)}
-                <button type="button" onClick={() => setModoRecuperar(true)} className="text-xs text-muted-foreground hover:text-primary transition-colors">
+                <button type="button" onClick={() => setModoRecuperar(true)} className="text-xs text-muted-foreground hover:text-primary transition-colors py-2 px-1 min-h-9 inline-flex items-center">
                   ¿Olvidaste tu contraseña?
                 </button>
               </div>
@@ -222,6 +222,6 @@ export default function LoginPage() {
           )}
         </CardFooter>
       </Card>
-    </div>
+    </main>
   );
 }
